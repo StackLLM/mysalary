@@ -11,6 +11,7 @@ export function Interrupteur({ libelle, actif, onChange }: { libelle: string; ac
       <span className="text-texte text-encre">{libelle}</span>
       <Switch.Root
         checked={actif}
+        aria-label={libelle}
         onCheckedChange={onChange}
         className="relative h-[30px] w-[58px] shrink-0 rounded-pilule bg-interrupteur transition-colors data-[state=checked]:bg-primaire"
       >

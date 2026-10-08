@@ -11,14 +11,14 @@ export const GROUPES: Record<GroupeCategorie, { libelle: string; aide: string }>
   engagement: { libelle: 'Engagement', aide: 'Ce qu’on a promis : famille, dettes.' },
 }
 
-/** « Le 5 de chaque mois », « Le 15, en juin et décembre », « Le 1er, chaque année en mars ». */
+/** « Le 5, chaque mois », « Le 15, en juin et décembre », « Le 1er, chaque année en mars ». */
 export function libelleQuandCharge(c: Pick<ChargeDto, 'nature' | 'frequence' | 'mois' | 'jour' | 'debut'>): string {
   if (c.nature === 'enveloppe') return 'Chaque mois budgétaire'
   const jour = c.jour === 1 ? '1er' : String(c.jour)
   const nomsMois = c.mois.map((m) => formaterMois(`2000-${String(m).padStart(2, '0')}`, { annee: false }))
   switch (c.frequence) {
     case 'mensuelle':
-      return `Le ${jour} de chaque mois`
+      return `Le ${jour}, chaque mois`
     case 'trimestrielle':
       return `Le ${jour}, tous les 3 mois dès ${formaterMois(c.debut, { annee: false })}`
     case 'annuelle':

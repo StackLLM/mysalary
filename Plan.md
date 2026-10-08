@@ -1,6 +1,6 @@
 # MySalary — Plan
 
-> Statut : **phase 2 — cœur métier**. Lots 0 à 5 clôturés et validés ; lot 6 en cours (08/10/2026).
+> Statut : **phase 2 — cœur métier**. Lots 0 à 5 clôturés et validés ; lot 6 livré le 08/10/2026, en attente de validation.
 > Suivi des lots : tableau du § 14. Bilan détaillé de chaque lot : `docs/lots/`.
 > Documents liés : `context.md` (produit), `UX.md` (parcours), `UI.md` (direction artistique).
 
@@ -628,7 +628,7 @@ Chaque lot se termine par une démo et une validation explicite.
 | 3 — Profils & réglages | ✅ Clôturé | 07/10/2026 | 52 | `docs/lots/Lot-03-profils-reglages.md` |
 | 4 — Salaire & cycle de paie | ✅ Clôturé (week-end → lundi suivant) | 07/10/2026 | 110 | `docs/lots/Lot-04-salaire.md` |
 | 5 — Autres revenus | ✅ Clôturé | 07/10/2026 | 138 | `docs/lots/Lot-05-revenus.md` |
-| 6 — Charges, enveloppes, ponctuels, dettes | 🔧 En cours : moteur, serveur et écrans écrits ; tests d'écran et vérification navigateur à faire | — | — | `docs/lots/Lot-06-charges-dettes.md` |
+| 6 — Charges, enveloppes, ponctuels, dettes | 🟡 Livré, en attente de validation | — | 166 | `docs/lots/Lot-06-charges-dettes.md` |
 | 7 à 19 | À venir | — | — | — |
 
 ### Phase 0 — Cadrage ✅
@@ -642,7 +642,7 @@ Chaque lot se termine par une démo et une validation explicite.
 - ✅ **Lot 3 — Profils & réglages** : écran Profils, création de compte, réglages.
 - ✅ **Lot 4 — Salaire & cycle de paie** : contrat versionné, paies prévues / reçues, primes sur paie, découpage des mois budgétaires, semaines. **Lot le plus critique.**
 - ✅ **Lot 5 — Autres revenus** : primes à part, revenus variables, certitude.
-- 🔧 **Lot 6 — Charges, enveloppes, ponctuels, dettes** (en cours).
+- 🟡 **Lot 6 — Charges, enveloppes, ponctuels, dettes** : catégories, charges fixes, enveloppes, ponctuels, dettes avec échéancier et paiements (livré, en attente de validation).
 - **Lot 7 — Dépenses réelles** : saisie rapide, rattachement au prévu.
 - **Lot 8 — Suivi mensuel** : prévu vs réel, clôture.
 - **Lot 9 — Suivi hebdomadaire.**

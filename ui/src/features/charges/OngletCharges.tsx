@@ -30,7 +30,7 @@ import {
 } from './requetes'
 import { dateOuMois, GROUPES, libelleQuandCharge, montantParJour, ORIGINES, part } from './saisie'
 
-const COLONNES = 'grid grid-cols-[minmax(0,1.3fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_28px] items-center gap-3'
+const COLONNES = 'grid grid-cols-[minmax(0,1.3fr)_minmax(0,1.55fr)_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)_28px] items-center gap-2.5'
 
 type Edition =
   | { type: 'fixe' | 'enveloppe'; charge?: ChargeDto }
@@ -99,7 +99,7 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
   const categorie = (id: string) => {
     const c = parId.get(id)
     return c ? (
-      <span className="flex min-w-0 items-center gap-2">
+      <span className="flex min-w-0 items-center gap-2" title={c.libelle}>
         <IconeCategorie icone={c.icone} className="h-7 w-7" />
         <span className="truncate text-texte-sm font-medium text-encre">{c.libelle}</span>
       </span>
@@ -190,10 +190,10 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
                   <span className="font-medium">{c.active ? libelleQuandCharge(c) : 'Terminée'}</span>
                 </Cellule>
                 {categorie(c.categorieId)}
-                <Cellule prefixe="DH">
+                <Cellule className="px-3" prefixe="DH">
                   <Montant valeur={c.montant} sansDevise />
                 </Cellule>
-                <Cellule prefixe="DH" attenue>
+                <Cellule className="px-3" prefixe="DH" attenue>
                   <Montant valeur={c.equivalentMensuel} sansDevise />
                 </Cellule>
                 {menu(c.libelle, () => setEdition({ type: 'fixe', charge: c }), () => setSuppression({ type: 'charge', id: c.id, libelle: c.libelle }))}
@@ -219,10 +219,10 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
                   <span className="font-medium">{c.active ? `Dès ${formaterMois(c.debut)}${c.fin ? ` → ${formaterMois(c.fin)}` : ''}` : 'Terminée'}</span>
                 </Cellule>
                 {categorie(c.categorieId)}
-                <Cellule prefixe="DH">
+                <Cellule className="px-3" prefixe="DH">
                   <Montant valeur={c.montant} sansDevise />
                 </Cellule>
-                <Cellule prefixe="DH" attenue titre={`Sur les ${resume.mois.nbJours} jours de ${nomMois}`}>
+                <Cellule className="px-3" prefixe="DH" attenue titre={`Sur les ${resume.mois.nbJours} jours de ${nomMois}`}>
                   ≈ <Montant valeur={montantParJour(c.montant, resume.mois.nbJours)} sansDevise />
                 </Cellule>
                 {menu(c.libelle, () => setEdition({ type: 'enveloppe', charge: c }), () => setSuppression({ type: 'charge', id: c.id, libelle: c.libelle }))}
@@ -246,7 +246,7 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
                 <BoutonLibelle libelle={p.libelle} onClick={() => setEdition({ type: 'ponctuel', ponctuel: p })} />
                 <Cellule attenue={p.passe}>{formaterDate(p.date)}</Cellule>
                 {categorie(p.categorieId)}
-                <Cellule prefixe="DH">
+                <Cellule className="px-3" prefixe="DH">
                   <Montant valeur={p.montant} sansDevise />
                 </Cellule>
                 <span className="truncate text-texte-sm font-medium text-gris">{p.passe ? 'Passé' : p.certitude === 'garanti' ? 'Sûr' : CERTITUDES_INFO[p.certitude].libelle}</span>

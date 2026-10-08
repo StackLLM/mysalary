@@ -22,7 +22,7 @@ import { FormulaireDette } from './FormulaireDette'
 import { PanneauDette } from './PanneauDette'
 import { totauxDettes } from './saisie'
 
-const COLONNES = 'grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_28px] items-center gap-3'
+const COLONNES = 'grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.95fr)_minmax(0,1.15fr)_28px] items-center gap-2.5'
 
 /** Mon plan › Dettes (UX.md § 5.11) : un total et un échéancier, jamais une charge sans fin (R9). */
 export function OngletDettes() {
@@ -147,11 +147,11 @@ function Dettes({ dettes, resume }: { dettes: DetteDto[]; resume: ResumeChargesD
                       >
                         {d.libelle}
                       </button>
-                      <Cellule attenue={!d.creancier}>{d.creancier || '—'}</Cellule>
-                      <Cellule prefixe="DH">
+                      <Cellule attenue={!d.creancier} titre={d.creancier || undefined}>{d.creancier || '—'}</Cellule>
+                      <Cellule className="px-3" prefixe="DH">
                         <Montant valeur={d.etat.restant} sansDevise />
                       </Cellule>
-                      <Cellule prefixe="DH" attenue>
+                      <Cellule className="px-3" prefixe="DH" attenue>
                         <Montant valeur={d.mensualite} sansDevise />
                       </Cellule>
                       <span className={cn('truncate text-texte-sm font-medium', d.etat.echeances.some((e) => e.statut === 'enRetard') ? 'text-alerte' : 'text-gris')}>
