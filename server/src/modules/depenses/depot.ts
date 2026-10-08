@@ -5,6 +5,7 @@ import type { z } from 'zod'
 import { introuvable } from '../../lib/erreurs'
 import { versCharge } from '../charges/conversion'
 import { regle, verifierCategorie } from '../charges/depot'
+import { exigerDatesOuvertes } from '../mois/clotures'
 import { chargerCalendrier } from '../salaire/depot'
 
 // Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
@@ -42,6 +43,7 @@ const donnees = (s: SaisieDepense) => ({
 })
 
 export async function creerDepense(prisma: PrismaClient, utilisateurId: string, saisie: SaisieDepense, aujourdhui: DateCivile) {
+  await exigerDatesOuvertes(prisma, utilisateurId, saisie.date)
   const s = await verifier(prisma, utilisateurId, saisie, aujourdhui)
   const { id } = await prisma.depense.create({ data: { utilisateurId, ...donnees(s) } })
   return { id }
@@ -54,13 +56,15 @@ async function trouver(prisma: PrismaClient, utilisateurId: string, id: string) 
 }
 
 export async function modifierDepense(prisma: PrismaClient, utilisateurId: string, id: string, saisie: SaisieDepense, aujourdhui: DateCivile) {
-  await trouver(prisma, utilisateurId, id)
+  const avant = await trouver(prisma, utilisateurId, id)
+  await exigerDatesOuvertes(prisma, utilisateurId, avant.date, saisie.date)
   const s = await verifier(prisma, utilisateurId, saisie, aujourdhui)
   await prisma.depense.update({ where: { id }, data: donnees(s) })
 }
 
 export async function supprimerDepense(prisma: PrismaClient, utilisateurId: string, id: string) {
-  await trouver(prisma, utilisateurId, id)
+  const avant = await trouver(prisma, utilisateurId, id)
+  await exigerDatesOuvertes(prisma, utilisateurId, avant.date)
   await prisma.depense.delete({ where: { id } })
 }
 

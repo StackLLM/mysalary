@@ -29,6 +29,8 @@ model Utilisateur {
   ponctuels         Ponctuel[]
   dettes            Dette[]
   depenses          Depense[]
+  clotures          ClotureMois[]
+  journalClotures   JournalCloture[]
 }
 
 model Reglages {
@@ -258,4 +260,35 @@ model Depense {
   modifieLe     DateTime    @updatedAt
 
   @@index([utilisateurId, date])
+}
+
+/// Mois budgétaire clôturé (R21) : bornes et bilan figés. Il ne bouge plus tant qu'il n'est pas rouvert.
+model ClotureMois {
+  id            String      @id @default(cuid())
+  utilisateurId String
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  cle           String
+  debut         String
+  fin           String
+  /// Bilan figé (JSON) : lignes, totaux, rythme.
+  instantane    String
+  forcee        Boolean     @default(false)
+  nonConfirmees Int         @default(0)
+  clotureLe     DateTime    @default(now())
+
+  @@unique([utilisateurId, cle])
+}
+
+/// Trace des clôtures et réouvertures (R22).
+model JournalCloture {
+  id            String      @id @default(cuid())
+  utilisateurId String
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  cle           String
+  /// cloture | reouverture
+  action        String
+  nonConfirmees Int         @default(0)
+  le            DateTime    @default(now())
+
+  @@index([utilisateurId, cle])
 }

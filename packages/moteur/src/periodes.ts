@@ -22,7 +22,8 @@ import { creerCalendrierPaie, type Certitude, type DonneesSalaire, type SourceDe
  */
 
 export type ModePeriode = 'cyclePaie' | 'calendaire'
-export type SourceBorne = SourceDebut | 'calendaire'
+/** `fige` : borne d'un mois clôturé, qui ne bouge plus (Plan.md § 7.1). */
+export type SourceBorne = SourceDebut | 'calendaire' | 'fige'
 export type StatutPeriode = 'passe' | 'enCours' | 'aVenir'
 
 export interface MoisBudgetaire {
@@ -101,6 +102,13 @@ export interface DonneesCharges {
   depenses?: Depense[]
 }
 
+/** Bornes figées d'un mois clôturé. */
+export interface BornesFigees {
+  cle: CleMois
+  debut: DateCivile
+  fin: DateCivile
+}
+
 /** Charge fixe ou ponctuel prévu dans un mois budgétaire, avec ce que les dépenses liées en couvrent. */
 export interface LigneAPayer {
   origine: 'fixe' | 'ponctuel'
@@ -112,8 +120,10 @@ export interface LigneAPayer {
   moisBudget: CleMois
   /** Prévu. */
   montant: Centimes
-  /** Réel : couvert par les dépenses liées. */
+  /** Réel : couvert par les dépenses liées (au plus le prévu). */
   paye: Centimes
+  /** Réel payé au-delà du prévu. */
+  surplus: Centimes
   reste: Centimes
   statut: StatutCouverture
 }
@@ -157,13 +167,21 @@ export function creerCalendrier({
   dettes = [],
   paiementsDettes = [],
   depenses = [],
+  moisClotures = [],
   ...donnees
-}: DonneesSalaire & DonneesCharges & { mode: ModePeriode; revenusRecus?: RevenuRecu[] }) {
+}: DonneesSalaire & DonneesCharges & { mode: ModePeriode; revenusRecus?: RevenuRecu[]; moisClotures?: BornesFigees[] }) {
   const paies = creerCalendrierPaie(donnees)
   /** Sans contrat, le cycle de paie n'est pas défini : on retombe sur le mois civil. */
   const cycle = mode === 'cyclePaie' && paies.aContrat
 
+  const figes = new Map(moisClotures.map((m) => [m.cle, m]))
+
+  /** Début d'un mois. Un mois clôturé garde ses bornes ; le mois qui le suit commence le lendemain de sa fin. */
   function borne(cle: CleMois): { date: DateCivile; source: SourceBorne } {
+    const fige = figes.get(cle)
+    if (fige) return { date: fige.debut, source: 'fige' }
+    const precedent = figes.get(decalerMois(cle, -1))
+    if (precedent) return { date: ajouterJours(precedent.fin, 1), source: 'fige' }
     if (!cycle) return { date: premierJour(cle), source: 'calendaire' }
     return paies.debut(cle)!
   }
@@ -177,7 +195,8 @@ export function creerCalendrier({
   function mois(cle: CleMois): MoisBudgetaire {
     const debut = borne(cle)
     const suivant = borne(decalerMois(cle, 1))
-    const fin = cycle ? ajouterJours(suivant.date, -1) : dernierJour(cle)
+    const fige = figes.get(cle)
+    const fin = fige ? fige.fin : cycle || suivant.source === 'fige' ? ajouterJours(suivant.date, -1) : dernierJour(cle)
     return {
       cle,
       debut: debut.date,
@@ -410,12 +429,31 @@ export function creerCalendrier({
     return { mois: cle, lignes: [...suivi.lignes, ...avance].filter((l) => l.reste > 0), enveloppes: suivi.enveloppes }
   }
 
+  const dansMois = (cle: CleMois) => {
+    const periode = mois(cle)
+    return (date: DateCivile) => date >= periode.debut && date <= periode.fin
+  }
+
+  /** Revenus reçus sans source (cadeau, remboursement…) datés dans le mois : du réel sans prévu. */
+  function revenusLibres(cle: CleMois): RevenuRecu[] {
+    const dans = dansMois(cle)
+    return revenusRecus.filter((r) => !r.sourceId && dans(r.date)).sort((a, b) => a.date.localeCompare(b.date))
+  }
+
+  /** Échéances de dettes datées dans le mois, avec leur couverture par les paiements (R9). */
+  function echeancesDettes(cle: CleMois) {
+    const dans = dansMois(cle)
+    return dettes.flatMap((d) => etats.get(d.id)!.echeances.filter((e) => dans(e.date)).map((e) => ({ ...e, detteId: d.id, libelle: d.libelle })))
+  }
+
   return {
     mode: cycle ? ('cyclePaie' as const) : ('calendaire' as const),
     revenusPrevus,
     chargesDuMois,
     suiviDuMois,
     rattachements,
+    revenusLibres,
+    echeancesDettes,
     etatDette: (id: string) => etats.get(id) ?? null,
     /** Vrai si l'utilisateur a choisi le cycle de paie mais n'a pas encore de contrat. */
     sansContrat: mode === 'cyclePaie' && !paies.aContrat,

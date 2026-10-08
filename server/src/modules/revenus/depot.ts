@@ -25,6 +25,8 @@ import { ErreurApi, introuvable } from '../../lib/erreurs'
 import { chargerCalendrier } from '../salaire/depot'
 import { versRevenuRecu, versSource } from './conversion'
 
+import { exigerDatesOuvertes } from '../mois/clotures'
+
 // Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
 
 type SaisieSource = z.output<typeof schemaSource>
@@ -138,6 +140,7 @@ const donneesRecu = (saisie: SaisieRecu, libelle: string) => ({
 })
 
 export async function creerRecu(prisma: PrismaClient, utilisateurId: string, saisie: SaisieRecu, aujourdhui: DateCivile) {
+  await exigerDatesOuvertes(prisma, utilisateurId, saisie.date)
   const libelle = await verifierRecu(prisma, utilisateurId, saisie, aujourdhui)
   return versDtoRecu(await prisma.revenuRecu.create({ data: { utilisateurId, ...donneesRecu(saisie, libelle) } }))
 }
@@ -149,13 +152,15 @@ async function trouverRecu(prisma: PrismaClient, utilisateurId: string, id: stri
 }
 
 export async function modifierRecu(prisma: PrismaClient, utilisateurId: string, id: string, saisie: SaisieRecu, aujourdhui: DateCivile) {
-  await trouverRecu(prisma, utilisateurId, id)
+  const avant = await trouverRecu(prisma, utilisateurId, id)
+  await exigerDatesOuvertes(prisma, utilisateurId, avant.date, saisie.date)
   const libelle = await verifierRecu(prisma, utilisateurId, saisie, aujourdhui, id)
   return versDtoRecu(await prisma.revenuRecu.update({ where: { id }, data: donneesRecu(saisie, libelle) }))
 }
 
 export async function supprimerRecu(prisma: PrismaClient, utilisateurId: string, id: string) {
-  await trouverRecu(prisma, utilisateurId, id)
+  const avant = await trouverRecu(prisma, utilisateurId, id)
+  await exigerDatesOuvertes(prisma, utilisateurId, avant.date)
   await prisma.revenuRecu.delete({ where: { id } })
 }
 

@@ -1,6 +1,6 @@
 # MySalary — Plan
 
-> Statut : **phase 2 — cœur métier**. Lots 0 à 6 clôturés et validés ; lot 7 livré le 08/10/2026, en attente de validation.
+> Statut : **phase 2 — cœur métier**. Lots 0 à 7 clôturés et validés ; lot 8 livré le 08/10/2026, en attente de validation.
 > Suivi des lots : tableau du § 14. Bilan détaillé de chaque lot : `docs/lots/`.
 > Documents liés : `context.md` (produit), `UX.md` (parcours), `UI.md` (direction artistique).
 
@@ -14,7 +14,7 @@
 | 4 | Données de départ | **Onboarding avec import** de l'ancien fichier. Base de données avec données **par utilisateur**. |
 | 5 | Comptes | **Comptes utilisateurs en base**, **sans authentification** pour l'instant. |
 | 6 | Thème | **Clair uniquement**. Pas de thème sombre. |
-| 7 | Avancement | Lots 0 à 5 clôturés et validés ; lot 6 en cours (voir § 14 et `docs/lots/`). |
+| 7 | Avancement | Voir le suivi des lots au § 14 et les bilans dans `docs/lots/`. |
 | 8 | Interface | **Identique au template** `Templates/image.png` (barre du haut, cartes, bandeau, tableau en champs), sauge à la place du violet. Le style maison de la skill (rail en verre, fenêtre, serif, nacré) est abandonné. |
 
 ---
@@ -297,7 +297,7 @@ Toutes les routes, sauf `/utilisateurs`, agissent sur l'utilisateur de l'en-têt
 | Dépenses réelles | `GET /depenses?mois=` (suivi du mois), `GET /depenses/rattachements?date=`, `POST /depenses`, `PUT/DELETE /depenses/:id` |
 | Épargne | `GET/PUT /epargne`, `POST /epargne/mouvements` |
 | Objectifs | `GET/POST /objectifs`, `PUT/DELETE /objectifs/:id`, `POST /objectifs/:id/versements`, `POST /objectifs/:id/realiser` |
-| Mois budgétaires | `GET /mois/:cle`, `GET /mois/:cle/semaines`, `POST /mois/:cle/cloturer`, `POST /mois/:cle/rouvrir` |
+| Mois budgétaires | `GET /mois/:cle`, `GET /mois/:cle/bilan`, `GET /mois/:cle/semaines`, `POST /mois/:cle/cloturer`, `POST /mois/:cle/rouvrir` |
 | Année | `GET /annees/:annee` |
 | Tableau de bord | `GET /aujourdhui` |
 | Calendrier | `GET /calendrier?du=&au=` |
@@ -333,7 +333,8 @@ Montants en centimes. Dates civiles. Toutes les tables métier ont `id`, `utilis
 | **Objectif** | `libelle`, `type` (`achat` \| `securite` \| `investissement` \| `autre`), `montantCible`, `montantInitial`, `dateCible?`, `priorite`, `versementMensuel?`, `statut` (`actif` \| `pause` \| `atteint` \| `realise` \| `abandonne`) |
 | **VersementObjectif** | `objectifId`, `date`, `montant` — **réel** |
 | **Scenario** | `nom`, `base` (`prudent` \| `realiste` \| `ambitieux` \| `perso`), `ajustements` (primes en plus, versement, réduction, horizon) |
-| **ClotureMois** | `cle`, `clotureLe`, `instantane` (JSON figé des totaux) |
+| **ClotureMois** | `cle`, `debut`, `fin` (bornes figées), `clotureLe`, `instantane` (bilan figé, JSON), `forcee`, `nonConfirmees` |
+| **JournalCloture** | `cle`, `action` (`cloture` \| `reouverture`), `le`, `nonConfirmees` — trace (R22) |
 | **ImportSource** | `type` (`moneyGuruV0` \| `mysalary`), `fichierBrut` (JSON), `importeLe`, `lignes` (décision par ligne) — traçabilité |
 
 Chaque donnée importée garde `origine = import` jusqu'à confirmation.
@@ -629,8 +630,9 @@ Chaque lot se termine par une démo et une validation explicite.
 | 4 — Salaire & cycle de paie | ✅ Clôturé (week-end → lundi suivant) | 07/10/2026 | 110 | `docs/lots/Lot-04-salaire.md` |
 | 5 — Autres revenus | ✅ Clôturé | 07/10/2026 | 138 | `docs/lots/Lot-05-revenus.md` |
 | 6 — Charges, enveloppes, ponctuels, dettes | ✅ Clôturé | 08/10/2026 | 166 | `docs/lots/Lot-06-charges-dettes.md` |
-| 7 — Dépenses réelles | 🟡 Livré, en attente de validation | — | 194 | `docs/lots/Lot-07-depenses.md` |
-| 8 à 19 | À venir | — | — | — |
+| 7 — Dépenses réelles | ✅ Clôturé | 08/10/2026 | 194 | `docs/lots/Lot-07-depenses.md` |
+| 8 — Suivi mensuel | 🟡 Livré, en attente de validation | — | 209 | `docs/lots/Lot-08-suivi-mensuel.md` |
+| 9 à 19 | À venir | — | — | — |
 
 ### Phase 0 — Cadrage ✅
 - Lot 0 : analyse, `Plan.md`, `context.md`, `UX.md`, `UI.md`, décisions (§ 0). ✅
@@ -644,8 +646,8 @@ Chaque lot se termine par une démo et une validation explicite.
 - ✅ **Lot 4 — Salaire & cycle de paie** : contrat versionné, paies prévues / reçues, primes sur paie, découpage des mois budgétaires, semaines. **Lot le plus critique.**
 - ✅ **Lot 5 — Autres revenus** : primes à part, revenus variables, certitude.
 - ✅ **Lot 6 — Charges, enveloppes, ponctuels, dettes** : catégories, charges fixes, enveloppes, ponctuels, dettes avec échéancier et paiements.
-- 🟡 **Lot 7 — Dépenses réelles** : saisie rapide (`+`, touche N), rattachement au prévu, « Payé », écran Mois › Dépenses (livré, en attente de validation).
-- **Lot 8 — Suivi mensuel** : prévu vs réel, clôture.
+- ✅ **Lot 7 — Dépenses réelles** : saisie rapide (`+`, touche N), rattachement au prévu, « Payé », écran Mois › Dépenses.
+- 🟡 **Lot 8 — Suivi mensuel** : bilan prévu / réel par ligne, estimation de fin de mois, rythme, clôture et réouverture (livré, en attente de validation).
 - **Lot 9 — Suivi hebdomadaire.**
 - **Lot 10 — Épargne & objectifs** : soldes, versements, ETA, risque, allocation.
 

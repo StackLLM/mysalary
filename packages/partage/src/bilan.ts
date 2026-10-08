@@ -1,0 +1,25 @@
+import type { BilanDuMois, DateCivile, PointRythme } from '@mysalary/moteur'
+import { z } from 'zod'
+
+export type { CibleBilan, FamilleBilan, LigneBilan, PointRythme, StatutLigneBilan, TotauxBilan } from '@mysalary/moteur'
+
+export const schemaCloture = z.strictObject({
+  /** Clôturer malgré des lignes non confirmées (UX.md § 5.3). */
+  forcer: z.boolean().default(false),
+})
+export type SaisieCloture = z.input<typeof schemaCloture>
+
+export interface EvenementCloture {
+  action: 'cloture' | 'reouverture'
+  le: string
+  nonConfirmees: number
+}
+
+/** Mois › Vue d'ensemble : bilan calculé, ou figé si le mois est clôturé. */
+export interface BilanDto extends BilanDuMois {
+  aujourdhui: DateCivile
+  rythme: PointRythme[]
+  /** Mois clôturé : bilan figé à cette date (lecture seule). */
+  cloture: { le: string; forcee: boolean; nonConfirmees: number } | null
+  journal: EvenementCloture[]
+}

@@ -1,6 +1,6 @@
 # Lot 7 — Dépenses réelles
 
-> Statut : **livré** (08/10/2026), en attente de validation. Références : `Plan.md` § 6, § 7.2 · `context.md` R10, R11 · `UX.md` § 4.3, § 5.5.
+> Statut : **clôturé et validé** (08/10/2026). Références : `Plan.md` § 6, § 7.2 · `context.md` R10, R11 · `UX.md` § 4.3, § 5.5.
 
 ## Objectif
 

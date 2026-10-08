@@ -31,6 +31,7 @@ import {
 import type { Categorie, PrismaClient } from '@prisma/client'
 import type { z } from 'zod'
 import { ErreurApi, introuvable } from '../../lib/erreurs'
+import { exigerDatesOuvertes } from '../mois/clotures'
 import { chargerCalendrier } from '../salaire/depot'
 import { versCharge, versDette, versPaiement, versPonctuel } from './conversion'
 
@@ -260,6 +261,7 @@ export async function ajouterPaiement(
   aujourdhui: DateCivile,
 ) {
   const l = await trouverDette(prisma, utilisateurId, detteId)
+  await exigerDatesOuvertes(prisma, utilisateurId, saisie.date)
   if (saisie.date > aujourdhui) throw regle('Un paiement ne peut pas être daté après aujourd’hui.', { date: 'Date dans le futur.' })
   const plafond = plafondPaiement(versDette(l), l.paiements.map(versPaiement))
   if (plafond <= 0) throw regle(`« ${l.libelle} » est déjà soldée.`)
@@ -274,6 +276,7 @@ export async function supprimerPaiement(prisma: PrismaClient, utilisateurId: str
   await trouverDette(prisma, utilisateurId, detteId)
   const p = await prisma.paiementDette.findFirst({ where: { id: paiementId, detteId, utilisateurId } })
   if (!p) throw introuvable('Paiement')
+  await exigerDatesOuvertes(prisma, utilisateurId, p.date)
   await prisma.paiementDette.delete({ where: { id: paiementId } })
 }
 

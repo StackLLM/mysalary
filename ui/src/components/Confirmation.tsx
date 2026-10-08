@@ -12,6 +12,8 @@ interface ProprietesConfirmation {
   /** Bouton de confirmation bloqué tant qu'une condition n'est pas remplie (ex. prénom retapé). */
   confirmerDesactive?: boolean
   chargement?: boolean
+  /** `principal` pour une action lourde mais pas destructive (clôturer, rouvrir). */
+  ton?: 'danger' | 'principal'
   children?: ReactNode
 }
 
@@ -25,6 +27,7 @@ export function Confirmation({
   onConfirmer,
   confirmerDesactive,
   chargement,
+  ton = 'danger',
   children,
 }: ProprietesConfirmation) {
   return (
@@ -39,7 +42,7 @@ export function Confirmation({
             <Bouton variante="contour" taille="md" onClick={onFermer}>
               Annuler
             </Bouton>
-            <Bouton variante="danger" taille="md" onClick={onConfirmer} disabled={confirmerDesactive} chargement={chargement}>
+            <Bouton variante={ton} taille="md" onClick={onConfirmer} disabled={confirmerDesactive} chargement={chargement}>
               {libelleConfirmer}
             </Bouton>
           </div>

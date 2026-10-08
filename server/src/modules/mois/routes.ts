@@ -1,9 +1,10 @@
 import { ecartJours, semainesDe, type CleMois, type DateCivile } from '@mysalary/moteur'
-import { schemaCleMois, type MoisBudgetaireDto } from '@mysalary/partage'
+import { schemaCleMois, schemaCloture, type MoisBudgetaireDto } from '@mysalary/partage'
 import type { FastifyInstance } from 'fastify'
 import { valider } from '../../lib/valider'
 import { utilisateurDe } from '../../plugins/utilisateurCourant'
 import { chargerCalendrier } from '../salaire/depot'
+import * as depot from './depot'
 
 type Charge = Awaited<ReturnType<typeof chargerCalendrier>>
 
@@ -32,5 +33,22 @@ export async function routesMois(app: FastifyInstance) {
     const cle = valider(schemaCleMois, requete.params.cle)
     const aujourdhui = app.aujourdhui()
     return versDto(await chargerCalendrier(app.prisma, utilisateurDe(requete), aujourdhui), cle, aujourdhui)
+  })
+
+  // Suivi mensuel (lot 8) : bilan prévu / réel, clôture et réouverture.
+  app.get<{ Params: { cle: string } }>('/mois/:cle/bilan', async (requete) =>
+    depot.bilan(app.prisma, utilisateurDe(requete), app.aujourdhui(), valider(schemaCleMois, requete.params.cle)),
+  )
+
+  app.post<{ Params: { cle: string } }>('/mois/:cle/cloturer', async (requete, reponse) => {
+    const cle = valider(schemaCleMois, requete.params.cle)
+    const { forcer } = valider(schemaCloture, requete.body ?? {})
+    await depot.cloturer(app.prisma, utilisateurDe(requete), app.aujourdhui(), cle, forcer)
+    return reponse.status(204).send()
+  })
+
+  app.post<{ Params: { cle: string } }>('/mois/:cle/rouvrir', async (requete, reponse) => {
+    await depot.rouvrir(app.prisma, utilisateurDe(requete), valider(schemaCleMois, requete.params.cle))
+    return reponse.status(204).send()
   })
 }

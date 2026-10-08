@@ -1,4 +1,4 @@
-import type { CategorieDto, DepenseDto, RattachementsDto, SuiviDepensesDto, Utilisateur } from '@mysalary/partage'
+import type { BilanDto, CategorieDto, DepenseDto, RattachementsDto, SuiviDepensesDto, Utilisateur } from '@mysalary/partage'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../../lib/api'
@@ -52,22 +52,45 @@ const suivi = {
 
 const rattachements = { mois: '2027-01', lignes: [loyer], enveloppes: [courses] } as unknown as RattachementsDto
 
+const totauxBilan = { revenusPrevus: 1_000_000, revenusReels: 1_000_000, chargesPrevues: 700_000, sortiesReelles: 140_000, restePrevu: 300_000, resteReel: 860_000, ecart: null }
+const bilan = (modif: Partial<BilanDto> = {}) =>
+  ({
+    mois: { ...suivi.mois, sourceDebut: 'reelle', sourceFin: 'prevue' },
+    aujourdhui: '2027-01-20',
+    lignes: [
+      { cle: 'paie:0', famille: 'revenu', libelle: 'Salaire', date: '2026-12-27', prevu: 1_000_000, reel: 1_000_000, ecart: 0, statut: 'confirme', cible: { type: 'paie', mois: '2027-01' } },
+      { cle: 'fixe:loyer:2027-01-05', famille: 'fixe', libelle: 'Loyer', date: '2027-01-05', prevu: 350_000, reel: null, ecart: null, statut: 'enRetard', cible: { type: 'charge', id: 'loyer', date: '2027-01-05', categorieId: 'c-log' } },
+      { cle: 'enveloppe:courses', famille: 'enveloppe', libelle: 'Courses', date: null, prevu: 250_000, reel: 40_000, ecart: null, statut: 'enCours', cible: null },
+      { cle: 'dette:d1:1', famille: 'dette', libelle: 'Prêt voiture', date: '2027-01-10', prevu: 100_000, reel: 100_000, ecart: 0, statut: 'confirme', cible: { type: 'dette', id: 'd1' } },
+    ],
+    totaux: totauxBilan,
+    estimation: { revenusAttendus: 0, chargesAttendues: 560_000, resteFinDeMois: 300_000 },
+    aConfirmer: [],
+    rythme: [{ date: '2027-01-20', prevu: 100_000, reel: 140_000 }],
+    cloture: null,
+    journal: [],
+    ...modif,
+  }) as unknown as BilanDto
+let bilanCourant = bilan()
+
 function serveur() {
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
     if (chemin === '/utilisateurs') return [compte]
     if (chemin === '/categories') return categories
     if (chemin === '/depenses' || chemin.startsWith('/depenses?mois=')) return suivi
     if (chemin.startsWith('/depenses/rattachements?date=')) return rattachements
+    if (chemin === '/mois/courant') return suivi.mois
+    if (/^\/mois\/\d{4}-\d{2}\/bilan$/.test(chemin)) return bilanCourant
     throw new Error(`Route non simulée : ${chemin}`)
   })
 }
 
-const ouvrirMois = () =>
+const ouvrirMois = (route = '/mois?onglet=depenses') =>
   rendre(
     <FournisseurSaisieRapide>
       <PageMois />
     </FournisseurSaisieRapide>,
-    { route: '/mois', compte: 'u1' },
+    { route, compte: 'u1' },
   )
 
 beforeAll(() => {
@@ -76,6 +99,7 @@ beforeAll(() => {
 })
 afterAll(() => vi.useRealTimers())
 beforeEach(() => {
+  bilanCourant = bilan()
   serveur()
   vi.mocked(api.creer).mockReset().mockResolvedValue({ id: 'nouvelle' })
 })
@@ -143,6 +167,7 @@ describe('Mois › Dépenses', () => {
     expect(screen.getByText('Aucune dépense dans cette catégorie ce mois-ci.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Mois suivant' }))
     await waitFor(() => expect(api.lire).toHaveBeenCalledWith('/depenses?mois=2027-02'))
+    expect(api.lire).toHaveBeenCalledWith('/mois/2027-02/bilan')
   })
 })
 
@@ -219,5 +244,61 @@ describe('saisie rapide', () => {
     expect(screen.queryByText('Nouvelle dépense')).not.toBeInTheDocument()
     fireEvent.keyDown(document.body, { key: 'n' })
     expect(await screen.findByText('Nouvelle dépense')).toBeInTheDocument()
+  })
+})
+
+describe('Mois › Vue d’ensemble', () => {
+  it('prévu et réel par ligne, estimation de fin de mois, « Payé » sur une charge', async () => {
+    ouvrirMois('/mois')
+    expect(await screen.findByText('Bilan de janvier')).toBeInTheDocument()
+    const revenus = screen.getByRole('region', { name: 'Revenus' })
+    expect(within(revenus).getByText('Salaire')).toBeInTheDocument()
+    expect(within(revenus).getByText('Reçu')).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: 'Enveloppes' })).getByText('En cours')).toBeInTheDocument()
+    expect(screen.getByText(/Estimation de fin de mois/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Marquer Loyer payé' }))
+    await waitFor(() =>
+      expect(api.creer).toHaveBeenCalledWith('/depenses', {
+        date: '2027-01-05',
+        montant: 350_000,
+        categorieId: 'c-log',
+        libelle: 'Loyer',
+        chargeId: 'loyer',
+        echeance: '2027-01-05',
+        ponctuelId: null,
+      }),
+    )
+  })
+
+  it('mois terminé avec une ligne non confirmée : « Clôturer quand même »', async () => {
+    const loyerNonPaye = bilan().lignes[1]!
+    bilanCourant = bilan({ mois: { ...bilan().mois, statut: 'passe' }, estimation: null, aConfirmer: [loyerNonPaye], totaux: { ...totauxBilan, ecart: -20_000 } } as Partial<BilanDto>)
+    ouvrirMois('/mois')
+    expect(await screen.findByText('Janvier est terminé. Vérifie et clôture.')).toBeInTheDocument()
+    expect(screen.getByText(/Écart avec le plan/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Clôturer janvier' }))
+    expect(await screen.findByText(/1 ligne n’est pas confirmée : Loyer/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Clôturer quand même' }))
+    await waitFor(() => expect(api.creer).toHaveBeenCalledWith('/mois/2027-01/cloturer', { forcer: true }))
+  })
+
+  it('mois clôturé : lecture seule, réouverture', async () => {
+    bilanCourant = bilan({
+      mois: { ...bilan().mois, statut: 'passe' },
+      estimation: null,
+      cloture: { le: '2027-01-28T10:00:00.000Z', forcee: false, nonConfirmees: 0 },
+      journal: [{ action: 'cloture', le: '2027-01-28T10:00:00.000Z', nonConfirmees: 0 }],
+    } as Partial<BilanDto>)
+    ouvrirMois('/mois')
+    expect(await screen.findByText('Mois clôturé')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Marquer Loyer payé' })).not.toBeInTheDocument()
+    expect(within(screen.getByRole('list', { name: 'Historique de clôture' })).getByText('Clôturé le 28 janv. 2027')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Rouvrir le mois' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Rouvrir' }))
+    await waitFor(() => expect(api.creer).toHaveBeenCalledWith('/mois/2027-01/rouvrir', {}))
+
+    fireEvent.mouseDown(screen.getByRole('tab', { name: 'Dépenses' }))
+    expect(await screen.findByRole('button', { name: 'Ajouter une dépense' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Modifier Marché' })).not.toBeInTheDocument()
   })
 })

@@ -1,0 +1,67 @@
+import { bilanDuMois, rythmeDuMois, type CleMois, type DateCivile } from '@mysalary/moteur'
+import { CODES_ERREUR, formaterMois, type BilanDto, type EvenementCloture } from '@mysalary/partage'
+import type { PrismaClient } from '@prisma/client'
+import { ErreurApi } from '../../lib/erreurs'
+import { chargerCalendrier } from '../salaire/depot'
+
+// Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
+
+type Instantane = Omit<BilanDto, 'aujourdhui' | 'cloture' | 'journal'>
+
+const regle = (message: string) => new ErreurApi(422, CODES_ERREUR.REGLE_METIER, message)
+
+async function journal(prisma: PrismaClient, utilisateurId: string, cle: string): Promise<EvenementCloture[]> {
+  const lignes = await prisma.journalCloture.findMany({ where: { utilisateurId, cle }, orderBy: { le: 'desc' } })
+  return lignes.map((l) => ({ action: l.action as EvenementCloture['action'], le: l.le.toISOString(), nonConfirmees: l.nonConfirmees }))
+}
+
+async function calculer(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile, cle: CleMois): Promise<Instantane> {
+  const { calendrier } = await chargerCalendrier(prisma, utilisateurId, aujourdhui)
+  return { ...bilanDuMois(calendrier, cle), rythme: rythmeDuMois(calendrier, cle, aujourdhui) }
+}
+
+/** Bilan du mois : figé s'il est clôturé (R21), sinon calculé. */
+export async function bilan(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile, cle: CleMois): Promise<BilanDto> {
+  const [cloture, evenements] = await Promise.all([
+    prisma.clotureMois.findUnique({ where: { utilisateurId_cle: { utilisateurId, cle } } }),
+    journal(prisma, utilisateurId, cle),
+  ])
+  const contenu: Instantane = cloture ? JSON.parse(cloture.instantane) : await calculer(prisma, utilisateurId, aujourdhui, cle)
+  return {
+    ...contenu,
+    aujourdhui,
+    cloture: cloture ? { le: cloture.clotureLe.toISOString(), forcee: cloture.forcee, nonConfirmees: cloture.nonConfirmees } : null,
+    journal: evenements,
+  }
+}
+
+/** Clôture un mois passé : refus si des lignes ne sont pas confirmées, sauf si l'utilisateur force. */
+export async function cloturer(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile, cle: CleMois, forcer: boolean) {
+  const nom = formaterMois(cle, { majuscule: true })
+  if (await prisma.clotureMois.findUnique({ where: { utilisateurId_cle: { utilisateurId, cle } } })) {
+    throw new ErreurApi(409, CODES_ERREUR.CONFLIT, `${nom} est déjà clôturé.`)
+  }
+  const contenu = await calculer(prisma, utilisateurId, aujourdhui, cle)
+  if (contenu.mois.statut !== 'passe') throw regle(`${nom} n’est pas terminé : il se clôture après sa dernière journée.`)
+  const nonConfirmees = contenu.aConfirmer.length
+  if (nonConfirmees > 0 && !forcer) {
+    const quoi = nonConfirmees > 1 ? `${nonConfirmees} lignes ne sont pas confirmées` : '1 ligne n’est pas confirmée'
+    throw regle(`${quoi}. Confirme-les ou clôture quand même.`)
+  }
+  await prisma.$transaction([
+    prisma.clotureMois.create({
+      data: { utilisateurId, cle, debut: contenu.mois.debut, fin: contenu.mois.fin, instantane: JSON.stringify(contenu), forcee: nonConfirmees > 0, nonConfirmees },
+    }),
+    prisma.journalCloture.create({ data: { utilisateurId, cle, action: 'cloture', nonConfirmees } }),
+  ])
+}
+
+/** Rouvre un mois clôturé : le bilan redevient calculé ; la réouverture est tracée (R22). */
+export async function rouvrir(prisma: PrismaClient, utilisateurId: string, cle: CleMois) {
+  const cloture = await prisma.clotureMois.findUnique({ where: { utilisateurId_cle: { utilisateurId, cle } } })
+  if (!cloture) throw regle(`${formaterMois(cle, { majuscule: true })} n’est pas clôturé.`)
+  await prisma.$transaction([
+    prisma.clotureMois.delete({ where: { id: cloture.id } }),
+    prisma.journalCloture.create({ data: { utilisateurId, cle, action: 'reouverture' } }),
+  ])
+}

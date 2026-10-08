@@ -1,4 +1,5 @@
 export * from './argent'
+export * from './bilan'
 export * from './charges'
 export * from './dates'
 export * from './depenses'
