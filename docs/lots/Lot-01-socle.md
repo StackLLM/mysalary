@@ -1,6 +1,6 @@
 # Lot 1 — Socle
 
-> Statut : **clôturé et validé** (07/10/2026). Référence : `Plan.md` § 5 et § 14.
+> Statut : **clôturé et validé** (07/10/2026). Référence : `Plan.md` § 5 · `docs/plan.md`.
 
 ## Objectif
 

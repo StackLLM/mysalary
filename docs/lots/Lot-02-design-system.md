@@ -1,6 +1,6 @@
 # Lot 2 — Design system
 
-> Statut : **clôturé et validé**, refait à l'identique du template (07/10/2026). Référence : `UI.md`, skill UI-Stealer, `Plan.md` § 14.
+> Statut : **clôturé et validé**, refait à l'identique du template (07/10/2026). Référence : `UI.md`, skill UI-Stealer, `docs/plan.md`.
 
 ## Objectif
 
