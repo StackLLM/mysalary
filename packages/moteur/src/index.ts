@@ -1,6 +1,7 @@
 export * from './argent'
 export * from './charges'
 export * from './dates'
+export * from './depenses'
 export * from './periodes'
 export * from './revenus'
 export * from './salaire'

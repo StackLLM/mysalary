@@ -1,5 +1,6 @@
 import { additionner, centimes, repartir, soustraire, type Centimes } from './argent'
 import { chargeCeMois, dateDeCharge, enveloppeActive, etatDette, type Charge, type Dette, type EtatDette, type PaiementDette, type Ponctuel } from './charges'
+import { couvrir, somme, type Depense, type Imputation, type StatutCouverture } from './depenses'
 import {
   ajouterJours,
   decalerMois,
@@ -97,6 +98,53 @@ export interface DonneesCharges {
   ponctuels?: Ponctuel[]
   dettes?: Dette[]
   paiementsDettes?: PaiementDette[]
+  depenses?: Depense[]
+}
+
+/** Charge fixe ou ponctuel prévu dans un mois budgétaire, avec ce que les dépenses liées en couvrent. */
+export interface LigneAPayer {
+  origine: 'fixe' | 'ponctuel'
+  id: string
+  libelle: string
+  categorieId: string
+  /** Date prévue (pour une charge fixe : l'échéance). */
+  date: DateCivile
+  moisBudget: CleMois
+  /** Prévu. */
+  montant: Centimes
+  /** Réel : couvert par les dépenses liées. */
+  paye: Centimes
+  reste: Centimes
+  statut: StatutCouverture
+}
+
+/** Enveloppe d'un mois budgétaire : budget prévu et dépensé réel, jamais mélangés. */
+export interface SuiviEnveloppe {
+  id: string
+  libelle: string
+  categorieId: string
+  budget: Centimes
+  depense: Centimes
+  /** Budget − dépensé ; négatif si dépassé. */
+  reste: Centimes
+}
+
+export interface DepenseImputee extends Depense {
+  imputation: Imputation
+  /** Libellé de la ligne du plan couverte ; `null` hors plan. */
+  ligne: string | null
+}
+
+/** Le réel d'un mois budgétaire (Plan.md § 7.2) et l'état des lignes prévues à payer. */
+export interface SuiviDuMois {
+  depenses: DepenseImputee[]
+  paiementsDettes: PaiementDette[]
+  lignes: LigneAPayer[]
+  enveloppes: SuiviEnveloppe[]
+  /** Réel uniquement. */
+  totaux: Record<Imputation | 'dette' | 'total', Centimes>
+  /** Prévu encore attendu : lignes pas encore couvertes, budget d'enveloppe restant, échéances de dettes non payées. */
+  restePrevu: Record<'lignes' | 'enveloppes' | 'dettes' | 'total', Centimes>
 }
 
 export type Calendrier = ReturnType<typeof creerCalendrier>
@@ -108,6 +156,7 @@ export function creerCalendrier({
   ponctuels = [],
   dettes = [],
   paiementsDettes = [],
+  depenses = [],
   ...donnees
 }: DonneesSalaire & DonneesCharges & { mode: ModePeriode; revenusRecus?: RevenuRecu[] }) {
   const paies = creerCalendrierPaie(donnees)
@@ -213,10 +262,17 @@ export function creerCalendrier({
    * Charges prévues d'un mois budgétaire : fixes datées dans le mois, enveloppes, ponctuels, échéances.
    * Une échéance passée garde son montant prévu ; une échéance à venir ne compte que ce qui reste dû (R9).
    */
+  /** Échéances d'une charge fixe dans un mois budgétaire (parfois deux, parfois aucune). */
+  function echeancesDuMois(c: Charge, periode: MoisBudgetaire): DateCivile[] {
+    return moisEntre(moisDe(periode.debut), moisDe(periode.fin))
+      .filter((m) => chargeCeMois(c, m))
+      .map((m) => dateDeCharge(c, m))
+      .filter((date) => date >= periode.debut && date <= periode.fin)
+  }
+
   function chargesDuMois(cle: CleMois): ChargesDuMois {
     const periode = mois(cle)
     const dans = (date: DateCivile) => date >= periode.debut && date <= periode.fin
-    const moisCivils = moisEntre(moisDe(periode.debut), moisDe(periode.fin))
     const lignes: ChargePrevue[] = []
 
     for (const c of charges) {
@@ -226,10 +282,8 @@ export function creerCalendrier({
         }
         continue
       }
-      for (const m of moisCivils) {
-        if (!chargeCeMois(c, m)) continue
-        const date = dateDeCharge(c, m)
-        if (dans(date)) lignes.push({ origine: 'fixe', id: c.id, libelle: c.libelle, categorieId: c.categorieId, date, montant: c.montant, essentielle: c.essentielle, certitude: 'garanti' })
+      for (const date of echeancesDuMois(c, periode)) {
+        lignes.push({ origine: 'fixe', id: c.id, libelle: c.libelle, categorieId: c.categorieId, date, montant: c.montant, essentielle: c.essentielle, certitude: 'garanti' })
       }
     }
     for (const p of ponctuels) {
@@ -263,10 +317,105 @@ export function creerCalendrier({
     }
   }
 
+  const parCharge = new Map(charges.map((c) => [c.id, c]))
+  const parPonctuel = new Map(ponctuels.map((p) => [p.id, p]))
+  const parDette = new Set(dettes.map((d) => d.id))
+
+  /** Imputation d'une dépense (R10) ; un lien vers une ligne disparue la laisse hors plan. */
+  function imputer(d: Depense): DepenseImputee {
+    const charge = d.chargeId ? parCharge.get(d.chargeId) : undefined
+    const ponctuel = d.ponctuelId ? parPonctuel.get(d.ponctuelId) : undefined
+    if (charge?.nature === 'enveloppe') return { ...d, imputation: 'enveloppe', ligne: charge.libelle }
+    if (charge?.nature === 'fixe' && d.echeance) return { ...d, imputation: 'fixe', ligne: charge.libelle }
+    if (ponctuel) return { ...d, imputation: 'ponctuel', ligne: ponctuel.libelle }
+    return { ...d, imputation: 'horsPlan', ligne: null }
+  }
+
+  /** Mois budgétaire couvert par le paiement d'une échéance (mémorisé : la recherche du mois coûte). */
+  const moisDesEcheances = new Map<DateCivile, CleMois>()
+  function moisEcheance(date: DateCivile): CleMois {
+    let cle = moisDesEcheances.get(date)
+    if (!cle) moisDesEcheances.set(date, (cle = moisContenant(date).cle))
+    return cle
+  }
+
+  /**
+   * Réel d'un mois budgétaire : dépenses et paiements de dettes datés dans le mois.
+   * Les lignes à payer sont les charges fixes et ponctuels prévus du mois, couverts par les dépenses liées,
+   * même payées un autre mois (paiement en avance).
+   */
+  function suiviDuMois(cle: CleMois): SuiviDuMois {
+    const periode = mois(cle)
+    const dans = (date: DateCivile) => date >= periode.debut && date <= periode.fin
+    const reelles = depenses
+      .filter((d) => dans(d.date))
+      .map(imputer)
+      .sort((a, b) => b.date.localeCompare(a.date))
+    const lignes: LigneAPayer[] = []
+
+    for (const c of charges) {
+      if (c.nature !== 'fixe') continue
+      const dates = echeancesDuMois(c, periode)
+      if (dates.length === 0) continue
+      const liees = depenses.filter((d) => d.chargeId === c.id && d.echeance && moisEcheance(d.echeance) === cle)
+      const base = { origine: 'fixe' as const, id: c.id, libelle: c.libelle, categorieId: c.categorieId, moisBudget: cle }
+      lignes.push(...couvrir(dates.map((date) => ({ ...base, date, montant: c.montant })), somme(liees), donnees.aujourdhui))
+    }
+    for (const p of ponctuels) {
+      if (!dans(p.date)) continue
+      const liees = depenses.filter((d) => d.ponctuelId === p.id)
+      const base = { origine: 'ponctuel' as const, id: p.id, libelle: p.libelle, categorieId: p.categorieId, moisBudget: cle }
+      lignes.push(...couvrir([{ ...base, date: p.date, montant: p.montant }], somme(liees), donnees.aujourdhui))
+    }
+    lignes.sort((a, b) => a.date.localeCompare(b.date) || a.libelle.localeCompare(b.libelle))
+
+    const enveloppes: SuiviEnveloppe[] = charges
+      .filter((c) => c.nature === 'enveloppe' && enveloppeActive(c, cle))
+      .map((c) => {
+        const depense = somme(reelles.filter((d) => d.chargeId === c.id))
+        return { id: c.id, libelle: c.libelle, categorieId: c.categorieId, budget: c.montant, depense, reste: soustraire(c.montant, depense) }
+      })
+
+    const paiements = paiementsDettes.filter((p) => parDette.has(p.detteId) && dans(p.date)).sort((a, b) => b.date.localeCompare(a.date))
+    const total = (i: Imputation) => somme(reelles.filter((d) => d.imputation === i))
+    const dette = somme(paiements)
+    const totaux = { fixe: total('fixe'), enveloppe: total('enveloppe'), ponctuel: total('ponctuel'), horsPlan: total('horsPlan'), dette }
+    const restePrevu = {
+      lignes: additionner(...lignes.map((l) => l.reste)),
+      enveloppes: additionner(...enveloppes.map((e) => centimes(Math.max(0, e.reste)))),
+      dettes: additionner(...[...etats.values()].flatMap((e) => e.echeances.filter((x) => dans(x.date)).map((x) => x.attendu))),
+    }
+    return {
+      depenses: reelles,
+      paiementsDettes: paiements,
+      lignes,
+      enveloppes,
+      totaux: { ...totaux, total: additionner(somme(reelles), dette) },
+      restePrevu: { ...restePrevu, total: additionner(restePrevu.lignes, restePrevu.enveloppes, restePrevu.dettes) },
+    }
+  }
+
+  /** Jours après la date d'une dépense où une échéance peut être payée en avance. */
+  const AVANCE_JOURS = 10
+
+  /**
+   * Lignes auxquelles rattacher une dépense datée (UX.md § 4.3) : charges fixes et ponctuels pas entièrement payés
+   * du mois de la date, échéances des 10 jours suivants, enveloppes du mois.
+   */
+  function rattachements(date: DateCivile): { mois: CleMois; lignes: LigneAPayer[]; enveloppes: SuiviEnveloppe[] } {
+    const cle = moisContenant(date).cle
+    const suivi = suiviDuMois(cle)
+    const limite = ajouterJours(date, AVANCE_JOURS)
+    const avance = mois(decalerMois(cle, 1)).debut <= limite ? suiviDuMois(decalerMois(cle, 1)).lignes.filter((l) => l.date <= limite) : []
+    return { mois: cle, lignes: [...suivi.lignes, ...avance].filter((l) => l.reste > 0), enveloppes: suivi.enveloppes }
+  }
+
   return {
     mode: cycle ? ('cyclePaie' as const) : ('calendaire' as const),
     revenusPrevus,
     chargesDuMois,
+    suiviDuMois,
+    rattachements,
     etatDette: (id: string) => etats.get(id) ?? null,
     /** Vrai si l'utilisateur a choisi le cycle de paie mais n'a pas encore de contrat. */
     sansContrat: mode === 'cyclePaie' && !paies.aContrat,

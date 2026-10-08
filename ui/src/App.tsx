@@ -2,11 +2,12 @@ import * as Tooltip from '@radix-ui/react-tooltip'
 import { AnimatePresence, motion } from 'framer-motion'
 import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { toast } from 'sonner'
 import { GardeCompte } from './components/GardeCompte'
 import { MiseEnPage } from './components/MiseEnPage'
 import { Notifications } from './components/Notifications'
 import { PageAVenir } from './features/a-venir/PageAVenir'
+import { FournisseurSaisieRapide, useSaisieRapide } from './features/depenses/SaisieRapide'
+import { PageMois } from './features/mois/PageMois'
 import { PagePlan } from './features/plan/PagePlan'
 import { PageProfils } from './features/profils/PageProfils'
 import { PageReglages } from './features/reglages/PageReglages'
@@ -35,10 +36,11 @@ const compte = (page: ReactNode) => <GardeCompte>{page}</GardeCompte>
 function Vues() {
   const emplacement = useLocation()
   const { animations } = useAnimations()
+  const { ouvrir } = useSaisieRapide()
   const transition = animations ? transitionVue : transitionVueSobre
 
   return (
-    <MiseEnPage simple={emplacement.pathname === '/profils'} onSaisie={() => toast('La saisie rapide arrive avec le lot 7.')}>
+    <MiseEnPage simple={emplacement.pathname === '/profils'} onSaisie={() => ouvrir()}>
       <AnimatePresence mode="wait">
         <motion.div key={emplacement.pathname} {...transition}>
           <Routes location={emplacement}>
@@ -53,7 +55,8 @@ function Vues() {
             />
             <Route path="/reglages" element={compte(<PageReglages />)} />
             <Route path="/plan" element={compte(<PagePlan />)} />
-            {DESTINATIONS.filter((d) => d.chemin !== '/plan').map((d) => (
+            <Route path="/mois" element={compte(<PageMois />)} />
+            {DESTINATIONS.filter((d) => d.chemin !== '/plan' && d.chemin !== '/mois').map((d) => (
               <Route key={d.chemin} path={d.chemin} element={compte(<PageAVenir titre={d.libelle} lot={d.lot} />)} />
             ))}
             <Route path="*" element={<PageAVenir titre="Page introuvable" />} />
@@ -71,7 +74,9 @@ export function App() {
         <SynchroAnimations />
         <Tooltip.Provider delayDuration={250}>
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <Vues />
+            <FournisseurSaisieRapide>
+              <Vues />
+            </FournisseurSaisieRapide>
           </BrowserRouter>
           <Notifications />
         </Tooltip.Provider>

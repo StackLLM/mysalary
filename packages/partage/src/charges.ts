@@ -38,6 +38,8 @@ const montant = z
 
 const note = z.string().trim().max(200, 'Note trop longue (200 caractères au plus).').optional()
 
+export { montant as schemaMontantPositif, note as schemaNote }
+
 // --- Catégories ---
 
 export const ICONES_CATEGORIE = [
@@ -76,8 +78,10 @@ export interface CategorieDto {
   groupe: GroupeCategorie
   icone: IconeCategorie
   ordre: number
-  /** Utilisée par une charge ou un ponctuel : la suppression est refusée. */
+  /** Utilisée par une charge, un ponctuel ou une dépense : la suppression est refusée. */
   utilisee: boolean
+  /** Nombre de dépenses notées : les plus utilisées sont proposées en premier à la saisie. */
+  depenses: number
 }
 
 // --- Charges fixes et enveloppes ---

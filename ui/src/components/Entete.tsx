@@ -1,4 +1,4 @@
-import { LogOut, Settings } from 'lucide-react'
+import { LogOut, Plus, Settings } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useUtilisateurCourant } from '../features/profils/requetes'
 import { cn } from '../lib/cn'
@@ -11,9 +11,9 @@ import { Menu } from './Menu'
 /**
  * Barre de navigation du template : logo, liens icône + texte, onglet actif souligné,
  * deux boutons ronds gris, séparateur, avatar.
- * `simple` : écran Profils, sans navigation ni compte.
+ * `simple` : écran Profils, sans navigation ni compte. `onSaisie` : bouton + de la saisie rapide (bureau ; barre du bas sur mobile).
  */
-export function Entete({ simple = false }: { simple?: boolean }) {
+export function Entete({ simple = false, onSaisie }: { simple?: boolean; onSaisie?: () => void }) {
   const utilisateur = useUtilisateurCourant()
   const { quitter } = useCompte()
   const naviguer = useNavigate()
@@ -26,7 +26,7 @@ export function Entete({ simple = false }: { simple?: boolean }) {
         </NavLink>
 
         {!simple && (
-        <nav aria-label="Navigation principale" className="ml-6 hidden h-full items-stretch gap-2 lg:flex xl:ml-12 xl:gap-4">
+        <nav aria-label="Navigation principale" className="ml-2 hidden h-full items-stretch gap-1 lg:flex xl:ml-12 xl:gap-4">
           {DESTINATIONS.map(({ chemin, libelle, Icone }) => (
             <NavLink
               key={chemin}
@@ -34,14 +34,14 @@ export function Entete({ simple = false }: { simple?: boolean }) {
               end={chemin === '/'}
               className={({ isActive }) =>
                 cn(
-                  'group relative flex items-center gap-2.5 px-3 text-nav transition-colors xl:px-4',
+                  'group relative flex items-center gap-2.5 whitespace-nowrap px-3 text-nav transition-colors xl:px-4',
                   isActive ? 'text-lien' : 'text-encre hover:text-lien',
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icone className={cn('h-5 w-5 transition-colors', isActive ? 'text-primaire' : 'text-gris-icone group-hover:text-primaire')} />
+                  <Icone className={cn('hidden h-5 w-5 transition-colors xl:block', isActive ? 'text-primaire' : 'text-gris-icone group-hover:text-primaire')} />
                   {libelle}
                   <span
                     className={cn(
@@ -58,7 +58,18 @@ export function Entete({ simple = false }: { simple?: boolean }) {
         )}
 
         {!simple && (
-        <div className="ml-auto flex items-center gap-3 lg:gap-5">
+        <div className="ml-auto flex items-center gap-3 xl:gap-5">
+          {onSaisie && (
+            <button
+              type="button"
+              onClick={onSaisie}
+              aria-label="Ajouter une dépense"
+              title="Ajouter une dépense (N)"
+              className="hidden h-11 w-11 place-items-center rounded-pilule bg-primaire text-white transition-colors hover:bg-primaire-survol lg:grid"
+            >
+              <Plus className="h-5 w-5" strokeWidth={2.4} />
+            </button>
+          )}
           <button
             type="button"
             aria-label="Notifications"

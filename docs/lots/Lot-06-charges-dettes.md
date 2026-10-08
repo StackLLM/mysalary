@@ -1,6 +1,6 @@
 # Lot 6 — Charges, enveloppes, ponctuels, dettes
 
-> Statut : **livré** (08/10/2026), en attente de validation. Références : `Plan.md` § 6, § 7.2 · `context.md` R6–R11 · `UX.md` § 4.1 (étapes 5 à 7), § 5.11.
+> Statut : **clôturé et validé** (08/10/2026). Références : `Plan.md` § 6, § 7.2 · `context.md` R6–R11 · `UX.md` § 4.1 (étapes 5 à 7), § 5.11.
 
 ## Objectif
 

@@ -36,7 +36,7 @@ import { versCharge, versDette, versPaiement, versPonctuel } from './conversion'
 
 // Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
 
-const regle = (message: string, champs?: Record<string, string>) => new ErreurApi(422, CODES_ERREUR.REGLE_METIER, message, champs)
+export const regle = (message: string, champs?: Record<string, string>) => new ErreurApi(422, CODES_ERREUR.REGLE_METIER, message, champs)
 
 // --- Catégories ---
 
@@ -53,7 +53,7 @@ export async function listerCategories(prisma: PrismaClient, utilisateurId: stri
   const lignes = await prisma.categorie.findMany({
     where: { utilisateurId },
     orderBy: [{ ordre: 'asc' }, { creeLe: 'asc' }],
-    include: { _count: { select: { charges: true, ponctuels: true } } },
+    include: { _count: { select: { charges: true, ponctuels: true, depenses: true } } },
   })
   return lignes.map(({ _count, ...c }) => ({
     id: c.id,
@@ -61,7 +61,8 @@ export async function listerCategories(prisma: PrismaClient, utilisateurId: stri
     groupe: c.groupe as GroupeCategorie,
     icone: c.icone as IconeCategorie,
     ordre: c.ordre,
-    utilisee: _count.charges + _count.ponctuels > 0,
+    utilisee: _count.charges + _count.ponctuels + _count.depenses > 0,
+    depenses: _count.depenses,
   }))
 }
 
@@ -90,13 +91,14 @@ export async function modifierCategorie(prisma: PrismaClient, utilisateurId: str
 
 export async function supprimerCategorie(prisma: PrismaClient, utilisateurId: string, id: string) {
   const c = await trouverCategorie(prisma, utilisateurId, id)
-  const utilisations = (await prisma.charge.count({ where: { categorieId: id } })) + (await prisma.ponctuel.count({ where: { categorieId: id } }))
+  const ou = { where: { categorieId: id } }
+  const utilisations = (await prisma.charge.count(ou)) + (await prisma.ponctuel.count(ou)) + (await prisma.depense.count(ou))
   if (utilisations > 0) throw regle(`« ${c.libelle} » est utilisée par ${utilisations} élément${utilisations > 1 ? 's' : ''}. Change-leur d’abord de catégorie.`)
   await prisma.categorie.delete({ where: { id } })
 }
 
 /** Une charge ne peut viser qu'une catégorie du même compte. */
-async function verifierCategorie(prisma: PrismaClient, utilisateurId: string, categorieId: string) {
+export async function verifierCategorie(prisma: PrismaClient, utilisateurId: string, categorieId: string) {
   if (!(await prisma.categorie.findFirst({ where: { id: categorieId, utilisateurId } }))) {
     throw regle('Cette catégorie n’existe pas.', { categorieId: 'Catégorie inconnue.' })
   }

@@ -28,6 +28,7 @@ model Utilisateur {
   charges           Charge[]
   ponctuels         Ponctuel[]
   dettes            Dette[]
+  depenses          Depense[]
 }
 
 model Reglages {
@@ -155,6 +156,7 @@ model Categorie {
   ordre         Int         @default(0)
   charges       Charge[]
   ponctuels     Ponctuel[]
+  depenses      Depense[]
   creeLe        DateTime    @default(now())
   modifieLe     DateTime    @updatedAt
 
@@ -177,6 +179,7 @@ model Charge {
   debut         String
   fin           String?
   essentielle   Boolean     @default(false)
+  depenses      Depense[]
   creeLe        DateTime    @default(now())
   modifieLe     DateTime    @updatedAt
 
@@ -194,6 +197,7 @@ model Ponctuel {
   montant       Int
   date          String
   certitude     String      @default("garanti")
+  depenses      Depense[]
   creeLe        DateTime    @default(now())
   modifieLe     DateTime    @updatedAt
 
@@ -230,4 +234,28 @@ model PaiementDette {
   creeLe        DateTime @default(now())
 
   @@index([utilisateurId])
+}
+
+/// Dépense réelle. Liée à une charge fixe (avec l'échéance couverte), une enveloppe, un ponctuel, ou hors plan.
+/// Si la ligne du plan est supprimée, la dépense reste (elle a eu lieu) et passe hors plan.
+model Depense {
+  id            String      @id @default(cuid())
+  utilisateurId String
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  date          String
+  montant       Int
+  categorieId   String
+  categorie     Categorie   @relation(fields: [categorieId], references: [id], onDelete: Restrict)
+  libelle       String      @default("")
+  note          String?
+  chargeId      String?
+  charge        Charge?     @relation(fields: [chargeId], references: [id], onDelete: SetNull)
+  /// Date prévue de l'échéance couverte (charge fixe).
+  echeance      String?
+  ponctuelId    String?
+  ponctuel      Ponctuel?   @relation(fields: [ponctuelId], references: [id], onDelete: SetNull)
+  creeLe        DateTime    @default(now())
+  modifieLe     DateTime    @updatedAt
+
+  @@index([utilisateurId, date])
 }
