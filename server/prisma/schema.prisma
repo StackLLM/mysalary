@@ -1,0 +1,233 @@
+// MySalary — schéma de données (Plan.md § 6).
+// Montants en centimes (Int). Chaque table métier porte utilisateurId.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Utilisateur {
+  id                String    @id @default(cuid())
+  prenom            String
+  devise            String    @default("MAD")
+  onboardingEtape   Int       @default(0)
+  onboardingTermine Boolean   @default(false)
+  derniereOuverture DateTime?
+  creeLe            DateTime  @default(now())
+  modifieLe         DateTime  @updatedAt
+  reglages          Reglages?
+  contrats          ContratSalaire[]
+  paies             Paie[]
+  sources           SourceRevenu[]
+  revenusRecus      RevenuRecu[]
+  categories        Categorie[]
+  charges           Charge[]
+  ponctuels         Ponctuel[]
+  dettes            Dette[]
+}
+
+model Reglages {
+  id            String      @id @default(cuid())
+  utilisateurId String      @unique
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  modePeriode   String      @default("cyclePaie")
+  debutSemaine  Int         @default(1)
+  reportHebdo   Boolean     @default(false)
+  animations    Boolean     @default(true)
+  creeLe        DateTime    @default(now())
+  modifieLe     DateTime    @updatedAt
+}
+
+// Lot 4 — salaire et cycle de paie (docs/lots/Lot-04-salaire.md).
+// Dates civiles en texte « AAAA-MM-JJ », mois en « AAAA-MM » : pas de fuseau sur une date de paie.
+
+/// Une version du contrat : s'applique à partir de moisEffet, jusqu'à la version suivante.
+model ContratSalaire {
+  id                 String      @id @default(cuid())
+  utilisateurId      String
+  utilisateur        Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  moisEffet          String
+  montantNet         Int
+  jourHabituel       Int
+  regleJourNonOuvre  String      @default("apres")
+  financeMoisSuivant Boolean     @default(true)
+  creeLe             DateTime    @default(now())
+  modifieLe          DateTime    @updatedAt
+
+  @@unique([utilisateurId, moisEffet])
+}
+
+/// Paie sur laquelle l'utilisateur a agi (primes prévues ou réception). Les autres sont calculées.
+model Paie {
+  id            String      @id @default(cuid())
+  utilisateurId String
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  moisFinance   String
+  /// Renseignée à la réception (R28).
+  dateReelle    String?
+  /// Copie de la date prévue au moment de la réception (R27).
+  datePrevue    String?
+  recueLe       DateTime?
+  lignes        LignePaie[]
+  creeLe        DateTime    @default(now())
+  modifieLe     DateTime    @updatedAt
+
+  @@unique([utilisateurId, moisFinance])
+}
+
+model LignePaie {
+  id            String  @id @default(cuid())
+  paieId        String
+  paie          Paie    @relation(fields: [paieId], references: [id], onDelete: Cascade)
+  utilisateurId String
+  type          String
+  libelle       String
+  certitude     String
+  /// Vide pour une prime imprévue, ajoutée à la réception.
+  montantPrevu  Int?
+  /// Vide tant que la paie n'est pas reçue.
+  montantRecu   Int?
+  /// Prime d'une source de revenus versée avec la paie (lot 5).
+  sourceId      String?
+  ordre         Int     @default(0)
+
+  @@index([utilisateurId])
+}
+
+// Lot 5 — autres revenus (docs/lots/Lot-05-revenus.md).
+
+/// Revenu hors salaire qui revient : prime, revenu variable, autre.
+model SourceRevenu {
+  id            String       @id @default(cuid())
+  utilisateurId String
+  utilisateur   Utilisateur  @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  libelle       String
+  type          String
+  montant       Int
+  frequence     String
+  /// Mois choisis, ex. « 6,12 ».
+  mois          String       @default("")
+  versement     String
+  jour          Int?
+  certitude     String
+  debut         String
+  fin           String?
+  recus         RevenuRecu[]
+  creeLe        DateTime     @default(now())
+  modifieLe     DateTime     @updatedAt
+
+  @@index([utilisateurId])
+}
+
+/// Revenu réellement reçu hors paie (réel). Garde sa valeur si la source est supprimée.
+model RevenuRecu {
+  id             String        @id @default(cuid())
+  utilisateurId  String
+  utilisateur    Utilisateur   @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  sourceId       String?
+  source         SourceRevenu? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  moisOccurrence String?
+  date           String
+  montant        Int
+  libelle        String
+  note           String?
+  creeLe         DateTime      @default(now())
+  modifieLe      DateTime      @updatedAt
+
+  @@unique([sourceId, moisOccurrence])
+  @@index([utilisateurId, date])
+}
+
+// Lot 6 — charges, enveloppes, ponctuels, dettes (docs/lots/Lot-06-charges-dettes.md).
+
+model Categorie {
+  id            String      @id @default(cuid())
+  utilisateurId String
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  libelle       String
+  /// essentiel | flexible | engagement
+  groupe        String
+  icone         String      @default("autre")
+  ordre         Int         @default(0)
+  charges       Charge[]
+  ponctuels     Ponctuel[]
+  creeLe        DateTime    @default(now())
+  modifieLe     DateTime    @updatedAt
+
+  @@unique([utilisateurId, libelle])
+}
+
+/// Charge fixe (datée) ou enveloppe (budget par mois budgétaire).
+model Charge {
+  id            String      @id @default(cuid())
+  utilisateurId String
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  categorieId   String
+  categorie     Categorie   @relation(fields: [categorieId], references: [id], onDelete: Restrict)
+  libelle       String
+  nature        String
+  montant       Int
+  frequence     String      @default("mensuelle")
+  mois          String      @default("")
+  jour          Int?
+  debut         String
+  fin           String?
+  essentielle   Boolean     @default(false)
+  creeLe        DateTime    @default(now())
+  modifieLe     DateTime    @updatedAt
+
+  @@index([utilisateurId])
+}
+
+/// Charge unique connue et datée (assurance de décembre, permis).
+model Ponctuel {
+  id            String      @id @default(cuid())
+  utilisateurId String
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  categorieId   String
+  categorie     Categorie   @relation(fields: [categorieId], references: [id], onDelete: Restrict)
+  libelle       String
+  montant       Int
+  date          String
+  certitude     String      @default("garanti")
+  creeLe        DateTime    @default(now())
+  modifieLe     DateTime    @updatedAt
+
+  @@index([utilisateurId, date])
+}
+
+/// Dette : un total et un échéancier calculé (mensualité à partir de la première échéance).
+model Dette {
+  id               String          @id @default(cuid())
+  utilisateurId    String
+  utilisateur      Utilisateur     @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  libelle          String
+  creancier        String          @default("")
+  montantTotal     Int
+  mensualite       Int
+  premiereEcheance String
+  note             String?
+  paiements        PaiementDette[]
+  creeLe           DateTime        @default(now())
+  modifieLe        DateTime        @updatedAt
+
+  @@index([utilisateurId])
+}
+
+/// Paiement réel d'une dette.
+model PaiementDette {
+  id            String   @id @default(cuid())
+  detteId       String
+  dette         Dette    @relation(fields: [detteId], references: [id], onDelete: Cascade)
+  utilisateurId String
+  date          String
+  montant       Int
+  note          String?
+  creeLe        DateTime @default(now())
+
+  @@index([utilisateurId])
+}
