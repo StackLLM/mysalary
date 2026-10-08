@@ -1,0 +1,61 @@
+import { CODES_ERREUR, ENTETE_UTILISATEUR, PREFIXE_API, type CodeErreur, type ReponseErreur } from '@mysalary/partage'
+import { lireUtilisateurCourant } from '../state/utilisateur'
+
+/** Erreur renvoyée par le serveur, au format commun. */
+export class ErreurApi extends Error {
+  constructor(
+    readonly statut: number,
+    readonly code: CodeErreur,
+    message: string,
+    readonly champs?: Record<string, string>,
+  ) {
+    super(message)
+    this.name = 'ErreurApi'
+  }
+}
+
+type Methode = 'GET' | 'POST' | 'PUT' | 'DELETE'
+
+/**
+ * Seul point d'accès au serveur. Ajoute l'en-tête du compte courant
+ * et transforme toute erreur en `ErreurApi`.
+ */
+export async function appelerApi<T>(methode: Methode, chemin: string, corps?: unknown): Promise<T> {
+  const entetes: Record<string, string> = {}
+  const utilisateur = lireUtilisateurCourant()
+  if (utilisateur) entetes[ENTETE_UTILISATEUR] = utilisateur
+  if (corps !== undefined) entetes['content-type'] = 'application/json'
+
+  let reponse: Response
+  try {
+    reponse = await fetch(`${PREFIXE_API}${chemin}`, {
+      method: methode,
+      headers: entetes,
+      ...(corps !== undefined ? { body: JSON.stringify(corps) } : {}),
+    })
+  } catch {
+    throw new ErreurApi(0, CODES_ERREUR.INTERNE, 'Connexion au serveur perdue. Tes données ne sont pas perdues.')
+  }
+
+  if (reponse.status === 204) return undefined as T
+  const texte = await reponse.text()
+  const donnees: unknown = texte ? JSON.parse(texte) : undefined
+
+  if (!reponse.ok) {
+    const erreur = (donnees as Partial<ReponseErreur> | undefined)?.erreur
+    throw new ErreurApi(
+      reponse.status,
+      erreur?.code ?? CODES_ERREUR.INTERNE,
+      erreur?.message ?? 'Erreur inattendue du serveur.',
+      erreur?.champs,
+    )
+  }
+  return donnees as T
+}
+
+export const api = {
+  lire: <T>(chemin: string) => appelerApi<T>('GET', chemin),
+  creer: <T>(chemin: string, corps: unknown) => appelerApi<T>('POST', chemin, corps),
+  modifier: <T>(chemin: string, corps: unknown) => appelerApi<T>('PUT', chemin, corps),
+  supprimer: (chemin: string) => appelerApi<void>('DELETE', chemin),
+}

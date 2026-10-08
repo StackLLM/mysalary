@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply min-h-screen bg-page font-sans text-texte text-encre antialiased;
+  }
+  :focus-visible {
+    @apply outline-none shadow-focus;
+  }
+  ::selection {
+    @apply bg-sauge-200 text-encre;
+  }
+}
+
+@layer components {
+  .chiffres {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Toasts et infobulles : seule surface sombre */
+  .verre-sombre {
+    @apply bg-encre/85 text-white backdrop-blur;
+  }
+  /* Hachure des projections */
+  .hachure {
+    background-image: repeating-linear-gradient(45deg, rgba(158, 169, 161, 0.55) 0 2px, transparent 2px 6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Bascule « animations off » (réglages) : mêmes effets que reduced-motion */
+.sans-animations *, .sans-animations *::before, .sans-animations *::after {
+  animation: none !important;
+  transition-duration: 0.01ms !important;
+}
