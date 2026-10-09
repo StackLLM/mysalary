@@ -10,7 +10,7 @@ import {
   type Centimes,
   type RegleJourNonOuvre,
 } from '@mysalary/moteur'
-import { formaterDate, formaterMois, type PaieDto } from '@mysalary/partage'
+import { formaterDate, formaterMois, formaterMontant, type MoisCumul, type PaieDto } from '@mysalary/partage'
 
 /**
  * Règles de saisie et d'affichage du salaire. Aucun calcul dans les composants :
@@ -81,13 +81,27 @@ export function statutPaie(paie: PaieDto, aujourdhui: string, { court = false } 
   return { texte: court ? 'Prévue' : `Prévue le ${formaterDate(paie.datePrevue, 'court')}`, ton: 'neutre' }
 }
 
-/** Douze mois affichés : trois avant le mois courant, huit après, décalables par six. */
 /** « 2026-09 » → « Sept. 2026 » : le tableau des paies a 7 colonnes (cumul, lot 13). */
 export const moisAbrege = (cle: string) => {
   const court = formaterDate(`${cle}-01`, 'court').replace(/^1 /, '')
   return `${court.charAt(0).toUpperCase()}${court.slice(1)} ${cle.slice(0, 4)}`
 }
 
+/**
+ * Ligne « cumul » d'une paie (lot 13) : revenus − charges − épargne du mois, ajoutés au cumul du mois précédent.
+ * L'infobulle détaille le calcul ; la paie elle-même (prévue ou reçue) reste lisible dans les revenus.
+ */
+export function detailCumul(c: Pick<MoisCumul, 'premier' | 'report' | 'revenus' | 'charges' | 'epargne' | 'reste' | 'cumul'>, paie: Pick<PaieDto, 'totalPrevu' | 'totalRecu'>) {
+  const m = formaterMontant
+  const paieTexte = paie.totalRecu !== null ? `paie reçue ${m(paie.totalRecu)}` : `paie prévue ${m(paie.totalPrevu)}`
+  const autres = c.revenus - (paie.totalRecu ?? paie.totalPrevu)
+  return {
+    revenus: `Revenus ${m(c.revenus)} : ${paieTexte}${autres !== 0 ? `, autres revenus ${m(autres)}` : ''}.`,
+    cumul: `${c.premier ? 'Solde de départ' : 'Cumul du mois précédent'} ${m(c.report ?? 0)} + revenus ${m(c.revenus)} − charges ${m(c.charges)} − épargne ${m(c.epargne)} = ${m(c.cumul ?? 0)}.`,
+  }
+}
+
+/** Douze mois affichés : trois avant le mois courant, huit après, décalables par six. */
 export function fenetreMois(moisCourant: string, decalage: number): { du: string; au: string } {
   const du = decalerMois(lireCleMois(moisCourant), decalage - 3)
   return { du, au: decalerMois(du, 11) }

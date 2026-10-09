@@ -5,7 +5,6 @@ import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { BadgeNature } from '../../components/Badges'
 import { Bouton } from '../../components/Bouton'
 import { Carte, Separateur, TitreSection } from '../../components/Carte'
 import { CarteBandeau } from '../../components/CarteBandeau'
@@ -23,9 +22,9 @@ import { PanneauPaie } from './PanneauPaie'
 import { useCumul } from '../mois/requetes'
 import { NATURES_CUMUL } from '../mois/saisie'
 import { useContrats, useCreerContrat, useModifierContrat, useMoisCourant, usePaies, useSupprimerContrat } from './requetes'
-import { fenetreMois, moisAbrege, paieAConfirmer, resumeContrat, statutPaie, totauxPaies, versionPour, type Ton } from './saisie'
+import { detailCumul, fenetreMois, moisAbrege, paieAConfirmer, resumeContrat, statutPaie, totauxPaies, versionPour, type Ton } from './saisie'
 
-const COLONNES = 'grid grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.05fr)_minmax(0,0.85fr)_28px] items-center gap-2'
+const COLONNES = 'grid grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)_minmax(0,0.9fr)_minmax(0,0.85fr)_minmax(0,1fr)_minmax(0,1.05fr)_28px] items-center gap-2'
 
 const TONS_TEXTE: Record<Ton, string> = {
   positif: 'text-positif',
@@ -216,10 +215,10 @@ function Salaire({ versions, mois }: { versions: VersionContratDto[]; mois: Mois
             <div className="min-w-[820px] lg:min-w-[720px]">
               <div className={cn(COLONNES, 'border-y border-filet px-4 py-4 text-texte-sm text-gris')}>
                 <span>Mois financé</span>
-                <span>Date</span>
-                <span>Prévu</span>
-                <span>Reçu</span>
-                <span title="Ce qui resterait sur ton compte à la fin du mois : report du mois précédent + reste du mois (lot 13).">Cumul fin de mois</span>
+                <span className="text-right" title="Paie (prévue ou reçue) et autres revenus du mois">Revenus</span>
+                <span className="text-right" title="Charges fixes, enveloppes, ponctuels et échéances du mois">Charges</span>
+                <span className="text-right" title="Versements aux objectifs (jamais une charge)">Épargne</span>
+                <span className="text-right" title="Cumul du mois précédent + revenus − charges − épargne">Cumul fin de mois</span>
                 <span>Statut</span>
                 <span />
               </div>
@@ -253,22 +252,12 @@ function Salaire({ versions, mois }: { versions: VersionContratDto[]; mois: Mois
                           <span className="hidden truncate 2xl:inline">{formaterMois(p.mois, { majuscule: true })}</span>
                           <span className="truncate 2xl:hidden">{moisAbrege(p.mois)}</span>
                         </button>
-                        <Cellule attenue={p.statut !== 'recue'}>{formaterDate(p.dateReelle ?? p.datePrevue, 'court')}</Cellule>
-                        <Cellule prefixe="DH" attenue>
-                          <Montant valeur={p.totalPrevu} sansDevise />
-                        </Cellule>
-                        {p.totalRecu === null ? (
-                          <div className="flex h-[46px] items-center">
-                            <BadgeNature nature="prevu" />
-                          </div>
-                        ) : (
-                          <Cellule prefixe="DH">
-                            <Montant valeur={p.totalRecu} sansDevise className={cn((p.ecart ?? 0) < 0 && 'text-alerte')} />
-                          </Cellule>
-                        )}
-                        <CelluleCumul cumul={cumulDe.get(p.mois)} chargement={cumul.isPending} />
-                        <span className={cn('truncate text-texte-sm font-medium', TONS_TEXTE[statut.ton])} title={statutPaie(p, aujourdhui).texte}>
-                          {statut.texte}
+                        <LigneCumul paie={p} cumul={cumulDe.get(p.mois)} chargement={cumul.isPending} />
+                        <span className="flex min-w-0 flex-col">
+                          <span className={cn('truncate text-texte-sm font-medium', TONS_TEXTE[statut.ton])} title={statutPaie(p, aujourdhui).texte}>
+                            {statut.texte}
+                          </span>
+                          <span className="truncate text-mention text-gris">{formaterDate(p.dateReelle ?? p.datePrevue, 'court')}</span>
                         </span>
                         {p.statut === 'recue' ? (
                           <span />
@@ -289,8 +278,8 @@ function Salaire({ versions, mois }: { versions: VersionContratDto[]; mois: Mois
               )}
               {liste.length > 0 && (
                 <p className="px-4 pt-4 text-mention text-gris">
-                  Cumul fin de mois : report du mois précédent + reste du mois. Réel en noir ; <span className="italic">estimation</span> (mois en cours) et{' '}
-                  <span className="italic">prévu</span> en gris italique.
+                  Montants en DH. Chaque mois : cumul du mois précédent + revenus − charges − épargne = cumul fin de mois. Réel en noir ;{' '}
+                  <span className="italic">estimation</span> (mois en cours) et <span className="italic">prévu</span> en gris italique. Survole un montant pour le détail.
                 </p>
               )}
             </div>
@@ -469,17 +458,44 @@ function Salaire({ versions, mois }: { versions: VersionContratDto[]; mois: Mois
 }
 
 /**
- * Cumul de fin de mois (lot 13) dans le tableau des paies : réel en clair ; estimation (mois en cours) et prévu
- * en gris italique, avec leur mot en infobulle et dans la légende sous le tableau ; « — » avant le début du suivi.
+ * Revenus, charges, épargne et cumul d'une paie (lot 13) : le cumul de chaque mois s'ajoute au suivant.
+ * Réel en clair ; estimation (mois en cours) et prévu en gris italique, avec leur mot en infobulle ; « — » avant le suivi.
  */
-function CelluleCumul({ cumul, chargement }: { cumul: MoisCumul | undefined; chargement: boolean }) {
+function LigneCumul({ paie, cumul, chargement }: { paie: PaieDto; cumul: MoisCumul | undefined; chargement: boolean }) {
   if (!cumul || cumul.cumul === null) {
-    return <span className="px-4 text-texte-sm text-gris" title={chargement ? undefined : 'Avant le début du suivi'}>{chargement ? '…' : '—'}</span>
+    const vide = <span className="px-4 text-right text-texte-sm text-gris">{chargement ? '…' : '—'}</span>
+    return (
+      <>
+        <Cellule className="justify-end px-3" attenue={paie.totalRecu === null} titre={paie.totalRecu === null ? 'Paie prévue' : 'Paie reçue'}>
+          <Montant valeur={paie.totalRecu ?? paie.totalPrevu} sansDevise />
+        </Cellule>
+        {vide}
+        {vide}
+        <span className="px-4 text-right text-texte-sm text-gris" title={chargement ? undefined : 'Avant le début du suivi'}>
+          {chargement ? '…' : '—'}
+        </span>
+      </>
+    )
   }
   const mot = NATURES_CUMUL[cumul.nature]
+  const suffixe = mot ? ` (${mot})` : ''
+  const detail = detailCumul(cumul, paie)
+  // Prévu et estimation : texte secondaire en italique (UX.md § 9), lisible (contraste AA).
+  const style = cn(mot && 'italic text-gris')
   return (
-    <Cellule prefixe="DH" attenue={mot !== null} titre={mot ? `${formaterMontant(cumul.cumul)} (${mot})` : formaterMontant(cumul.cumul)}>
-      <Montant valeur={cumul.cumul} sansDevise className={cn(mot && 'italic', cumul.cumul < 0 && 'text-alerte')} />
-    </Cellule>
+    <>
+      <Cellule className="justify-end px-3" titre={detail.revenus + suffixe}>
+        <Montant valeur={cumul.revenus} sansDevise className={cn(style, 'pr-0.5', (paie.ecart ?? 0) < 0 && 'text-alerte')} />
+      </Cellule>
+      <Cellule className="justify-end px-3" titre={`Charges ${formaterMontant(cumul.charges)}${suffixe}`}>
+        <Montant valeur={cumul.charges} sansDevise className={cn(style, 'pr-0.5')} />
+      </Cellule>
+      <Cellule className="justify-end px-3" titre={`Épargne ${formaterMontant(cumul.epargne)}${suffixe}`}>
+        <Montant valeur={cumul.epargne} sansDevise className={cn(style, 'pr-0.5')} />
+      </Cellule>
+      <Cellule className="justify-end px-3" titre={detail.cumul + suffixe}>
+        <Montant valeur={cumul.cumul} sansDevise className={cn(style, 'pr-0.5', cumul.cumul < 0 && 'text-alerte')} />
+      </Cellule>
+    </>
   )
 }

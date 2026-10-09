@@ -45,7 +45,7 @@ Migration `cumul_depart`. `revenusDuMois` est sorti de `capaciteDuMois` (même r
 ## Interface
 
 - **Mois › Vue d'ensemble** : sous le bandeau, trois cases — « Report de septembre » (ou « Solde de départ » au premier mois), « Reste du mois », « Cumul fin de mois » — et une phrase qui dit d'où vient le chiffre (réel, estimation, prévu). Un mois d'avant le suivi le dit.
-- **Mon plan › Salaire & primes, tableau des Paies** (ajouté à ta demande) : 5e colonne « Cumul fin de mois » ; réel en noir, estimation et prévu en gris italique (mot en infobulle, légende sous le tableau), « — » avant le début du suivi. Mois abrégés (« Sept. 2026 ») pour que rien ne soit coupé à 1342 px ; sous 1024 px, le tableau défile dans sa carte.
+- **Mon plan › Salaire & primes, tableau des Paies** (ajouté à ta demande) : colonnes Mois financé · **Revenus · Charges · Épargne · Cumul fin de mois** · Statut (avec la date de paie). Chaque ligne se lit : cumul du mois précédent + revenus − charges du mois − épargne = cumul fin de mois ; les charges suivent chaque mois (loyer tous les mois, assurance trimestrielle, ponctuel daté…). L'infobulle de chaque montant donne le détail (« Cumul du mois précédent 9 800 DH + revenus 10 000 DH − charges 5 500 DH − épargne 1 000 DH = 13 300 DH »). Réel en noir, estimation et prévu en gris italique ; « — » avant le début du suivi. Montants en DH sans préfixe répété, mois abrégés (« Sept. 2026 ») : rien n'est coupé à 1342 px ; sous 1024 px, le tableau défile dans sa carte.
 - **Réglages › Compte courant** : mois (les 13 derniers) et solde ; « Enregistrer le solde », « Retirer », « Annuler » dans le toast.
 
 ## Tests
@@ -61,6 +61,8 @@ Migration `cumul_depart`. `revenusDuMois` est sorti de `capaciteDuMois` (même r
 Compte « Essai » (supprimé ensuite) : septembre réel 4 400 DH → octobre en cours +4 500 → 8 900 DH ; décembre prévu 17 900 DH. Avec un solde de 2 000 DH au début d'octobre : « Solde de départ +2 000 », cumul fin octobre 6 500 DH, novembre « Report d'octobre +6 500 ». 1342 px et 375 px sans débordement.
 
 ## Corrigé en passant
+
+- Les colonnes « Prévu » et « Reçu » du tableau des Paies deviennent « Revenus » (paie reçue, ou prévue en gris italique, et autres revenus) : la place sert aux charges et à l'épargne du mois ; le détail prévu / reçu reste dans l'infobulle et dans le panneau de la paie.
 
 - Au premier mois, la case disait « Report de septembre » même avec un solde déclaré : elle dit maintenant « Solde de départ ».
 
