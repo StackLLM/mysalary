@@ -324,6 +324,8 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `d6c5b5a` | Plan : lot 9 clôturé, lots 10 et 11 livrés |
 | `a8da49f` | Lot 12 : recommandations et KPI |
 | `faf0867` | Plan : lots 10 et 11 clôturés, lot 12 livré |
+| `81d2dfd` | Lot 13 : cumul du reste de mois en mois |
+| `c625cfe` | Plan : lots 13 à 15 ajoutés, lots suivants renumérotés |
 
 ## 7. Questions ouvertes
 
