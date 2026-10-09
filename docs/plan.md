@@ -1,7 +1,7 @@
 # MySalary — Progression
 
 > Suivi de la construction de MySalary, lot par lot. Mis à jour à chaque lot.
-> État au 09/10/2026 : **lots 0 à 11 clôturés et validés**, **lot 12 livré, en attente de validation**, lots 13 à 19 à venir.
+> État au 09/10/2026 : **lots 0 à 12 clôturés et validés**, **lot 13 livré, en attente de validation**, lots 14 à 22 à venir. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
 >
 > - Plan global de l'application (vision, architecture, données, règles métier) : [`Plan.md`](../Plan.md), à la racine.
 > - Bilan détaillé de chaque lot livré (périmètre, règles, tests, bugs corrigés) : [`docs/lots/`](lots/).
@@ -22,23 +22,26 @@
 | 9 | [Suivi hebdomadaire](#lot-9--suivi-hebdomadaire) | 2 — Cœur métier | ✅ Clôturé | 09/10/2026 | 232 | [Lot-09-suivi-hebdomadaire.md](lots/Lot-09-suivi-hebdomadaire.md) |
 | 10 | [Épargne & objectifs](#lot-10--épargne--objectifs) | 2 — Cœur métier | ✅ Clôturé | 09/10/2026 | 266 | [Lot-10-epargne-objectifs.md](lots/Lot-10-epargne-objectifs.md) |
 | 11 | [Simulateur & scénarios](#lot-11--simulateur--scénarios) | 3 — Intelligence et vues | ✅ Clôturé | 09/10/2026 | 288 | [Lot-11-simulateur.md](lots/Lot-11-simulateur.md) |
-| 12 | [Recommandations & KPI](#lot-12--recommandations--kpi) | 3 — Intelligence et vues | 🟡 Livré, à valider | — | 314 | [Lot-12-recommandations-kpi.md](lots/Lot-12-recommandations-kpi.md) |
-| 13 | [Aujourd'hui](#lot-13--aujourdhui) | 3 — Intelligence et vues | ⏳ Prochain | — | — | — |
-| 14 | [Calendrier](#lot-14--calendrier) | 3 — Intelligence et vues | À venir | — | — | — |
-| 15 | [Année](#lot-15--année) | 3 — Intelligence et vues | À venir | — | — | — |
-| 16 | [Onboarding & import V0](#lot-16--onboarding--import-v0) | 4 — Entrée et finitions | À venir | — | — | — |
-| 17 | [Export & sauvegarde](#lot-17--export--sauvegarde) | 4 — Entrée et finitions | À venir | — | — | — |
-| 18 | [Finitions (polish)](#lot-18--finitions-polish) | 4 — Entrée et finitions | À venir | — | — | — |
-| 19 | [Authentification](#lot-19--authentification) | 4 — Entrée et finitions | À venir | — | — | — |
+| 12 | [Recommandations & KPI](#lot-12--recommandations--kpi) | 3 — Intelligence et vues | ✅ Clôturé | 09/10/2026 | 314 | [Lot-12-recommandations-kpi.md](lots/Lot-12-recommandations-kpi.md) |
+| 13 | [Cumul du reste de mois en mois](#lot-13--cumul-du-reste-de-mois-en-mois) | 3 — Intelligence et vues | 🟡 Livré, à valider | — | 323 | [Lot-13-cumul.md](lots/Lot-13-cumul.md) |
+| 14 | [Objectifs › vue Calendrier de l'année](#lot-14--objectifs--vue-calendrier-de-lannée) | 3 — Intelligence et vues | ⏳ Prochain | — | — | — |
+| 15 | [Semaines en cartes](#lot-15--semaines-en-cartes) | 3 — Intelligence et vues | À venir | — | — | — |
+| 16 | [Aujourd'hui](#lot-16--aujourdhui) | 3 — Intelligence et vues | À venir | — | — | — |
+| 17 | [Calendrier](#lot-17--calendrier) | 3 — Intelligence et vues | À venir | — | — | — |
+| 18 | [Année](#lot-18--année) | 3 — Intelligence et vues | À venir | — | — | — |
+| 19 | [Onboarding & import V0](#lot-19--onboarding--import-v0) | 4 — Entrée et finitions | À venir | — | — | — |
+| 20 | [Export & sauvegarde](#lot-20--export--sauvegarde) | 4 — Entrée et finitions | À venir | — | — | — |
+| 21 | [Finitions (polish)](#lot-21--finitions-polish) | 4 — Entrée et finitions | À venir | — | — | — |
+| 22 | [Authentification](#lot-22--authentification) | 4 — Entrée et finitions | À venir | — | — | — |
 
 « Tests » = nombre total de tests automatiques du projet à la clôture du lot (partage + moteur + serveur + interface).
 
 Autres sections :
 
 - [1. Méthode et règles de travail](#1-méthode-et-règles-de-travail)
-- [2. Lots clôturés](#2-lots-clôturés-0-à-11)
+- [2. Lots clôturés](#2-lots-clôturés-0-à-12)
 - [3. Lots livrés, en attente de validation](#3-lots-livrés-en-attente-de-validation)
-- [4. Lots à venir](#4-lots-à-venir-13-à-19)
+- [4. Lots à venir](#4-lots-à-venir-14-à-22)
 - [5. Points reportés, rangés par lot](#5-points-reportés-rangés-par-lot)
 - [6. Historique des commits](#6-historique-des-commits)
 - [7. Questions ouvertes](#7-questions-ouvertes)
@@ -59,7 +62,7 @@ Règles appliquées à chaque lot :
 - Serveur et interface écoutent seulement sur `127.0.0.1` (ports 3010 et 6010).
 - Code versionné dans le dépôt privé `github.com/oussamaalmouallim/mysalary` : commits en anglais, au nom de l'auteur. Le dossier `Salaire/` (données personnelles réelles), la base SQLite, `.env` et `.claude/` ne sont jamais versionnés.
 
-## 2. Lots clôturés (0 à 11)
+## 2. Lots clôturés (0 à 12)
 
 ### Lot 0 — Cadrage
 
@@ -189,11 +192,9 @@ Règles appliquées à chaque lot :
   - Réglages › Scénarios : revenus retenus et dépenses flexibles par scénario ; le prudent prend la moyenne réelle des 3 derniers mois si elle dépasse le budget ; les Objectifs suivent ces règles.
 - **Écarts** : un levier de chaque sorte à l'écran ; une prime appliquée devient une source « unique » probable ; une réduction appliquée coupe la charge et en crée une copie réduite le mois suivant ; pas de scénario « perso ».
 
-## 3. Lots livrés, en attente de validation
-
 ### Lot 12 — Recommandations & KPI
 
-- **Statut** : 🟡 livré le 09/10/2026, en attente de validation · 314 tests · `docs/lots/Lot-12-recommandations-kpi.md`.
+- **Statut** : ✅ clôturé le 09/10/2026 · 314 tests · `docs/lots/Lot-12-recommandations-kpi.md`.
 - **Livré** :
   - les huit KPI de `Plan.md` § 8 dans le moteur (`indicateurs`), route `GET /indicateurs?mois=` ; carte « Indicateurs » dans Mois › Vue d'ensemble, base de chaque calcul à la demande ;
   - alertes (`alertes`) : paie en retard ou prévue aujourd'hui, revenu en retard, échéance en retard, enveloppe dépassée, semaine dépassée, objectifs au-delà de l'épargne ; rien pour un mois clôturé ni avant le début du suivi ;
@@ -201,9 +202,30 @@ Règles appliquées à chaque lot :
   - cloche de l'en-tête : pastille du nombre d'alertes, panneau « À faire » + « Suggestions », actions vers l'écran concerné ; carte « Suggestions » sur Objectifs ; « Simuler » pré-remplit le simulateur.
 - **Écarts** : le reste à dépenser retire aussi les charges datées encore à payer ; part variable sur les 12 prochains mois (prévu) ; écart du mois en cours comparé au prévu à date ; délai calculé en réaliste ; phrases rédigées dans `partage`.
 
-## 4. Lots à venir (13 à 19)
+## 3. Lots livrés, en attente de validation
 
-### Lot 13 — Aujourd'hui
+### Lot 13 — Cumul du reste de mois en mois
+
+- **Statut** : 🟡 livré le 09/10/2026, en attente de validation · 323 tests · `docs/lots/Lot-13-cumul.md`.
+- **Livré** :
+  - moteur `cumulDesMois` : report, revenus, charges, épargne, reste et cumul de fin de mois ; réel (passé), estimation (en cours), prévu en réaliste (futur) ;
+  - solde de départ du compte courant au début d'un mois (Réglages › Compte courant), sinon 0 au premier mois suivi ;
+  - Mois › Vue d'ensemble : « Report / Solde de départ », « Reste du mois », « Cumul fin de mois » ; route `GET /cumul?du=&au=`.
+- **Décision** : le cumul suppose que ce qui n'est pas versé à un objectif reste sur le compte ; les Objectifs supposent qu'il est épargné. Deux hypothèses, affichées comme telles.
+
+## 4. Lots à venir (14 à 22)
+
+### Lot 14 — Objectifs › vue Calendrier de l'année
+
+- **Demande** (09/10/2026) : sur Objectifs, une vue calendrier « premium » de l'année ; chaque mois en carte (salaire, cumul après charges), cliquable, avec une fenêtre détaillée et bien structurée du mois (revenus, charges, épargne, objectifs).
+- **Périmètre prévu** : bascule Liste / Calendrier sur Objectifs ; grille de 12 cartes, année précédente / suivante ; réel, en cours et projeté bien distingués ; fenêtre du mois ; composant réutilisé par la page Année (lot 18).
+
+### Lot 15 — Semaines en cartes
+
+- **Demande** (09/10/2026) : refaire Mois › Semaines sur le même principe que le calendrier : une carte par semaine avec ses chiffres, et un clic ouvre le détail de la semaine.
+- **Périmètre prévu** : grille de cartes (budget, dépensé, reste, rythme, charges datées, épargne) ; fenêtre de la semaine (dépenses par jour, charges, ajouter une dépense) ; même logique de calcul qu'au lot 9.
+
+### Lot 16 — Aujourd'hui
 
 - **Objectif** : « où j'en suis » en 5 secondes (UX.md § 5.2) ; remplace la page d'attente actuelle.
 - **Périmètre prévu** :
@@ -213,17 +235,17 @@ Règles appliquées à chaque lot :
   - épargne du mois, objectif prioritaire, 7 prochains jours, 1 à 3 recommandations ;
   - saisie rapide d'un revenu reçu.
 
-### Lot 14 — Calendrier
+### Lot 17 — Calendrier
 
 - **Objectif** : voir quand l'argent entre et sort (UX.md § 5.10).
 - **Périmètre prévu** : vue mois (grille) et vue liste ; salaire, primes, charges, échéances, ponctuels, dates cibles d'objectifs ; solde projeté du jour au survol ; filtre par type ; confirmer ou modifier un événement ; ajouter un ponctuel daté ; pastille « +3 » ; marqueur d'événement passé non confirmé.
 
-### Lot 15 — Année
+### Lot 18 — Année
 
 - **Objectif** : comprendre l'année sans lire chaque mois (UX.md § 4.8, § 5.6).
 - **Périmètre prévu** : 12 mois de l'année ; revenus, dépenses, épargne (réel à date + projeté restant, séparés) ; graphique mensuel (composant du lot 2) ; mois les plus coûteux, part variable du revenu, épargne cumulée, progression des objectifs ; clic sur un mois → Mois ; mois sans données grisés ; année future marquée « projection ».
 
-### Lot 16 — Onboarding & import V0
+### Lot 19 — Onboarding & import V0
 
 - **Objectif** : une première vue utile en moins de 5 minutes (UX.md § 4.1, § 5.1 ; `Plan.md` § 7.1 bis).
 - **Périmètre prévu** :
@@ -232,11 +254,11 @@ Règles appliquées à chaque lot :
   - progression visible, sauvegarde à chaque étape, reprise, retour sans perte, mode « mes revenus varient ».
 - **Pourquoi si tard** : l'onboarding enchaîne des formulaires qui doivent d'abord exister et être testés seuls (lots 3 à 10).
 
-### Lot 17 — Export & sauvegarde
+### Lot 20 — Export & sauvegarde
 
 - **Périmètre prévu** : export et import JSON d'un compte ; sauvegarde de la base ; export proposé avant la suppression d'un compte (lot 3) et avant la réinitialisation d'un compte (Réglages).
 
-### Lot 18 — Finitions (polish)
+### Lot 21 — Finitions (polish)
 
 - **Périmètre prévu** :
   - animations, responsive, accessibilité, performance (paquet JS ≈ 540 ko à alléger) ;
@@ -245,7 +267,7 @@ Règles appliquées à chaque lot :
   - retrait des textes de chantier (« Cette page arrive au lot N ») et décision sur la page vitrine ;
   - points reportés listés au § 5.
 
-### Lot 19 — Authentification
+### Lot 22 — Authentification
 
 - **Périmètre prévu** : mot de passe par compte, sessions ; obligatoire avant toute mise en ligne ou ouverture du réseau (aujourd'hui tout reste sur `127.0.0.1`).
 
@@ -259,21 +281,21 @@ Tout ce qu'un lot livré a laissé de côté, et le lot qui doit le reprendre.
 | Alerte « budget flexible de la semaine dépassé » | lot 9 | ✅ fait au lot 12 |
 | KPI taux d'épargne, progression et délai des objectifs (chiffres déjà calculés, KPI à assembler) | lot 10 | ✅ fait au lot 12 |
 | Alerte « objectifs au-delà de l'épargne déclarée » dans la cloche | lot 10 | ✅ fait au lot 12 |
-| Carte « Paie prévue aujourd'hui » | lot 4 | 13 |
-| Saisie rapide d'un revenu reçu | lot 7 | 13 |
-| Bilan de la semaine passée sur Aujourd'hui, le lundi | lot 9 | 13 |
-| Calendrier des revenus et des charges | lot 5 | 14 |
-| Dates cibles des objectifs dans le calendrier | lot 10 | 14 |
-| Graphique annuel | lot 8 | 15 |
-| Export avant suppression d'un compte ; réinitialisation d'un compte | lot 3 | 17 |
-| Toast « Ajoutée à novembre » pour une dépense datée hors du mois affiché | lot 7 | 18 |
-| Paquet JS à alléger | lot 2 | 18 |
-| Glisser-déposer pour l'ordre des objectifs (aujourd'hui : monter / descendre) | lot 10 | 18 |
+| Carte « Paie prévue aujourd'hui » | lot 4 | 16 |
+| Saisie rapide d'un revenu reçu | lot 7 | 16 |
+| Bilan de la semaine passée sur Aujourd'hui, le lundi | lot 9 | 16 |
+| Calendrier des revenus et des charges | lot 5 | 17 |
+| Dates cibles des objectifs dans le calendrier | lot 10 | 17 |
+| Graphique annuel | lot 8 | 18 |
+| Export avant suppression d'un compte ; réinitialisation d'un compte | lot 3 | 20 |
+| Toast « Ajoutée à novembre » pour une dépense datée hors du mois affiché | lot 7 | 21 |
+| Paquet JS à alléger | lot 2 | 21 |
+| Glisser-déposer pour l'ordre des objectifs (aujourd'hui : monter / descendre) | lot 10 | 21 |
 | Scénario « perso » avec ses propres règles | lot 11 | non planifié |
-| Réglages › Catégories (renommer, fusionner) | lot 6 | 18 (proposé, à confirmer) |
-| Modifier une charge « à partir de maintenant » ou « depuis le début » (UX.md § 5.11) ; aujourd'hui une modification s'applique à tous les mois non clôturés | lot 6 | 18 (proposé, à confirmer) |
-| Suspendre ou archiver un élément de Mon plan (aujourd'hui : choisir un dernier mois, ou supprimer) | lot 6 | 18 (proposé, à confirmer) |
-| Aperçu de l'effet avant de changer de mode de période (UX.md § 5.12) | lot 3 | 18 (proposé, à confirmer) |
+| Réglages › Catégories (renommer, fusionner) | lot 6 | 21 (proposé, à confirmer) |
+| Modifier une charge « à partir de maintenant » ou « depuis le début » (UX.md § 5.11) ; aujourd'hui une modification s'applique à tous les mois non clôturés | lot 6 | 21 (proposé, à confirmer) |
+| Suspendre ou archiver un élément de Mon plan (aujourd'hui : choisir un dernier mois, ou supprimer) | lot 6 | 21 (proposé, à confirmer) |
+| Aperçu de l'effet avant de changer de mode de période (UX.md § 5.12) | lot 3 | 21 (proposé, à confirmer) |
 | Jours fériés (seul le week-end décale la paie) | lot 4 | non planifié |
 
 ## 6. Historique des commits
@@ -301,11 +323,12 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `eff45b8` | Lot 11 : simulateur et scénarios |
 | `d6c5b5a` | Plan : lot 9 clôturé, lots 10 et 11 livrés |
 | `a8da49f` | Lot 12 : recommandations et KPI |
+| `faf0867` | Plan : lots 10 et 11 clôturés, lot 12 livré |
 
 ## 7. Questions ouvertes
 
-1. Où placer **Réglages › Catégories** (renommer, fusionner) ? Proposition : lot 18.
-2. Où placer le choix **« à partir de maintenant » / « depuis le début »** quand on modifie une charge ? Proposition : lot 18.
-3. Où placer **suspendre / archiver** un élément de Mon plan ? Proposition : lot 18.
-4. Où placer l'**aperçu de l'effet** d'un changement de mode de période ? Proposition : lot 18.
+1. Où placer **Réglages › Catégories** (renommer, fusionner) ? Proposition : lot 21.
+2. Où placer le choix **« à partir de maintenant » / « depuis le début »** quand on modifie une charge ? Proposition : lot 21.
+3. Où placer **suspendre / archiver** un élément de Mon plan ? Proposition : lot 21.
+4. Où placer l'**aperçu de l'effet** d'un changement de mode de période ? Proposition : lot 21.
 5. Faut-il gérer les **jours fériés** pour la date de paie ? Aujourd'hui, seul le week-end la décale.
