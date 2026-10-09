@@ -1,7 +1,7 @@
 # MySalary — Progression
 
 > Suivi de la construction de MySalary, lot par lot. Mis à jour à chaque lot.
-> État au 09/10/2026 : **lots 0 à 9 clôturés et validés**, **lots 10 et 11 livrés, en attente de validation**, lots 12 à 19 à venir.
+> État au 09/10/2026 : **lots 0 à 11 clôturés et validés**, **lot 12 livré, en attente de validation**, lots 13 à 19 à venir.
 >
 > - Plan global de l'application (vision, architecture, données, règles métier) : [`Plan.md`](../Plan.md), à la racine.
 > - Bilan détaillé de chaque lot livré (périmètre, règles, tests, bugs corrigés) : [`docs/lots/`](lots/).
@@ -20,10 +20,10 @@
 | 7 | [Dépenses réelles](#lot-7--dépenses-réelles) | 2 — Cœur métier | ✅ Clôturé | 08/10/2026 | 194 | [Lot-07-depenses.md](lots/Lot-07-depenses.md) |
 | 8 | [Suivi mensuel](#lot-8--suivi-mensuel) | 2 — Cœur métier | ✅ Clôturé | 09/10/2026 | 209 | [Lot-08-suivi-mensuel.md](lots/Lot-08-suivi-mensuel.md) |
 | 9 | [Suivi hebdomadaire](#lot-9--suivi-hebdomadaire) | 2 — Cœur métier | ✅ Clôturé | 09/10/2026 | 232 | [Lot-09-suivi-hebdomadaire.md](lots/Lot-09-suivi-hebdomadaire.md) |
-| 10 | [Épargne & objectifs](#lot-10--épargne--objectifs) | 2 — Cœur métier | 🟡 Livré, à valider | — | 266 | [Lot-10-epargne-objectifs.md](lots/Lot-10-epargne-objectifs.md) |
-| 11 | [Simulateur & scénarios](#lot-11--simulateur--scénarios) | 3 — Intelligence et vues | 🟡 Livré, à valider | — | 288 | [Lot-11-simulateur.md](lots/Lot-11-simulateur.md) |
-| 12 | [Recommandations & KPI](#lot-12--recommandations--kpi) | 3 — Intelligence et vues | ⏳ Prochain | — | — | — |
-| 13 | [Aujourd'hui](#lot-13--aujourdhui) | 3 — Intelligence et vues | À venir | — | — | — |
+| 10 | [Épargne & objectifs](#lot-10--épargne--objectifs) | 2 — Cœur métier | ✅ Clôturé | 09/10/2026 | 266 | [Lot-10-epargne-objectifs.md](lots/Lot-10-epargne-objectifs.md) |
+| 11 | [Simulateur & scénarios](#lot-11--simulateur--scénarios) | 3 — Intelligence et vues | ✅ Clôturé | 09/10/2026 | 288 | [Lot-11-simulateur.md](lots/Lot-11-simulateur.md) |
+| 12 | [Recommandations & KPI](#lot-12--recommandations--kpi) | 3 — Intelligence et vues | 🟡 Livré, à valider | — | 314 | [Lot-12-recommandations-kpi.md](lots/Lot-12-recommandations-kpi.md) |
+| 13 | [Aujourd'hui](#lot-13--aujourdhui) | 3 — Intelligence et vues | ⏳ Prochain | — | — | — |
 | 14 | [Calendrier](#lot-14--calendrier) | 3 — Intelligence et vues | À venir | — | — | — |
 | 15 | [Année](#lot-15--année) | 3 — Intelligence et vues | À venir | — | — | — |
 | 16 | [Onboarding & import V0](#lot-16--onboarding--import-v0) | 4 — Entrée et finitions | À venir | — | — | — |
@@ -36,9 +36,9 @@
 Autres sections :
 
 - [1. Méthode et règles de travail](#1-méthode-et-règles-de-travail)
-- [2. Lots clôturés](#2-lots-clôturés-0-à-9)
+- [2. Lots clôturés](#2-lots-clôturés-0-à-11)
 - [3. Lots livrés, en attente de validation](#3-lots-livrés-en-attente-de-validation)
-- [4. Lots à venir](#4-lots-à-venir-12-à-19)
+- [4. Lots à venir](#4-lots-à-venir-13-à-19)
 - [5. Points reportés, rangés par lot](#5-points-reportés-rangés-par-lot)
 - [6. Historique des commits](#6-historique-des-commits)
 - [7. Questions ouvertes](#7-questions-ouvertes)
@@ -59,7 +59,7 @@ Règles appliquées à chaque lot :
 - Serveur et interface écoutent seulement sur `127.0.0.1` (ports 3010 et 6010).
 - Code versionné dans le dépôt privé `github.com/oussamaalmouallim/mysalary` : commits en anglais, au nom de l'auteur. Le dossier `Salaire/` (données personnelles réelles), la base SQLite, `.env` et `.claude/` ne sont jamais versionnés.
 
-## 2. Lots clôturés (0 à 9)
+## 2. Lots clôturés (0 à 11)
 
 ### Lot 0 — Cadrage
 
@@ -168,11 +168,9 @@ Règles appliquées à chaque lot :
 - **Écarts** : le hors plan compte dans le flexible ; budgets au centime près (pas d'arrondi caché) ; les mois clôturés avant le lot 9 n'ont pas de semaines figées.
 - **Corrigé en passant** : un réglage modifié rafraîchit les mois affichés ; détail d'une dépense sans répétition de la catégorie ; dossiers `salaire` du code jamais versionnés à cause de la règle `Salaire/` du `.gitignore` (règle ancrée à la racine, dossiers ajoutés, clone propre vérifié).
 
-## 3. Lots livrés, en attente de validation
-
 ### Lot 10 — Épargne & objectifs
 
-- **Statut** : 🟡 livré le 09/10/2026, en attente de validation · 266 tests · `docs/lots/Lot-10-epargne-objectifs.md`.
+- **Statut** : ✅ clôturé le 09/10/2026 · 266 tests · `docs/lots/Lot-10-epargne-objectifs.md`.
 - **Livré** :
   - Mon plan › Épargne : comptes (solde déclaré à une date), versements et retraits, solde / réservé / disponible, alerte si les objectifs réservent plus que l'épargne (R12–R14) ;
   - objectifs : type, cible, déjà mis de côté, date souhaitée, versement mensuel, priorité (monter / descendre), pause, abandon, suppression ; achat réalisé sans dépense, annulable (R19) ;
@@ -183,7 +181,7 @@ Règles appliquées à chaque lot :
 
 ### Lot 11 — Simulateur & scénarios
 
-- **Statut** : 🟡 livré le 09/10/2026, en attente de validation · 288 tests · `docs/lots/Lot-11-simulateur.md`.
+- **Statut** : ✅ clôturé le 09/10/2026 · 288 tests · `docs/lots/Lot-11-simulateur.md`.
 - **Livré** :
   - page Simulateur (`/simulateur`, touche `S`, liens depuis Objectifs) : trois scénarios côte à côte, épargne projetée (réel plein, réaliste hachuré, prudent et ambitieux en pointillés), objectifs avec et sans leviers ;
   - leviers : versement mensuel, date cible, prime en plus, réduction d'une charge, horizon 6 / 12 / 24 / 36 mois (avertissement au-delà de 24) ; alertes claires (versements au-delà de la capacité, épargne négative) ;
@@ -191,16 +189,19 @@ Règles appliquées à chaque lot :
   - Réglages › Scénarios : revenus retenus et dépenses flexibles par scénario ; le prudent prend la moyenne réelle des 3 derniers mois si elle dépasse le budget ; les Objectifs suivent ces règles.
 - **Écarts** : un levier de chaque sorte à l'écran ; une prime appliquée devient une source « unique » probable ; une réduction appliquée coupe la charge et en crée une copie réduite le mois suivant ; pas de scénario « perso ».
 
-## 4. Lots à venir (12 à 19)
+## 3. Lots livrés, en attente de validation
 
 ### Lot 12 — Recommandations & KPI
 
-- **Objectif** : proposer des actions chiffrées et expliquées (`Plan.md` § 7.5, § 8, R24–R26).
-- **Périmètre prévu** :
-  - règles explicites et testées : chaque recommandation donne message, montant, impact, base de calcul, niveau de confiance ;
-  - jamais de garantie, toujours une condition ; aucun conseil d'investissement personnalisé ;
-  - les huit KPI de `Plan.md` § 8 calculés dans le moteur ;
-  - cloche de l'en-tête : alertes (paie attendue, échéance en retard, enveloppe dépassée).
+- **Statut** : 🟡 livré le 09/10/2026, en attente de validation · 314 tests · `docs/lots/Lot-12-recommandations-kpi.md`.
+- **Livré** :
+  - les huit KPI de `Plan.md` § 8 dans le moteur (`indicateurs`), route `GET /indicateurs?mois=` ; carte « Indicateurs » dans Mois › Vue d'ensemble, base de chaque calcul à la demande ;
+  - alertes (`alertes`) : paie en retard ou prévue aujourd'hui, revenu en retard, échéance en retard, enveloppe dépassée, semaine dépassée, objectifs au-delà de l'épargne ; rien pour un mois clôturé ni avant le début du suivi ;
+  - recommandations (`recommandations`) : fin de mois serrée, effort pour tenir une date, réduire une enveloppe, mettre de côté une prime, affecter l'épargne disponible, fonds de sécurité ; chacune avec message, effet, base de calcul, condition, confiance (R24–R26) ;
+  - cloche de l'en-tête : pastille du nombre d'alertes, panneau « À faire » + « Suggestions », actions vers l'écran concerné ; carte « Suggestions » sur Objectifs ; « Simuler » pré-remplit le simulateur.
+- **Écarts** : le reste à dépenser retire aussi les charges datées encore à payer ; part variable sur les 12 prochains mois (prévu) ; écart du mois en cours comparé au prévu à date ; délai calculé en réaliste ; phrases rédigées dans `partage`.
+
+## 4. Lots à venir (13 à 19)
 
 ### Lot 13 — Aujourd'hui
 
@@ -254,10 +255,10 @@ Tout ce qu'un lot livré a laissé de côté, et le lot qui doit le reprendre.
 
 | Point | Noté au | Lot prévu |
 |---|---|---|
-| Cloche des notifications (aujourd'hui sans effet) | lot 2 | 12 |
-| Alerte « budget flexible de la semaine dépassé » | lot 9 | 12 |
-| KPI taux d'épargne, progression et délai des objectifs (chiffres déjà calculés, KPI à assembler) | lot 10 | 12 |
-| Alerte « objectifs au-delà de l'épargne déclarée » dans la cloche | lot 10 | 12 |
+| Cloche des notifications (aujourd'hui sans effet) | lot 2 | ✅ fait au lot 12 |
+| Alerte « budget flexible de la semaine dépassé » | lot 9 | ✅ fait au lot 12 |
+| KPI taux d'épargne, progression et délai des objectifs (chiffres déjà calculés, KPI à assembler) | lot 10 | ✅ fait au lot 12 |
+| Alerte « objectifs au-delà de l'épargne déclarée » dans la cloche | lot 10 | ✅ fait au lot 12 |
 | Carte « Paie prévue aujourd'hui » | lot 4 | 13 |
 | Saisie rapide d'un revenu reçu | lot 7 | 13 |
 | Bilan de la semaine passée sur Aujourd'hui, le lundi | lot 9 | 13 |
@@ -298,6 +299,8 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `9d3449a` | Plan : lot 8 clôturé, lot 9 livré |
 | `eaad93f` | Lot 10 : épargne et objectifs |
 | `eff45b8` | Lot 11 : simulateur et scénarios |
+| `d6c5b5a` | Plan : lot 9 clôturé, lots 10 et 11 livrés |
+| `a8da49f` | Lot 12 : recommandations et KPI |
 
 ## 7. Questions ouvertes
 

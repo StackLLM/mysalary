@@ -1,6 +1,6 @@
 # Lot 11 — Simulateur & scénarios
 
-> Statut : **livré** (09/10/2026), en attente de validation. Références : `Plan.md` § 6 (Scenario, Reglages.reglesScenarios), § 7.3 · `UX.md` § 4.5, § 5.9, § 5.12 · `context.md` R5.
+> Statut : **clôturé et validé** (09/10/2026). Références : `Plan.md` § 6 (Scenario, Reglages.reglesScenarios), § 7.3 · `UX.md` § 4.5, § 5.9, § 5.12 · `context.md` R5.
 
 ## Objectif
 

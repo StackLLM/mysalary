@@ -1,6 +1,6 @@
 # Lot 10 — Épargne & objectifs
 
-> Statut : **livré** (09/10/2026), en attente de validation. Références : `Plan.md` § 6 (CompteEpargne, Objectif, VersementObjectif), § 7.2, § 7.4, § 8 · `context.md` R11–R20 · `UX.md` § 4.4, § 5.7, § 5.8, § 5.11.
+> Statut : **clôturé et validé** (09/10/2026). Références : `Plan.md` § 6 (CompteEpargne, Objectif, VersementObjectif), § 7.2, § 7.4, § 8 · `context.md` R11–R20 · `UX.md` § 4.4, § 5.7, § 5.8, § 5.11.
 
 ## Objectif
 
