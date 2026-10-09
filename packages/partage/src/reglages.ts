@@ -1,5 +1,6 @@
 import { CERTITUDES, REGLES_SCENARIOS_DEFAUT } from '@mysalary/moteur'
 import { z } from 'zod'
+import { schemaCleMois } from './salaire'
 
 export { REGLES_SCENARIOS_DEFAUT }
 export type { RegleScenario, ReglesScenarios } from '@mysalary/moteur'
@@ -27,6 +28,13 @@ export const schemaReglages = z.strictObject({
   reportHebdo: z.boolean({ error: 'Valeur oui / non attendue.' }),
   animations: z.boolean({ error: 'Valeur oui / non attendue.' }),
   reglesScenarios: schemaReglesScenarios,
+  /** Solde du compte courant au début d'un mois budgétaire : point de départ du cumul (lot 13). `null` : 0 au premier mois suivi. */
+  depart: z
+    .strictObject({
+      mois: schemaCleMois,
+      solde: z.number({ error: 'Montant attendu.' }).int('Montant en centimes entiers.').min(-100_000_000_00, 'Montant trop grand.').max(100_000_000_00, 'Montant trop grand.'),
+    })
+    .nullable(),
 })
 export type Reglages = z.infer<typeof schemaReglages>
 
@@ -41,4 +49,5 @@ export const REGLAGES_PAR_DEFAUT: Reglages = {
   reportHebdo: false,
   animations: true,
   reglesScenarios: REGLES_SCENARIOS_DEFAUT,
+  depart: null,
 }

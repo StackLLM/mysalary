@@ -47,6 +47,9 @@ model Reglages {
   animations    Boolean     @default(true)
   /// Règles des scénarios (JSON) ; vide = règles par défaut (lot 11).
   reglesScenarios String?
+  /// Solde du compte courant au début de `moisDepart`, en centimes : départ du cumul (lot 13).
+  soldeDepart   Int?
+  moisDepart    String?
   creeLe        DateTime    @default(now())
   modifieLe     DateTime    @updatedAt
 }

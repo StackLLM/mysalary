@@ -69,6 +69,7 @@ const bilan = (modif: Partial<BilanDto> = {}) =>
     rythme: [{ date: '2027-01-20', prevu: 100_000, reel: 140_000 }],
     cloture: null,
     journal: [],
+    cumul: { cle: '2027-01', nature: 'enCours', premier: false, report: 150_000, revenus: 1_000_000, charges: 650_000, epargne: 50_000, reste: 300_000, cumul: 450_000, dontReel: null },
     ...modif,
   }) as unknown as BilanDto
 let bilanCourant = bilan()
@@ -258,6 +259,10 @@ describe('Mois › Vue d’ensemble', () => {
     expect(within(revenus).getByText('Reçu')).toBeInTheDocument()
     expect(within(screen.getByRole('region', { name: 'Enveloppes' })).getByText('En cours')).toBeInTheDocument()
     expect(screen.getByText(/Estimation de fin de mois/)).toBeInTheDocument()
+    // Cumul (lot 13) : le reste de décembre arrive en janvier, le cumul de fin de janvier est une estimation.
+    const cumul = screen.getByRole('region', { name: 'Cumul de mois en mois' })
+    const texte = cumul.textContent!.replace(/\s+/g, ' ')
+    for (const morceau of [/^Report de décembre\+1 500/, /Reste du mois\+3 000/, /Cumul fin de mois4 500/, /Ce qui restait à la fin de décembre est reporté ici\./, /\(estimation\)/]) expect(texte).toMatch(morceau)
     fireEvent.click(screen.getByRole('button', { name: 'Marquer Loyer payé' }))
     await waitFor(() =>
       expect(api.creer).toHaveBeenCalledWith('/depenses', {

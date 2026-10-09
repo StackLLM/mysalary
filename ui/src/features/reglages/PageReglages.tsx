@@ -1,11 +1,12 @@
-import type { ModePeriode, ModificationReglages, Reglages } from '@mysalary/partage'
+import { decalerMois, lireCleMois } from '@mysalary/moteur'
+import { formaterMois, formaterMontant, type ModePeriode, type ModificationReglages, type Reglages } from '@mysalary/partage'
 import { motion } from 'framer-motion'
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Bouton } from '../../components/Bouton'
 import { Carte, Separateur, TitreSection } from '../../components/Carte'
-import { Cellule, Champ } from '../../components/Champ'
+import { Cellule, Champ, ChampMontant } from '../../components/Champ'
 import { Identite, Interrupteur } from '../../components/Elements'
 import { FilAriane } from '../../components/FilAriane'
 import { ErreurApi } from '../../lib/api'
@@ -14,6 +15,8 @@ import { cn } from '../../lib/cn'
 import { dateCourte } from '../../lib/dates'
 import { useCompte } from '../../state/compte'
 import { useRenommerUtilisateur, useUtilisateurCourant } from '../profils/requetes'
+import { lireMontant, versSaisie } from '../salaire/saisie'
+import { useMoisCourant } from '../salaire/requetes'
 import { SuppressionCompte } from '../profils/SuppressionCompte'
 import { useModifierReglages, useReglages } from './requetes'
 
@@ -146,6 +149,15 @@ export function PageReglages() {
                       onChange={(v) => changer({ reportHebdo: v }, v ? 'Report activé.' : 'Report désactivé.')}
                     />
                   </div>
+                </Section>
+
+                <Separateur className="my-7" />
+
+                <Section
+                  titre="Compte courant"
+                  sousTitre="Ce que tu avais sur ton compte au début d’un mois. Le reste de chaque mois s’y ajoute, mois après mois."
+                >
+                  <SoldeDepart depart={reglages.data.depart} onChange={(depart, message) => changer({ depart }, message)} />
                 </Section>
 
                 <Separateur className="my-7" />
@@ -296,6 +308,62 @@ function ReglesScenarios({ regles, onChange }: { regles: Reglages['reglesScenari
           </fieldset>
         )
       })}
+    </div>
+  )
+}
+
+/**
+ * Solde de départ du cumul (lot 13) : ce qu'il y avait sur le compte courant au début d'un mois budgétaire.
+ * Sans lui, le cumul part de 0 au premier mois suivi. Un découvert (montant négatif) est permis.
+ */
+function SoldeDepart({ depart, onChange }: { depart: Reglages['depart']; onChange: (d: Reglages['depart'], message: string) => void }) {
+  const courant = useMoisCourant()
+  const [mois, setMois] = useState(depart?.mois ?? '')
+  const [montant, setMontant] = useState(depart ? versSaisie(depart.solde) : '')
+  const [erreur, setErreur] = useState<string>()
+  const cle = courant.data?.cle
+  const choix = cle ? Array.from({ length: 13 }, (_, i) => decalerMois(lireCleMois(cle), -i)) : []
+  const moisChoisi = mois || cle || ''
+
+  function enregistrer() {
+    const lu = lireMontant(montant, -Number.MAX_SAFE_INTEGER)
+    if ('erreur' in lu) return setErreur(lu.erreur)
+    setErreur(undefined)
+    onChange({ mois: lireCleMois(moisChoisi), solde: lu.valeur }, `Solde de départ : ${formaterMontant(lu.valeur)} au début de ${formaterMois(moisChoisi)}.`)
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-texte-sm text-gris">Au début du mois</span>
+          <select
+            value={moisChoisi}
+            onChange={(e) => setMois(e.target.value)}
+            className="h-[46px] rounded-champ border border-filet bg-white px-4 text-texte font-medium text-encre hover:border-filet-fort focus:border-primaire focus:shadow-focus focus:outline-none"
+          >
+            {choix.map((m) => (
+              <option key={m} value={m}>
+                {formaterMois(m, { majuscule: true })}
+              </option>
+            ))}
+          </select>
+        </label>
+        <ChampMontant libelle="Solde du compte courant" value={montant} onChange={(e) => setMontant(e.target.value)} erreur={erreur} placeholder="0" />
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Bouton variante="teinte" taille="sm" onClick={enregistrer} disabled={!moisChoisi}>
+          Enregistrer le solde
+        </Bouton>
+        {depart && (
+          <Bouton variante="blanc" taille="sm" onClick={() => onChange(null, 'Solde de départ retiré : le cumul part de 0.')}>
+            Retirer
+          </Bouton>
+        )}
+        <span className="text-mention text-gris">
+          {depart ? `Actuel : ${formaterMontant(depart.solde)} au début de ${formaterMois(depart.mois)}.` : 'Aucun : le cumul part de 0 au premier mois suivi.'}
+        </span>
+      </div>
     </div>
   )
 }

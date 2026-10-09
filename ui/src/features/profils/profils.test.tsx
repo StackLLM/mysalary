@@ -26,7 +26,7 @@ const oussama: Utilisateur = {
   creeLe: '2026-10-07T10:00:00.000Z',
   derniereOuverture: '2026-10-07T12:00:00.000Z',
 }
-const reglages: Reglages = { modePeriode: 'cyclePaie', debutSemaine: 1, reportHebdo: false, animations: true, reglesScenarios: REGLES_SCENARIOS_DEFAUT }
+const reglages: Reglages = { modePeriode: 'cyclePaie', debutSemaine: 1, reportHebdo: false, animations: true, reglesScenarios: REGLES_SCENARIOS_DEFAUT, depart: null }
 
 function serveur(utilisateurs: Utilisateur[]) {
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {

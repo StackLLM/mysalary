@@ -18,10 +18,10 @@ export interface Destination {
 
 /** Navigation principale, en haut comme dans le template (UX.md § 3). */
 export const DESTINATIONS: Destination[] = [
-  { chemin: '/', libelle: 'Aujourd’hui', Icone: IconeGrille, lot: 13 },
+  { chemin: '/', libelle: 'Aujourd’hui', Icone: IconeGrille, lot: 16 },
   { chemin: '/mois', libelle: 'Mois', Icone: IconeMois, lot: 8 },
-  { chemin: '/annee', libelle: 'Année', Icone: IconeAnnee, lot: 15 },
+  { chemin: '/annee', libelle: 'Année', Icone: IconeAnnee, lot: 18 },
   { chemin: '/objectifs', libelle: 'Objectifs', Icone: IconeObjectif, lot: 10 },
-  { chemin: '/calendrier', libelle: 'Calendrier', Icone: IconeCalendrier, lot: 14 },
+  { chemin: '/calendrier', libelle: 'Calendrier', Icone: IconeCalendrier, lot: 17 },
   { chemin: '/plan', libelle: 'Mon plan', Icone: IconePortefeuille, lot: 4 },
 ]

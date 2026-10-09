@@ -1,4 +1,4 @@
-import { deMois, formaterDate, formaterMois, formaterMontant, type BilanDto, type LigneBilan } from '@mysalary/partage'
+import { deMois, formaterDate, formaterMois, formaterMontant, type BilanDto, type LigneBilan, type MoisCumul } from '@mysalary/partage'
 import { motion } from 'framer-motion'
 import { Lock } from 'lucide-react'
 import { useState } from 'react'
@@ -19,7 +19,7 @@ import { useEnregistrerDepense, useSupprimerDepense } from '../depenses/requetes
 import type { Ton } from '../salaire/saisie'
 import { EnteteMois } from './EnteteMois'
 import { useCloturer, useRouvrir } from './requetes'
-import { confirmation, FAMILLES, parFamille, plus, pointsRythme, statutLigne } from './saisie'
+import { confirmation, FAMILLES, moisPrecedent, NATURES_CUMUL, parFamille, plus, pointsRythme, statutLigne } from './saisie'
 
 const TONS: Record<Ton, string> = { positif: 'text-positif', alerte: 'text-alerte', info: 'text-info', neutre: 'text-gris' }
 const COLONNES = 'grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1.2fr)] items-center gap-3'
@@ -84,6 +84,8 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
               ],
             }}
           />
+
+          <BandeCumul cumul={bilan.cumul} />
 
           {bilan.estimation && (
             <p className="mt-5 rounded-champ bg-teinte px-4 py-3 text-texte-sm text-encre-2">
@@ -351,5 +353,47 @@ function CarteCloture({ bilan, onDemande }: { bilan: BilanDto; onDemande: (d: 'c
           : `${nom} n’a pas commencé.`}
       </p>
     </Carte>
+  )
+}
+
+/**
+ * Cumul de mois en mois (lot 13) : le reste du mois précédent arrive dans ce mois, et ce qui restera à la fin
+ * passera au suivant, comme sur le compte courant. Réel, estimation (mois en cours) ou prévu : toujours dit.
+ */
+function BandeCumul({ cumul }: { cumul: MoisCumul }) {
+  if (cumul.nature === 'avant' || cumul.report === null || cumul.cumul === null) {
+    return <p className="mt-5 rounded-champ bg-teinte px-4 py-3 text-texte-sm text-gris">Pas de cumul pour ce mois : il précède le début de ton suivi.</p>
+  }
+  const nature = NATURES_CUMUL[cumul.nature]
+  const precedent = deMois(moisPrecedent(cumul.cle), { annee: false })
+  const cases = [
+    { cle: 'report', libelle: cumul.premier ? 'Solde de départ' : `Report ${precedent}`, valeur: cumul.report, signe: true },
+    { cle: 'reste', libelle: 'Reste du mois', valeur: cumul.reste, signe: true },
+    { cle: 'cumul', libelle: 'Cumul fin de mois', valeur: cumul.cumul, signe: false },
+  ]
+  return (
+    <section aria-label="Cumul de mois en mois" className="mt-5 rounded-bouton bg-interne p-4 shadow-bouton sm:p-5">
+      <div className="grid grid-cols-3 gap-3">
+        {cases.map((c, i) => (
+          <div key={c.cle} className={cn('min-w-0', i === 2 && 'text-right')}>
+            <span className="block truncate text-mention text-gris" title={c.libelle}>
+              {c.libelle}
+            </span>
+            <span className={cn('block tabular-nums', i === 2 ? 'text-titre font-bold' : 'text-texte font-semibold', c.valeur < 0 ? 'text-alerte' : 'text-encre')}>
+              {c.signe ? plus(c.valeur) : ''}
+              <Montant valeur={c.valeur} />
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-mention text-gris">
+        {cumul.premier ? 'Premier mois du cumul : il part du solde déclaré dans les Réglages (0 sinon). ' : `Ce qui restait à la fin ${precedent} est reporté ici. `}
+        Revenus − charges − épargne versée, ajoutés au report{nature ? ` (${nature})` : ''}. Solde de départ :{' '}
+        <Link to="/reglages" className="font-semibold text-lien hover:underline">
+          Réglages
+        </Link>
+        .
+      </p>
+    </section>
   )
 }

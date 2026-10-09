@@ -1,6 +1,7 @@
 import type { ModePeriode, ModificationReglages, Reglages, ReglesScenarios } from '@mysalary/partage'
 import { REGLAGES_PAR_DEFAUT, REGLES_SCENARIOS_DEFAUT } from '@mysalary/partage'
 import type { PrismaClient, Reglages as LigneReglages } from '@prisma/client'
+import { centimes, lireCleMois, type Depart } from '@mysalary/moteur'
 
 function versDto(ligne: LigneReglages): Reglages {
   return {
@@ -9,7 +10,13 @@ function versDto(ligne: LigneReglages): Reglages {
     reportHebdo: ligne.reportHebdo,
     animations: ligne.animations,
     reglesScenarios: lireRegles(ligne.reglesScenarios),
+    depart: lireDepart(ligne),
   }
+}
+
+/** Solde de départ du cumul (lot 13) : les deux colonnes vont ensemble. */
+export function lireDepart(ligne: Pick<LigneReglages, 'soldeDepart' | 'moisDepart'> | null | undefined): Depart | null {
+  return ligne?.moisDepart && ligne.soldeDepart !== null ? { mois: lireCleMois(ligne.moisDepart), solde: centimes(ligne.soldeDepart) } : null
 }
 
 /** Règles des scénarios enregistrées (JSON) ; absentes = règles par défaut. « garanti » est toujours retenu. */
@@ -21,8 +28,12 @@ export function lireRegles(json: string | null | undefined): ReglesScenarios {
 }
 
 /** Ligne de base : les règles sont stockées en JSON. */
-function versLigne({ reglesScenarios, ...reste }: ModificationReglages) {
-  return { ...reste, ...(reglesScenarios ? { reglesScenarios: JSON.stringify(reglesScenarios) } : {}) }
+function versLigne({ reglesScenarios, depart, ...reste }: ModificationReglages) {
+  return {
+    ...reste,
+    ...(reglesScenarios ? { reglesScenarios: JSON.stringify(reglesScenarios) } : {}),
+    ...(depart !== undefined ? { soldeDepart: depart?.solde ?? null, moisDepart: depart?.mois ?? null } : {}),
+  }
 }
 
 // Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).

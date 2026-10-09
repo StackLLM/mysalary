@@ -93,21 +93,7 @@ export interface OptionsCapacite {
  * réelle si la règle le demande), avec les leviers de simulation (prime, réductions).
  */
 export function capaciteDuMois(calendrier: Calendrier, cle: CleMois, regle: RegleScenario, { ajustements = {}, moyenneFlexible = null }: OptionsCapacite = {}): Centimes {
-  const retenu = (c: Certitude) => c === 'garanti' || regle.revenus.includes(c)
-  const paie = calendrier.paies.paie(cle)
-  const salaire = !paie
-    ? centimes(0)
-    : paie.statut === 'recue'
-      ? additionner(...paie.lignes.map((l) => l.montantRecu ?? centimes(0)))
-      : additionner(...paie.lignes.filter((l) => retenu(l.certitude)).map((l) => l.montantPrevu ?? centimes(0)))
-  const aPart = calendrier
-    .revenusPrevus(decalerMois(cle, -2), decalerMois(cle, 1))
-    .filter((r) => r.versement === 'dateSeparee' && r.moisBudget === cle)
-    .map((r) => (r.statut === 'recu' ? (r.montantRecu ?? centimes(0)) : retenu(r.certitude) ? r.montantPrevu : centimes(0)))
-  const libres = calendrier.revenusLibres(cle).map((r) => r.montant)
-  const primes = (ajustements.primes ?? []).filter((p) => p.mois === cle).map((p) => p.montant)
-  const revenus = additionner(salaire, ...aPart, ...libres, ...primes)
-
+  const revenus = revenusDuMois(calendrier, cle, regle, ajustements)
   const mois = calendrier.mois(cle)
   if (mois.statut === 'aVenir') {
     const prevues = calendrier.chargesDuMois(cle)
@@ -121,6 +107,27 @@ export function capaciteDuMois(calendrier: Calendrier, cle: CleMois, regle: Regl
   const suivi = calendrier.suiviDuMois(cle)
   const charges = additionner(suivi.totaux.total, suivi.restePrevu.total)
   return soustraire(soustraire(revenus, charges), calendrier.epargneEntre(mois.debut, mois.fin))
+}
+
+/**
+ * Revenus d'un mois budgétaire retenus par la règle d'un scénario : reçus s'ils le sont (réel),
+ * sinon prévus selon leur certitude ; revenus libres reçus ; primes des leviers de simulation.
+ */
+export function revenusDuMois(calendrier: Calendrier, cle: CleMois, regle: RegleScenario, ajustements: Ajustements = {}): Centimes {
+  const retenu = (c: Certitude) => c === 'garanti' || regle.revenus.includes(c)
+  const paie = calendrier.paies.paie(cle)
+  const salaire = !paie
+    ? centimes(0)
+    : paie.statut === 'recue'
+      ? additionner(...paie.lignes.map((l) => l.montantRecu ?? centimes(0)))
+      : additionner(...paie.lignes.filter((l) => retenu(l.certitude)).map((l) => l.montantPrevu ?? centimes(0)))
+  const aPart = calendrier
+    .revenusPrevus(decalerMois(cle, -2), decalerMois(cle, 1))
+    .filter((r) => r.versement === 'dateSeparee' && r.moisBudget === cle)
+    .map((r) => (r.statut === 'recu' ? (r.montantRecu ?? centimes(0)) : retenu(r.certitude) ? r.montantPrevu : centimes(0)))
+  const libres = calendrier.revenusLibres(cle).map((r) => r.montant)
+  const primes = (ajustements.primes ?? []).filter((p) => p.mois === cle).map((p) => p.montant)
+  return additionner(salaire, ...aPart, ...libres, ...primes)
 }
 
 interface EtatProjete {

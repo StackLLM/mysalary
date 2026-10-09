@@ -1,12 +1,12 @@
-import { bilanDuMois, rythmeDuMois, suiviDesSemaines, type CleMois, type DateCivile, type SuiviDesSemaines } from '@mysalary/moteur'
-import { CODES_ERREUR, formaterMois, type BilanDto, type EvenementCloture, type SemainesDto } from '@mysalary/partage'
+import { bilanDuMois, cumulDesMois, debutCumul, rythmeDuMois, suiviDesSemaines, type CleMois, type DateCivile, type SuiviDesSemaines } from '@mysalary/moteur'
+import { CODES_ERREUR, formaterMois, type BilanDto, type CumulDto, type EvenementCloture, type SemainesDto } from '@mysalary/partage'
 import type { PrismaClient } from '@prisma/client'
 import { ErreurApi } from '../../lib/erreurs'
 import { chargerCalendrier } from '../salaire/depot'
 
 // Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
 
-type Instantane = Omit<BilanDto, 'aujourdhui' | 'cloture' | 'journal'>
+type Instantane = Omit<BilanDto, 'aujourdhui' | 'cloture' | 'journal' | 'cumul'>
 
 const regle = (message: string) => new ErreurApi(422, CODES_ERREUR.REGLE_METIER, message)
 
@@ -26,9 +26,10 @@ async function calculer(prisma: PrismaClient, utilisateurId: string, aujourdhui:
 
 /** Bilan du mois : figé s'il est clôturé (R21), sinon calculé. */
 export async function bilan(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile, cle: CleMois): Promise<BilanDto> {
-  const [cloture, evenements] = await Promise.all([
+  const [cloture, evenements, suite] = await Promise.all([
     prisma.clotureMois.findUnique({ where: { utilisateurId_cle: { utilisateurId, cle } } }),
     journal(prisma, utilisateurId, cle),
+    cumul(prisma, utilisateurId, aujourdhui, cle, cle),
   ])
   const { semaines: _semaines, ...contenu }: Instantane & { semaines?: SuiviDesSemaines } = cloture
     ? JSON.parse(cloture.instantane)
@@ -40,6 +41,18 @@ export async function bilan(prisma: PrismaClient, utilisateurId: string, aujourd
     aujourdhui,
     cloture: cloture ? { le: cloture.clotureLe.toISOString(), forcee: cloture.forcee, nonConfirmees: cloture.nonConfirmees } : null,
     journal: evenements,
+    cumul: suite.mois[0]!,
+  }
+}
+
+/** Cumul de mois en mois (lot 13) : le reste de chaque mois reporté sur le suivant, du premier mois suivi jusqu'à `au`. */
+export async function cumul(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile, du: CleMois, au: CleMois): Promise<CumulDto> {
+  const { calendrier, regles, depart } = await chargerCalendrier(prisma, utilisateurId, aujourdhui)
+  return {
+    aujourdhui,
+    debut: debutCumul(calendrier, aujourdhui, depart),
+    depart,
+    mois: cumulDesMois(calendrier, du, au, { aujourdhui, regle: regles.realiste, depart }),
   }
 }
 

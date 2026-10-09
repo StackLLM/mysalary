@@ -505,6 +505,10 @@ export function creerCalendrier({
   /** Date de la première dépense notée : avant, aucune moyenne n'a de sens. */
   const debutSuivi: DateCivile | null = depenses.reduce<DateCivile | null>((min, d) => (min === null || d.date < min ? d.date : min), null)
 
+  /** Première donnée réelle notée (paie reçue, revenu reçu, dépense, paiement de dette) : début du cumul de mois en mois. */
+  const debutDonnees: DateCivile | null =
+    [...donnees.paies.flatMap((p) => (p.dateReelle ? [p.dateReelle] : [])), ...revenusRecus.map((r) => r.date), ...depenses.map((d) => d.date), ...paiementsDettes.map((p) => p.date)].sort()[0] ?? null
+
   return {
     mode: cycle ? ('cyclePaie' as const) : ('calendaire' as const),
     revenusPrevus,
@@ -515,6 +519,7 @@ export function creerCalendrier({
     echeancesDettes,
     sortiesEntre,
     debutSuivi,
+    debutDonnees,
     epargneDuMois,
     /** Épargne nette (réelle) entre deux dates incluses. */
     epargneEntre: (du: DateCivile, au: DateCivile) => epargneNette(mouvementsEpargne, du, au),

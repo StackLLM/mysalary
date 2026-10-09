@@ -147,3 +147,14 @@ export const dansSemaine = (s: Periode) => (x: { date: string }) => x.date >= s.
 
 /** Date proposée pour ajouter une dépense à une semaine : aujourd'hui s'il en fait partie, sinon son dernier jour passé. */
 export const dateProposee = (s: Periode, aujourdhui: string) => (s.fin < aujourdhui ? s.fin : aujourdhui)
+
+// --- Cumul de mois en mois (lot 13) ---
+
+/** Mot qui dit d'où vient le chiffre du cumul : réel, estimation (mois en cours) ou prévu. */
+export const NATURES_CUMUL = { reel: null, enCours: 'estimation', prevu: 'prévu', avant: null } as const
+
+/** Le mois qui précède, pour « Report de septembre ». */
+export const moisPrecedent = (cle: string) => {
+  const [a, m] = cle.split('-').map(Number) as [number, number]
+  return m === 1 ? `${a - 1}-12` : `${a}-${String(m - 1).padStart(2, '0')}`
+}

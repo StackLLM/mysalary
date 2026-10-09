@@ -28,7 +28,7 @@ import { versCharge, versDette, versPaiement, versPonctuel } from '../charges/co
 import { versDepense } from '../depenses/conversion'
 import { versCompte, versMouvement, versObjectif } from '../epargne/conversion'
 import { bornesFigees } from '../mois/clotures'
-import { lireRegles } from '../reglages/depot'
+import { lireDepart, lireRegles } from '../reglages/depot'
 import { versRevenuRecu, versSource } from '../revenus/conversion'
 
 // Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
@@ -157,6 +157,8 @@ export async function chargerCalendrier(prisma: PrismaClient, utilisateurId: str
     reportHebdo: reglages?.reportHebdo ?? false,
     /** Règles des scénarios (lot 11). */
     regles: lireRegles(reglages?.reglesScenarios),
+    /** Solde de départ du cumul (lot 13). */
+    depart: lireDepart(reglages),
   }
 }
 

@@ -57,7 +57,7 @@ const charges = [
   { id: 'vieux', libelle: 'Ancien abonnement', nature: 'fixe', montant: 10_000, active: false },
 ]
 let scenarios: ScenarioDto[] = []
-const reglages: Reglages = { modePeriode: 'cyclePaie', debutSemaine: 1, reportHebdo: false, animations: true, reglesScenarios: REGLES_SCENARIOS_DEFAUT }
+const reglages: Reglages = { modePeriode: 'cyclePaie', debutSemaine: 1, reportHebdo: false, animations: true, reglesScenarios: REGLES_SCENARIOS_DEFAUT, depart: null }
 
 function serveur() {
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {

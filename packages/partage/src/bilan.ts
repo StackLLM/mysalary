@@ -1,4 +1,4 @@
-import type { BilanDuMois, DateCivile, PointRythme } from '@mysalary/moteur'
+import type { MoisCumul, BilanDuMois, DateCivile, PointRythme } from '@mysalary/moteur'
 import { z } from 'zod'
 
 export type { CibleBilan, FamilleBilan, LigneBilan, PointRythme, StatutLigneBilan, TotauxBilan } from '@mysalary/moteur'
@@ -22,4 +22,6 @@ export interface BilanDto extends BilanDuMois {
   /** Mois clôturé : bilan figé à cette date (lecture seule). */
   cloture: { le: string; forcee: boolean; nonConfirmees: number } | null
   journal: EvenementCloture[]
+  /** Report reçu du mois précédent et cumul de fin de mois (lot 13) ; calculé, même pour un mois clôturé. */
+  cumul: MoisCumul
 }
