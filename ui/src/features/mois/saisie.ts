@@ -1,5 +1,13 @@
 import { centimes, soustraire } from '@mysalary/moteur'
-import { formaterDate, type FamilleBilan, type LigneBilan, type PointRythme, type SaisieDepense, type StatutLigneBilan } from '@mysalary/partage'
+import {
+  formaterDate,
+  formaterMontant,
+  type FamilleBilan,
+  type LigneBilan,
+  type PointRythme,
+  type SaisieDepense,
+  type StatutLigneBilan,
+} from '@mysalary/partage'
 import { dateDePaiement } from '../depenses/saisie'
 import type { Ton } from '../salaire/saisie'
 
@@ -83,3 +91,51 @@ export const pointsRythme = (points: PointRythme[]) =>
 
 /** Préfixe d'un écart positif (« +500 DH ») ; le moins d'un écart négatif est déjà écrit par le format. */
 export const plus = (valeur: number) => (valeur > 0 ? '+' : '')
+
+// --- Semaines (lot 9) ---
+
+type Reponse = { type: 'avance' | 'retard' | 'marge' | 'depasse'; montant: number } | { type: 'aVenir' | 'sansEnveloppe' }
+type Periode = { debut: string; fin: string }
+type Tendance = { moyenneSemaine: number; variation: number | null; sens: 'hausse' | 'baisse' | 'stable' }
+
+/** Réponse en tête à « Est-ce que je tiens mon budget ? » (UX.md § 4.6). */
+export function reponseSemaines(r: Reponse): { texte: string; ton: Ton } | null {
+  switch (r.type) {
+    case 'avance':
+      return { texte: `Oui, avec ${formaterMontant(r.montant)} d’avance`, ton: 'positif' }
+    case 'retard':
+      return { texte: `${formaterMontant(r.montant)} au-dessus du rythme prévu`, ton: 'alerte' }
+    case 'marge':
+      return { texte: `Oui, ${formaterMontant(r.montant)} de marge`, ton: 'positif' }
+    case 'depasse':
+      return { texte: `Budget flexible dépassé de ${formaterMontant(r.montant)}`, ton: 'alerte' }
+    case 'aVenir':
+      return { texte: 'Mois à venir : budget prévu seul', ton: 'neutre' }
+    case 'sansEnveloppe':
+      return null
+  }
+}
+
+/** « 4 – 10 janv. », ou « 27 déc. » pour une semaine d'un jour. */
+export const datesSemaine = (s: Periode) =>
+  s.debut === s.fin ? formaterDate(s.debut, 'court') : `${formaterDate(s.debut, 'court')} – ${formaterDate(s.fin, 'court')}`
+
+/** « 3 jours » pour une semaine partielle. */
+export const joursSemaine = (s: { nbJours: number; partielle: boolean }) => (s.partielle ? `${s.nbJours} jour${s.nbJours > 1 ? 's' : ''}` : null)
+
+/** Tendance en mots : « +18 % », « −12 % », « Stable », « En hausse » (moyenne nulle). */
+export function texteTendance(t: Tendance | null): { texte: string; ton: Ton; detail: string } {
+  if (!t) return { texte: '—', ton: 'neutre', detail: 'Pas encore 4 semaines de dépenses notées avant cette semaine.' }
+  const detail = `Dépensé par jour comparé à la moyenne des 4 semaines précédentes (${formaterMontant(t.moyenneSemaine)} par semaine).`
+  if (t.sens === 'stable') return { texte: 'Stable', ton: 'neutre', detail }
+  const ton: Ton = t.sens === 'hausse' ? 'alerte' : 'positif'
+  if (t.variation === null) return { texte: 'En hausse', ton, detail }
+  const pourcent = Math.round(Math.abs(t.variation) * 100)
+  return { texte: `${t.sens === 'hausse' ? '+' : '−'}${pourcent} %`, ton, detail }
+}
+
+/** Ce qui est dans une semaine (affichage) : dates comprises entre son début et sa fin. */
+export const dansSemaine = (s: Periode) => (x: { date: string }) => x.date >= s.debut && x.date <= s.fin
+
+/** Date proposée pour ajouter une dépense à une semaine : aujourd'hui s'il en fait partie, sinon son dernier jour passé. */
+export const dateProposee = (s: Periode, aujourdhui: string) => (s.fin < aujourdhui ? s.fin : aujourdhui)

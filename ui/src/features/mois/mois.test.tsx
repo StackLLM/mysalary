@@ -133,6 +133,8 @@ describe('règles d’affichage', () => {
     expect([libelleDepense(marche, parId), detailDepense(marche, parId)]).toEqual(['Marché', 'Alimentation · Courses · enveloppe'])
     expect([libelleDepense(loyerPaye, parId), detailDepense(loyerPaye, parId)]).toEqual(['Loyer', 'Logement · charge fixe'])
     expect([libelleDepense(horsPlan, parId), detailDepense(horsPlan, parId)]).toEqual(['Loisirs', 'Loisirs · hors plan'])
+    // Enveloppe du même nom que la catégorie : pas de répétition.
+    expect(detailDepense({ ...marche, ligne: 'Alimentation' }, parId)).toBe('Alimentation · enveloppe')
   })
 })
 

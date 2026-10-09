@@ -446,6 +446,18 @@ export function creerCalendrier({
     return dettes.flatMap((d) => etats.get(d.id)!.echeances.filter((e) => dans(e.date)).map((e) => ({ ...e, detteId: d.id, libelle: d.libelle })))
   }
 
+  /** Sorties réelles datées entre deux dates incluses : dépenses imputées et paiements de dettes. */
+  function sortiesEntre(du: DateCivile, au: DateCivile): { depenses: DepenseImputee[]; paiementsDettes: PaiementDette[] } {
+    const dans = (date: DateCivile) => date >= du && date <= au
+    return {
+      depenses: depenses.filter((d) => dans(d.date)).map(imputer),
+      paiementsDettes: paiementsDettes.filter((p) => parDette.has(p.detteId) && dans(p.date)),
+    }
+  }
+
+  /** Date de la première dépense notée : avant, aucune moyenne n'a de sens. */
+  const debutSuivi: DateCivile | null = depenses.reduce<DateCivile | null>((min, d) => (min === null || d.date < min ? d.date : min), null)
+
   return {
     mode: cycle ? ('cyclePaie' as const) : ('calendaire' as const),
     revenusPrevus,
@@ -454,6 +466,8 @@ export function creerCalendrier({
     rattachements,
     revenusLibres,
     echeancesDettes,
+    sortiesEntre,
+    debutSuivi,
     etatDette: (id: string) => etats.get(id) ?? null,
     /** Vrai si l'utilisateur a choisi le cycle de paie mais n'a pas encore de contrat. */
     sansContrat: mode === 'cyclePaie' && !paies.aContrat,

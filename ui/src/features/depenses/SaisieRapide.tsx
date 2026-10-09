@@ -19,8 +19,8 @@ import { useEnregistrerDepense, useRattachements, useSupprimerDepense } from './
 import { categoriesFrequentes, cleDe, HORS_PLAN, lienPropose, optionsLien, versLien, type CleLien, type OptionLien } from './saisie'
 
 interface ContexteSaisie {
-  /** Ouvre la saisie : vide, ou pour modifier une dépense. */
-  ouvrir: (depense?: DepenseDto) => void
+  /** Ouvre la saisie : vide (à une date proposée, sinon aujourd'hui), ou pour modifier une dépense. */
+  ouvrir: (depense?: DepenseDto, options?: { date?: string }) => void
 }
 
 const Contexte = createContext<ContexteSaisie | null>(null)
@@ -42,10 +42,10 @@ function frappeOccupee(e: KeyboardEvent): boolean {
  * Elle n'existe que lorsqu'un compte est ouvert.
  */
 export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
-  const [etat, setEtat] = useState<{ depense?: DepenseDto; cle: number } | null>(null)
+  const [etat, setEtat] = useState<{ depense?: DepenseDto; date?: string; cle: number } | null>(null)
   const actif = Boolean(useCompte().id && useUtilisateurCourant())
   const surProfils = useLocation().pathname === '/profils'
-  const ouvrir = useCallback((depense?: DepenseDto) => setEtat({ depense, cle: Date.now() }), [])
+  const ouvrir = useCallback((depense?: DepenseDto, options?: { date?: string }) => setEtat({ depense, date: options?.date, cle: Date.now() }), [])
 
   useEffect(() => {
     if (!actif || surProfils) return
@@ -58,7 +58,10 @@ export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('keydown', surTouche)
   }, [actif, surProfils, ouvrir])
 
-  const valeur = useMemo(() => ({ ouvrir: (d?: DepenseDto) => (actif ? ouvrir(d) : toast('Ouvre d’abord ton compte.')) }), [actif, ouvrir])
+  const valeur = useMemo(
+    () => ({ ouvrir: (d?: DepenseDto, options?: { date?: string }) => (actif ? ouvrir(d, options) : toast('Ouvre d’abord ton compte.')) }),
+    [actif, ouvrir],
+  )
 
   return (
     <Contexte.Provider value={valeur}>
@@ -70,14 +73,14 @@ export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
           titre={etat?.depense ? 'Modifier la dépense' : 'Nouvelle dépense'}
           description={etat?.depense ? undefined : 'Ce qui est sorti vraiment. Entrée pour valider.'}
         >
-          {etat && <FormulaireDepense key={etat.cle} initiale={etat.depense} onTermine={() => setEtat(null)} onAutre={() => ouvrir()} />}
+          {etat && <FormulaireDepense key={etat.cle} initiale={etat.depense} dateProposee={etat.date} onTermine={() => setEtat(null)} onAutre={() => ouvrir()} />}
         </Panneau>
       )}
     </Contexte.Provider>
   )
 }
 
-function FormulaireDepense({ initiale, onTermine, onAutre }: { initiale?: DepenseDto; onTermine: () => void; onAutre: () => void }) {
+function FormulaireDepense({ initiale, dateProposee, onTermine, onAutre }: { initiale?: DepenseDto; dateProposee?: string; onTermine: () => void; onAutre: () => void }) {
   const aujourdhui = dateDuJour()
   const categories = useCategories()
   const enregistrer = useEnregistrerDepense()
@@ -85,7 +88,7 @@ function FormulaireDepense({ initiale, onTermine, onAutre }: { initiale?: Depens
   const [montant, setMontant] = useState(initiale ? versSaisie(initiale.montant) : '')
   const [categorieId, setCategorieId] = useState(initiale?.categorieId ?? '')
   const [autre, setAutre] = useState(false)
-  const [date, setDate] = useState<string>(initiale?.date ?? aujourdhui)
+  const [date, setDate] = useState<string>(initiale?.date ?? (dateProposee && dateProposee < aujourdhui ? dateProposee : aujourdhui))
   const [libelle, setLibelle] = useState(initiale?.libelle ?? '')
   const [note, setNote] = useState(initiale?.note ?? '')
   const [lien, setLien] = useState<CleLien>(initiale ? cleDe(initiale) : HORS_PLAN)

@@ -1,6 +1,6 @@
 # Lot 8 — Suivi mensuel
 
-> Statut : **livré** (08/10/2026), en attente de validation. Références : `Plan.md` § 7.2, § 8 · `context.md` R21–R23 · `UX.md` § 4.7, § 5.3.
+> Statut : **clôturé et validé** (09/10/2026). Références : `Plan.md` § 7.2, § 8 · `context.md` R21–R23 · `UX.md` § 4.7, § 5.3.
 
 ## Objectif
 

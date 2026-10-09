@@ -109,7 +109,9 @@ export function libelleDepense(d: Pick<DepenseDto, 'libelle' | 'ligne' | 'catego
 /** « Alimentation · Courses · enveloppe », « Logement · charge fixe », « Loisirs · hors plan ». */
 export function detailDepense(d: Pick<DepenseDto, 'libelle' | 'ligne' | 'categorieId' | 'imputation'>, categories: Map<string, CategorieDto>): string {
   const nom = libelleDepense(d, categories)
-  return [categories.get(d.categorieId)?.libelle, d.ligne && d.ligne !== nom ? d.ligne : null, IMPUTATIONS[d.imputation].toLowerCase()].filter(Boolean).join(' · ')
+  const categorie = categories.get(d.categorieId)?.libelle
+  // La ligne du plan n'est répétée que si elle apporte quelque chose (« Transport · Transport » non).
+  return [categorie, d.ligne && d.ligne !== nom && d.ligne !== categorie ? d.ligne : null, IMPUTATIONS[d.imputation].toLowerCase()].filter(Boolean).join(' · ')
 }
 
 /** « Aujourd'hui », « Hier » ou « Lundi 5 octobre » (année seulement si ce n'est pas l'année en cours). */

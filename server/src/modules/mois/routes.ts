@@ -40,6 +40,11 @@ export async function routesMois(app: FastifyInstance) {
     depot.bilan(app.prisma, utilisateurDe(requete), app.aujourdhui(), valider(schemaCleMois, requete.params.cle)),
   )
 
+  // Suivi hebdomadaire (lot 9).
+  app.get<{ Params: { cle: string } }>('/mois/:cle/semaines', async (requete) =>
+    depot.semaines(app.prisma, utilisateurDe(requete), app.aujourdhui(), valider(schemaCleMois, requete.params.cle)),
+  )
+
   app.post<{ Params: { cle: string } }>('/mois/:cle/cloturer', async (requete, reponse) => {
     const cle = valider(schemaCleMois, requete.params.cle)
     const { forcer } = valider(schemaCloture, requete.body ?? {})

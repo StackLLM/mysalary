@@ -1,4 +1,4 @@
-import type { BilanDto, SaisieCloture } from '@mysalary/partage'
+import type { BilanDto, SaisieCloture, SemainesDto } from '@mysalary/partage'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
@@ -16,6 +16,16 @@ export function useBilan(cle: string | null) {
   return useQuery({
     queryKey: [...mois, 'bilan', cle],
     queryFn: () => api.lire<BilanDto>(`/mois/${cle}/bilan`),
+    enabled: actif && Boolean(cle),
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useSemaines(cle: string | null) {
+  const { mois, actif } = useCles()
+  return useQuery({
+    queryKey: [...mois, 'semaines', cle],
+    queryFn: () => api.lire<SemainesDto>(`/mois/${cle}/semaines`),
     enabled: actif && Boolean(cle),
     placeholderData: keepPreviousData,
   })

@@ -272,6 +272,8 @@ model ClotureMois {
   fin           String
   /// Bilan figé (JSON) : lignes, totaux, rythme.
   instantane    String
+  /// Semaines figées (JSON), avec le début de semaine et le report de la clôture. Absent avant le lot 9.
+  semaines      String?
   forcee        Boolean     @default(false)
   nonConfirmees Int         @default(0)
   clotureLe     DateTime    @default(now())

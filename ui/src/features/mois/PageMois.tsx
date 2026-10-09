@@ -8,6 +8,7 @@ import { conteneurCascade, elementApparition } from '../../lib/animations'
 import { useMoisCourant } from '../salaire/requetes'
 import { OngletDepenses } from './OngletDepenses'
 import { OngletEnsemble } from './OngletEnsemble'
+import { OngletSemaines } from './OngletSemaines'
 import { useBilan } from './requetes'
 
 const ONGLETS = [
@@ -72,10 +73,7 @@ export function PageMois() {
               ) : o.valeur === 'depenses' ? (
                 <OngletDepenses cle={cle} verrouille={bilan.data.cloture !== null} changerMois={changerMois} />
               ) : (
-                <Carte espacement="large" className="max-w-2xl">
-                  <h2 className="text-titre text-encre">Cet onglet arrive au lot 9.</h2>
-                  <p className="mt-2 text-texte text-gris">Le suivi semaine par semaine (budget flexible, dépensé, reste) se construit au prochain lot.</p>
-                </Carte>
+                <OngletSemaines cle={cle} verrouille={bilan.data.cloture !== null} changerMois={changerMois} />
               ),
           }))}
         />
