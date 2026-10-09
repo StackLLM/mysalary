@@ -3,6 +3,7 @@ import { PREFIXE_API } from '@mysalary/partage'
 import type { PrismaClient } from '@prisma/client'
 import Fastify, { type FastifyServerOptions } from 'fastify'
 import { routesCharges } from './modules/charges/routes'
+import { routesConseils } from './modules/conseils/routes'
 import { routesDepenses } from './modules/depenses/routes'
 import { routesEpargne } from './modules/epargne/routes'
 import { routesSimulation } from './modules/simulation/routes'
@@ -47,6 +48,7 @@ export async function construireApp({ prisma, logger = false, horloge }: Options
         await compte.register(routesDepenses)
         await compte.register(routesEpargne)
         await compte.register(routesSimulation)
+        await compte.register(routesConseils)
       })
     },
     { prefix: PREFIXE_API },

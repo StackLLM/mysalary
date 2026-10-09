@@ -14,6 +14,7 @@ import { Montant } from '../../components/Montant'
 import { ErreurApi } from '../../lib/api'
 import { elementApparition } from '../../lib/animations'
 import { cn } from '../../lib/cn'
+import { CarteIndicateurs } from '../conseils/Conseils'
 import { useEnregistrerDepense, useSupprimerDepense } from '../depenses/requetes'
 import type { Ton } from '../salaire/saisie'
 import { EnteteMois } from './EnteteMois'
@@ -216,6 +217,8 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
 
       <motion.div variants={elementApparition} className="flex min-w-0 flex-col gap-8">
         <CarteCloture bilan={bilan} onDemande={setDemande} />
+
+        {!cloture && mois.statut !== 'aVenir' && <CarteIndicateurs cle={mois.cle} />}
 
         <Carte titre="À confirmer" precision={bilan.aConfirmer.length ? `(${bilan.aConfirmer.length})` : undefined}>
           {bilan.aConfirmer.length === 0 ? (

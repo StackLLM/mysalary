@@ -1,9 +1,7 @@
 import {
-  additionner,
   centimes,
   cibleFondsSecurite,
   epargneObjectif,
-  equivalentMensuelCharge,
   etatEpargne,
   lireDate,
   reserve,
@@ -30,7 +28,7 @@ import type { PrismaClient } from '@prisma/client'
 import type { z } from 'zod'
 import { introuvable } from '../../lib/erreurs'
 import { versCharge } from '../charges/conversion'
-import { chargesActives, regle } from '../charges/depot'
+import { essentielMensuel, regle } from '../charges/depot'
 import { exigerDatesOuvertes } from '../mois/clotures'
 import { chargerCalendrier } from '../salaire/depot'
 import { versMouvement } from './conversion'
@@ -152,8 +150,7 @@ export async function lister(prisma: PrismaClient, utilisateurId: string, aujour
     comptesCourts(prisma, utilisateurId),
   ])
   const suivi = suiviDesObjectifs(calendrier, epargne, aujourdhui, { regles })
-  const essentielles = chargesActives(charges.map(versCharge), aujourdhui, suivi.moisCourant).filter((c) => c.essentielle)
-  const essentiel = additionner(...essentielles.map(equivalentMensuelCharge))
+  const essentiel = essentielMensuel(charges.map(versCharge), aujourdhui, suivi.moisCourant)
   return { ...suivi, aujourdhui, fondsSecurite: essentiel > 0 ? cibleFondsSecurite(essentiel) : null, comptes, regles }
 }
 

@@ -288,6 +288,10 @@ export async function supprimerPaiement(prisma: PrismaClient, utilisateurId: str
 export const chargesActives = (charges: Charge[], aujourdhui: DateCivile, moisCourant: CleMois) =>
   charges.filter((c) => !c.fin || c.fin >= (c.nature === 'fixe' ? moisDe(aujourdhui) : moisCourant))
 
+/** Charges essentielles actives, en équivalent mensuel (fonds de sécurité, lot 10). */
+export const essentielMensuel = (charges: Charge[], aujourdhui: DateCivile, moisCourant: CleMois) =>
+  additionner(...chargesActives(charges, aujourdhui, moisCourant).filter((c) => c.essentielle).map(equivalentMensuelCharge))
+
 export async function resume(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile): Promise<ResumeChargesDto> {
   await assurerCategories(prisma, utilisateurId)
   const [{ calendrier }, categories, charges, dettes] = await Promise.all([

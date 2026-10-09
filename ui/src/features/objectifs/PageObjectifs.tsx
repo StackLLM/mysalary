@@ -14,6 +14,8 @@ import { Menu } from '../../components/Menu'
 import { Montant } from '../../components/Montant'
 import { ErreurApi } from '../../lib/api'
 import { conteneurCascade, elementApparition } from '../../lib/animations'
+import { ListeRecommandations } from '../conseils/Conseils'
+import { useConseils } from '../conseils/requetes'
 import { useSaisieRapide } from '../depenses/SaisieRapide'
 import { useObjectifs, useOrdonnerObjectifs, useStatutObjectif } from '../epargne/requetes'
 import { phraseObjectif, SCENARIOS_LIBELLES, texteEstimation, texteRegle, TYPES } from './saisie'
@@ -221,6 +223,7 @@ function Objectifs({ donnees }: { donnees: ObjectifsDto }) {
       </motion.div>
 
       <motion.div variants={elementApparition} className="flex min-w-0 flex-col gap-8">
+        <CarteSuggestions />
         {fondsSecurite && !aUnFonds && (
           <Carte titre="Fonds de sécurité">
             <p className="text-texte-sm text-gris">
@@ -243,6 +246,18 @@ function Objectifs({ donnees }: { donnees: ObjectifsDto }) {
         </Carte>
       </motion.div>
     </div>
+  )
+}
+
+/** Leviers chiffrés pour le premier objectif à risque (lot 12) ; rien si aucun n'aide. */
+function CarteSuggestions() {
+  const conseils = useConseils()
+  const leviers = (conseils.data?.recommandations ?? []).filter((r) => r.type === 'reduction' || r.type === 'prime' || r.type === 'disponible')
+  if (leviers.length === 0) return null
+  return (
+    <Carte titre="Suggestions">
+      <ListeRecommandations recommandations={leviers} />
+    </Carte>
   )
 }
 

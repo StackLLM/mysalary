@@ -21,7 +21,7 @@ import { cn } from '../../lib/cn'
 import { useCharges } from '../charges/requetes'
 import { moisSouhaitables, SCENARIOS_LIBELLES, texteEstimation, texteRegle } from '../objectifs/saisie'
 import { useAppliquer, useEnregistrerScenario, useScenarios, useSimulation, useSupprimerScenario } from './requetes'
-import { aDesLeviers, depuisScenario, moisCourt, LEVIERS_VIDES, pointsSimulation, resumeLeviers, texteAlerte, texteGain, versAjustements, type Leviers } from './saisie'
+import { aDesLeviers, depuisAdresse, depuisScenario, moisCourt, LEVIERS_VIDES, pointsSimulation, resumeLeviers, texteAlerte, texteGain, versAjustements, type Leviers } from './saisie'
 
 const GRILLE = 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_352px] xl:gap-12'
 const SCENARIOS = ['prudent', 'realiste', 'ambitieux'] as const
@@ -46,7 +46,7 @@ function useStable(valeur: string, delai = 350): string {
 /** Simulateur (UX.md § 4.5, § 5.9) : des leviers « et si », sans rien enregistrer tant qu'on n'applique pas. */
 export function PageSimulateur() {
   const [parametres] = useSearchParams()
-  const [leviers, setLeviers] = useState<Leviers>({ ...LEVIERS_VIDES, objectifId: parametres.get('objectif') ?? '' })
+  const [leviers, setLeviers] = useState<Leviers>(() => depuisAdresse(parametres))
   const { ajustements, erreurs } = versAjustements(leviers)
   const saisie: SaisieExecution = { ajustements, horizon: leviers.horizon }
   const stable = useStable(JSON.stringify(saisie))

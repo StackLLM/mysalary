@@ -1,11 +1,12 @@
 import { LogOut, Plus, Settings } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { Cloche } from '../features/conseils/Conseils'
 import { useUtilisateurCourant } from '../features/profils/requetes'
 import { cn } from '../lib/cn'
 import { DESTINATIONS } from '../lib/navigation'
 import { useCompte } from '../state/compte'
 import { Avatar } from './Elements'
-import { IconeCloche, IconeEngrenage } from './icones'
+import { IconeEngrenage } from './icones'
 import { Menu } from './Menu'
 
 /**
@@ -70,13 +71,7 @@ export function Entete({ simple = false, onSaisie }: { simple?: boolean; onSaisi
               <Plus className="h-5 w-5" strokeWidth={2.4} />
             </button>
           )}
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="grid h-11 w-11 place-items-center rounded-pilule bg-gris-bouton text-gris-icone transition-colors hover:text-lien"
-          >
-            <IconeCloche />
-          </button>
+          <Cloche />
           <NavLink
             to="/reglages"
             aria-label="Réglages"

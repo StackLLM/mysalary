@@ -27,6 +27,12 @@ export const LEVIERS_VIDES: Omit<Leviers, 'objectifId'> = {
   horizon: 12,
 }
 
+/** Leviers pré-remplis depuis l'adresse : objectif visé, réduction d'une charge (bouton « Simuler » d'une suggestion). */
+export function depuisAdresse(p: URLSearchParams): Leviers {
+  const reduction = p.get('reduction') ?? ''
+  return { ...LEVIERS_VIDES, objectifId: p.get('objectif') ?? '', reductionChargeId: reduction, reductionMontant: reduction ? (p.get('montant') ?? '') : '' }
+}
+
 /** Leviers → ajustements envoyés au moteur ; un champ vide ou invalide ne compte pas (l'erreur est rendue à part). */
 export function versAjustements(l: Leviers): { ajustements: SaisieAjustements; erreurs: Record<string, string> } {
   const erreurs: Record<string, string> = {}
