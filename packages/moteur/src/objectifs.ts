@@ -12,11 +12,60 @@ import type { Certitude } from './salaire'
 export const SCENARIOS = ['prudent', 'realiste', 'ambitieux'] as const
 export type Scenario = (typeof SCENARIOS)[number]
 
-/** Revenus retenus par scénario (Plan.md § 7.3). */
-export const CERTITUDES_SCENARIO: Record<Scenario, readonly Certitude[]> = {
-  prudent: ['garanti'],
-  realiste: ['garanti', 'probable'],
-  ambitieux: ['garanti', 'probable', 'incertain'],
+/** Règle d'un scénario (Plan.md § 7.3), modifiable dans les Réglages. */
+export interface RegleScenario {
+  /** Certitudes des revenus retenus ; « garanti » l'est toujours. */
+  revenus: Certitude[]
+  /** Dépenses flexibles = moyenne réelle des 3 derniers mois si elle dépasse le budget des enveloppes. */
+  flexibleMoyenne: boolean
+}
+export type ReglesScenarios = Record<Scenario, RegleScenario>
+
+export const REGLES_SCENARIOS_DEFAUT: ReglesScenarios = {
+  prudent: { revenus: ['garanti'], flexibleMoyenne: true },
+  realiste: { revenus: ['garanti', 'probable'], flexibleMoyenne: false },
+  ambitieux: { revenus: ['garanti', 'probable', 'incertain'], flexibleMoyenne: false },
+}
+
+/**
+ * Leviers d'une simulation (UX.md § 4.5) : des hypothèses, jamais enregistrées dans les données.
+ * `versements` et `datesCibles` remplacent ceux des objectifs ; une prime s'ajoute à un mois budgétaire ;
+ * une réduction baisse une charge chaque mois à partir du mois suivant.
+ */
+export interface Ajustements {
+  versements?: Record<string, Centimes | null>
+  datesCibles?: Record<string, CleMois | null>
+  primes?: { mois: CleMois; montant: Centimes }[]
+  reductions?: { chargeId: string; montant: Centimes }[]
+}
+
+/** Nombre de mois terminés pris pour la moyenne réelle des dépenses flexibles. */
+const MOIS_MOYENNE = 3
+
+/**
+ * Moyenne réelle des dépenses flexibles (enveloppes + hors plan) des 3 derniers mois budgétaires terminés
+ * qui ont des dépenses notées ; `null` sans historique (jamais de moyenne sur des mois vides).
+ */
+export function moyenneFlexible(calendrier: Calendrier, aujourdhui: DateCivile): Centimes | null {
+  const courant = calendrier.moisContenant(aujourdhui).cle
+  const debut = calendrier.debutSuivi
+  if (debut === null) return null
+  const mois = Array.from({ length: MOIS_MOYENNE }, (_, i) => calendrier.mois(decalerMois(courant, -(i + 1)))).filter((m) => m.statut === 'passe' && m.fin >= debut)
+  if (mois.length === 0) return null
+  const total = mois.reduce((t, m) => {
+    const s = calendrier.suiviDuMois(m.cle)
+    return t + s.totaux.enveloppe + s.totaux.horsPlan
+  }, 0)
+  return centimes(Math.round(total / mois.length))
+}
+
+/** Objectifs avec les leviers « versement » et « date cible » appliqués (copies : les données ne bougent pas). */
+export function avecAjustements(objectifs: Objectif[], ajustements: Ajustements = {}): Objectif[] {
+  return objectifs.map((o) => ({
+    ...o,
+    ...(ajustements.versements && o.id in ajustements.versements ? { versementMensuel: ajustements.versements[o.id] ?? null } : {}),
+    ...(ajustements.datesCibles && o.id in ajustements.datesCibles ? { dateCible: ajustements.datesCibles[o.id] ?? null } : {}),
+  }))
 }
 
 /** Au-delà, la date estimée n'est pas donnée (« au-delà de 10 ans »). */
@@ -26,17 +75,25 @@ export type Risque = 'sur' | 'probable' | 'fragile' | 'horsPortee'
 
 export interface OptionsProjection {
   aujourdhui: DateCivile
-  /** Certitudes des revenus retenus ; par défaut celles du scénario. */
-  certitudes?: readonly Certitude[]
+  /** Règle du scénario ; par défaut le réaliste. */
+  regle?: RegleScenario
+  ajustements?: Ajustements
+}
+
+export interface OptionsCapacite {
+  ajustements?: Ajustements
+  /** Moyenne réelle des dépenses flexibles (règle du prudent). */
+  moyenneFlexible?: Centimes | null
 }
 
 /**
  * Capacité d'épargne d'un mois budgétaire (R15) : revenus retenus − charges.
  * Mois en cours : revenus reçus (réel) + revenus encore attendus retenus − (sorties réelles + charges encore prévues)
- * − épargne déjà versée. Mois futur : revenus prévus retenus − charges prévues.
+ * − épargne déjà versée. Mois futur : revenus prévus retenus − charges prévues (flexible au moins égal à la moyenne
+ * réelle si la règle le demande), avec les leviers de simulation (prime, réductions).
  */
-export function capaciteDuMois(calendrier: Calendrier, cle: CleMois, certitudes: readonly Certitude[]): Centimes {
-  const retenu = (c: Certitude) => certitudes.includes(c)
+export function capaciteDuMois(calendrier: Calendrier, cle: CleMois, regle: RegleScenario, { ajustements = {}, moyenneFlexible = null }: OptionsCapacite = {}): Centimes {
+  const retenu = (c: Certitude) => c === 'garanti' || regle.revenus.includes(c)
   const paie = calendrier.paies.paie(cle)
   const salaire = !paie
     ? centimes(0)
@@ -48,10 +105,19 @@ export function capaciteDuMois(calendrier: Calendrier, cle: CleMois, certitudes:
     .filter((r) => r.versement === 'dateSeparee' && r.moisBudget === cle)
     .map((r) => (r.statut === 'recu' ? (r.montantRecu ?? centimes(0)) : retenu(r.certitude) ? r.montantPrevu : centimes(0)))
   const libres = calendrier.revenusLibres(cle).map((r) => r.montant)
-  const revenus = additionner(salaire, ...aPart, ...libres)
+  const primes = (ajustements.primes ?? []).filter((p) => p.mois === cle).map((p) => p.montant)
+  const revenus = additionner(salaire, ...aPart, ...libres, ...primes)
 
   const mois = calendrier.mois(cle)
-  if (mois.statut === 'aVenir') return soustraire(revenus, calendrier.chargesDuMois(cle).totaux.total)
+  if (mois.statut === 'aVenir') {
+    const prevues = calendrier.chargesDuMois(cle)
+    const flexible = regle.flexibleMoyenne && moyenneFlexible !== null ? Math.max(0, moyenneFlexible - prevues.totaux.enveloppe) : 0
+    const reduction = (ajustements.reductions ?? []).reduce((t, r) => {
+      const prevu = prevues.lignes.filter((l) => l.id === r.chargeId && (l.origine === 'fixe' || l.origine === 'enveloppe')).reduce((u, l) => u + l.montant, 0)
+      return t + Math.min(r.montant, prevu)
+    }, 0)
+    return centimes(revenus - prevues.totaux.total - flexible + reduction)
+  }
   const suivi = calendrier.suiviDuMois(cle)
   const charges = additionner(suivi.totaux.total, suivi.restePrevu.total)
   return soustraire(soustraire(revenus, charges), calendrier.epargneEntre(mois.debut, mois.fin))
@@ -103,10 +169,12 @@ export function projeter(
   calendrier: Calendrier,
   objectifs: Objectif[],
   mouvements: MouvementEpargne[],
-  { aujourdhui, certitudes = CERTITUDES_SCENARIO.realiste }: OptionsProjection,
+  { aujourdhui, regle = REGLES_SCENARIOS_DEFAUT.realiste, ajustements = {} }: OptionsProjection,
   horizon = HORIZON_MAX_MOIS,
 ): Projection {
   const depart = calendrier.moisContenant(aujourdhui).cle
+  const moyenne = regle.flexibleMoyenne ? moyenneFlexible(calendrier, aujourdhui) : null
+  objectifs = avecAjustements(objectifs, ajustements)
   const periode = calendrier.mois(depart)
   /** Déjà versé ce mois-ci à un objectif : son versement mensuel du mois en cours est déjà (en partie) fait. */
   const verseCeMois = (id: string) =>
@@ -121,7 +189,7 @@ export function projeter(
 
   for (let i = 0; i < horizon; i++) {
     const cle = decalerMois(depart, i)
-    const capacite = capaciteDuMois(calendrier, cle, certitudes)
+    const capacite = capaciteDuMois(calendrier, cle, regle, { ajustements, moyenneFlexible: moyenne })
     const parts = repartirCapacite(
       capacite,
       etats.map((e) => ({
@@ -199,12 +267,30 @@ export interface DonneesObjectifs {
   mouvementsEpargne: MouvementEpargne[]
 }
 
+export interface OptionsSuivi {
+  regles?: ReglesScenarios
+  /** Leviers de simulation : appliqués à des copies, les données ne bougent pas. */
+  ajustements?: Ajustements
+  horizon?: number
+}
+
 /** Toutes les projections de la page Objectifs : un passage par scénario. */
-export function suiviDesObjectifs(calendrier: Calendrier, { objectifs, comptes, mouvementsEpargne }: DonneesObjectifs, aujourdhui: DateCivile): SuiviDesObjectifs {
+export function suiviDesObjectifs(calendrier: Calendrier, donnees: DonneesObjectifs, aujourdhui: DateCivile, options: OptionsSuivi = {}): SuiviDesObjectifs {
+  return analyser(calendrier, donnees, aujourdhui, options).suivi
+}
+
+/** Suivi des objectifs et projections par scénario (servent aussi au simulateur). */
+export function analyser(
+  calendrier: Calendrier,
+  { objectifs: reels, comptes, mouvementsEpargne }: DonneesObjectifs,
+  aujourdhui: DateCivile,
+  { regles = REGLES_SCENARIOS_DEFAUT, ajustements = {}, horizon }: OptionsSuivi = {},
+): { suivi: SuiviDesObjectifs; projections: Record<Scenario, Projection> } {
+  const objectifs = avecAjustements(reels, ajustements)
   const moisCourant = calendrier.moisContenant(aujourdhui).cle
   const veille = ajouterJours(calendrier.mois(moisCourant).debut, -1)
   const projections = Object.fromEntries(
-    SCENARIOS.map((s) => [s, projeter(calendrier, objectifs, mouvementsEpargne, { aujourdhui, certitudes: CERTITUDES_SCENARIO[s] })]),
+    SCENARIOS.map((s) => [s, projeter(calendrier, objectifs, mouvementsEpargne, { aujourdhui, regle: regles[s], ajustements }, horizon)]),
   ) as Record<Scenario, Projection>
 
   const suivis = [...objectifs]
@@ -239,10 +325,13 @@ export function suiviDesObjectifs(calendrier: Calendrier, { objectifs, comptes, 
     })
 
   return {
-    epargne: etatEpargne({ comptes, mouvementsEpargne, objectifs }),
-    objectifs: suivis,
-    capacite: Object.fromEntries(SCENARIOS.map((s) => [s, projections[s].capacites[0] ?? centimes(0)])) as Record<Scenario, Centimes>,
-    moisCourant,
+    suivi: {
+      epargne: etatEpargne({ comptes, mouvementsEpargne, objectifs }),
+      objectifs: suivis,
+      capacite: Object.fromEntries(SCENARIOS.map((s) => [s, projections[s].capacites[0] ?? centimes(0)])) as Record<Scenario, Centimes>,
+      moisCourant,
+    },
+    projections,
   }
 }
 
@@ -255,6 +344,7 @@ export function trajectoireObjectif(
   objectif: Objectif,
   donnees: DonneesObjectifs,
   aujourdhui: DateCivile,
+  regles: ReglesScenarios = REGLES_SCENARIOS_DEFAUT,
 ): PointTrajectoireObjectif[] {
   const courant = calendrier.moisContenant(aujourdhui).cle
   const liees = donnees.mouvementsEpargne.filter((m) => m.objectifId === objectif.id && m.type !== 'achat')
@@ -268,7 +358,7 @@ export function trajectoireObjectif(
   points.push({ mois: courant, reel: epargne, projete: epargne, aujourdhui: true })
   if (objectif.statut !== 'actif') return points
 
-  const projection = projeter(calendrier, donnees.objectifs, donnees.mouvementsEpargne, { aujourdhui })
+  const projection = projeter(calendrier, donnees.objectifs, donnees.mouvementsEpargne, { aujourdhui, regle: regles.realiste })
   const estimee = projection.dates.get(objectif.id) ?? null
   const fin = [estimee, objectif.dateCible].filter((m): m is CleMois => m !== null).sort().at(-1) ?? decalerMois(courant, 5)
   const nombre = Math.min(36, Math.max(6, ecartMois(courant, fin) + 1))

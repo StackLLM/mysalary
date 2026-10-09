@@ -1,4 +1,17 @@
+import { CERTITUDES, REGLES_SCENARIOS_DEFAUT } from '@mysalary/moteur'
 import { z } from 'zod'
+
+export { REGLES_SCENARIOS_DEFAUT }
+export type { RegleScenario, ReglesScenarios } from '@mysalary/moteur'
+
+const regle = z.strictObject({
+  /** « garanti » est toujours retenu, même absent de la liste. */
+  revenus: z.array(z.enum(CERTITUDES, { error: 'Certitude inconnue.' })).max(3).transform((l) => [...new Set(l)]),
+  flexibleMoyenne: z.boolean({ error: 'Valeur oui / non attendue.' }),
+})
+
+/** Règles des scénarios (Plan.md § 7.3), modifiables (UX.md § 5.12). */
+export const schemaReglesScenarios = z.strictObject({ prudent: regle, realiste: regle, ambitieux: regle })
 
 export const MODES_PERIODE = ['cyclePaie', 'calendaire'] as const
 export type ModePeriode = (typeof MODES_PERIODE)[number]
@@ -13,6 +26,7 @@ export const schemaReglages = z.strictObject({
     .max(7, 'Le début de semaine va de 1 (lundi) à 7 (dimanche).'),
   reportHebdo: z.boolean({ error: 'Valeur oui / non attendue.' }),
   animations: z.boolean({ error: 'Valeur oui / non attendue.' }),
+  reglesScenarios: schemaReglesScenarios,
 })
 export type Reglages = z.infer<typeof schemaReglages>
 
@@ -26,4 +40,5 @@ export const REGLAGES_PAR_DEFAUT: Reglages = {
   debutSemaine: 1,
   reportHebdo: false,
   animations: true,
+  reglesScenarios: REGLES_SCENARIOS_DEFAUT,
 }

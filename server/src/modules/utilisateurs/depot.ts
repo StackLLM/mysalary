@@ -24,8 +24,10 @@ export async function lister(prisma: PrismaClient) {
 
 /** Crée le compte et ses réglages par défaut dans la même écriture. */
 export async function creer(prisma: PrismaClient, donnees: Required<CreationUtilisateur>) {
+  // Règles des scénarios absentes : les règles par défaut s'appliquent (lot 11).
+  const { reglesScenarios: _defaut, ...reglages } = REGLAGES_PAR_DEFAUT
   const ligne = await prisma.utilisateur.create({
-    data: { ...donnees, reglages: { create: REGLAGES_PAR_DEFAUT } },
+    data: { ...donnees, reglages: { create: reglages } },
   })
   return versDto(ligne)
 }

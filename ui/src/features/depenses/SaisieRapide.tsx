@@ -1,6 +1,6 @@
 import { formaterMontant, type DepenseDto, type SaisieDepense } from '@mysalary/partage'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Bouton } from '../../components/Bouton'
 import { Champ, ChampMontant } from '../../components/Champ'
@@ -35,8 +35,8 @@ export function useSaisieRapide(): ContexteSaisie {
 }
 
 /** Vrai quand la frappe vise un champ ou une fenêtre : la touche N ne doit pas ouvrir la saisie. */
-function frappeOccupee(e: KeyboardEvent): boolean {
-  const cible = e.target as HTMLElement | null
+export function frappeOccupee(e: KeyboardEvent): boolean {
+  const cible = e.target instanceof Element ? e.target : null
   return Boolean(cible?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"], [role="menu"]'))
 }
 
@@ -53,16 +53,24 @@ export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
   const ouvrir = useCallback((depense?: DepenseDto, options?: { date?: string }) => setEtat({ mode: 'depense', depense, date: options?.date, cle: Date.now() }), [])
   const ouvrirVersement = useCallback((options?: { objectifId?: string }) => setEtat({ mode: 'epargne', objectifId: options?.objectifId, cle: Date.now() }), [])
 
+  const naviguer = useNavigate()
   useEffect(() => {
     if (!actif || surProfils) return
     const surTouche = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== 'n' || e.metaKey || e.ctrlKey || e.altKey || frappeOccupee(e)) return
-      e.preventDefault()
-      ouvrir()
+      if (e.metaKey || e.ctrlKey || e.altKey || frappeOccupee(e)) return
+      const touche = e.key.toLowerCase()
+      // N : nouvelle saisie ; S : simulateur (Plan.md, lot 11).
+      if (touche === 'n') {
+        e.preventDefault()
+        ouvrir()
+      } else if (touche === 's') {
+        e.preventDefault()
+        naviguer('/simulateur')
+      }
     }
     window.addEventListener('keydown', surTouche)
     return () => window.removeEventListener('keydown', surTouche)
-  }, [actif, surProfils, ouvrir])
+  }, [actif, surProfils, ouvrir, naviguer])
 
   const valeur = useMemo(
     () => ({

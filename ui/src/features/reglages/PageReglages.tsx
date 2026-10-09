@@ -150,6 +150,12 @@ export function PageReglages() {
 
                 <Separateur className="my-7" />
 
+                <Section titre="Scénarios" sousTitre="Ce que chaque scénario retient pour les projections (objectifs, simulateur).">
+                  <ReglesScenarios regles={reglages.data.reglesScenarios} onChange={(r, message) => changer({ reglesScenarios: r }, message)} />
+                </Section>
+
+                <Separateur className="my-7" />
+
                 <Section titre="Affichage">
                   <Interrupteur
                     libelle="Animations"
@@ -252,5 +258,44 @@ function CarteCompte() {
 
       <SuppressionCompte utilisateur={confirmer ? utilisateur : null} onFermer={() => setConfirmer(false)} onSupprime={() => naviguer('/profils')} />
     </>
+  )
+}
+
+const NOMS_SCENARIOS = { prudent: 'Prudent', realiste: 'Réaliste', ambitieux: 'Ambitieux' } as const
+
+/** Règles des scénarios (Plan.md § 7.3, UX.md § 5.12) : revenus retenus et dépenses flexibles. Les revenus garantis comptent toujours. */
+function ReglesScenarios({ regles, onChange }: { regles: Reglages['reglesScenarios']; onChange: (r: Reglages['reglesScenarios'], message: string) => void }) {
+  return (
+    <div className="flex flex-col gap-4">
+      {(['prudent', 'realiste', 'ambitieux'] as const).map((s) => {
+        const r = regles[s]
+        const basculer = (certitude: 'probable' | 'incertain', oui: boolean) =>
+          onChange(
+            { ...regles, [s]: { ...r, revenus: oui ? [...r.revenus, certitude] : r.revenus.filter((c) => c !== certitude) } },
+            `${NOMS_SCENARIOS[s]} : revenus ${certitude === 'probable' ? 'probables' : 'incertains'} ${oui ? 'retenus' : 'écartés'}.`,
+          )
+        return (
+          <fieldset key={s} className="rounded-bouton border border-filet p-4">
+            <legend className="px-1 text-texte font-semibold text-encre">{NOMS_SCENARIOS[s]}</legend>
+            <p className="text-texte-sm text-gris">Revenus garantis : toujours retenus.</p>
+            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-texte-sm text-encre">
+              {(['probable', 'incertain'] as const).map((c) => (
+                <label key={c} className="flex items-center gap-2">
+                  <input type="checkbox" className="h-4 w-4 accent-[#7D8C82]" checked={r.revenus.includes(c)} onChange={(e) => basculer(c, e.target.checked)} />
+                  Revenus {c === 'probable' ? 'probables' : 'incertains'}
+                </label>
+              ))}
+            </div>
+            <div className="mt-3">
+              <Interrupteur
+                libelle="Dépenses flexibles : moyenne réelle des 3 derniers mois si plus élevée"
+                actif={r.flexibleMoyenne}
+                onChange={(v) => onChange({ ...regles, [s]: { ...r, flexibleMoyenne: v } }, `${NOMS_SCENARIOS[s]} : ${v ? 'moyenne réelle des dépenses flexibles' : 'dépenses flexibles prévues'}.`)}
+              />
+            </div>
+          </fieldset>
+        )
+      })}
+    </div>
   )
 }

@@ -1,3 +1,4 @@
+import { REGLAGES_PAR_DEFAUT } from '@mysalary/partage'
 import { describe, expect, it } from 'vitest'
 import { creerCompte, pour, preparerApp, url } from './outils'
 
@@ -30,12 +31,7 @@ describe('compte courant et isolation des données', () => {
     expect(modif.json()).toMatchObject({ modePeriode: 'calendaire', animations: false })
 
     const reglagesB = await ctx.app.inject({ method: 'GET', url: url('/reglages'), headers: pour(b.id) })
-    expect(reglagesB.json()).toEqual({
-      modePeriode: 'cyclePaie',
-      debutSemaine: 1,
-      reportHebdo: false,
-      animations: true,
-    })
+    expect(reglagesB.json()).toEqual(REGLAGES_PAR_DEFAUT)
 
     const reglagesA = await ctx.app.inject({ method: 'GET', url: url('/reglages'), headers: pour(a.id) })
     expect(reglagesA.json()).toMatchObject({ modePeriode: 'calendaire', animations: false })

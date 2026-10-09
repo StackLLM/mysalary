@@ -22,7 +22,7 @@ import { dateDuJour } from '../../lib/dates'
 import { useSaisieRapide } from '../depenses/SaisieRapide'
 import { LIBELLES_MOUVEMENT } from '../epargne/saisie'
 import { useObjectif, useRealiserObjectif, useStatutObjectif, useSupprimerObjectif } from '../epargne/requetes'
-import { phraseObjectif, pointsTrajectoire, propositions, REGLES_SCENARIOS, RISQUES_PHRASES, SCENARIOS_LIBELLES, texteEstimation, TYPES } from './saisie'
+import { phraseObjectif, pointsTrajectoire, propositions, RISQUES_PHRASES, SCENARIOS_LIBELLES, texteEstimation, texteRegle, TYPES } from './saisie'
 
 const GRILLE = 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_352px] xl:gap-12'
 
@@ -215,6 +215,11 @@ function Detail({ detail }: { detail: ObjectifDetailDto }) {
                 Marquer comme réalisé
               </Bouton>
             )}
+            {actif && (
+              <Link to={`/simulateur?objectif=${o.id}`} className={styleBouton({ variante: 'blanc', className: 'w-full' })}>
+                Simuler
+              </Link>
+            )}
             {o.statut !== 'realise' && (
               <Link to={`/objectifs/${o.id}/modifier`} className={styleBouton({ variante: 'blanc', className: 'w-full' })}>
                 Modifier
@@ -255,7 +260,7 @@ function Detail({ detail }: { detail: ObjectifDetailDto }) {
           <ul className="flex list-disc flex-col gap-2 pl-4 text-texte-sm text-gris">
             {(['prudent', 'realiste', 'ambitieux'] as const).map((s) => (
               <li key={s}>
-                {SCENARIOS_LIBELLES[s]} : {REGLES_SCENARIOS[s]}, moins les charges prévues. Capacité ce mois : {formaterMontant(detail.capacite[s])}.
+                {SCENARIOS_LIBELLES[s]} : {texteRegle(detail.regles[s])} Capacité ce mois : {formaterMontant(detail.capacite[s])}.
               </li>
             ))}
             <li>Le versement choisi passe d’abord, puis ce qui reste va aux objectifs par priorité.</li>

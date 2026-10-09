@@ -1,5 +1,5 @@
 import { decalerMois, lireCleMois } from '@mysalary/moteur'
-import { formaterDate, formaterMois, formaterMontant, type PointTrajectoireObjectif, type Risque, type Scenario, type TypeObjectif } from '@mysalary/partage'
+import { formaterDate, formaterMois, formaterMontant, type PointTrajectoireObjectif, type RegleScenario, type Risque, type Scenario, type TypeObjectif } from '@mysalary/partage'
 import { Bike, Car, Home, Laptop, Plane, ShieldCheck, Target, TrendingUp, type LucideIcon } from 'lucide-react'
 import type { PointTrajectoire } from '../../components/graphiques/GraphiqueTrajectoire'
 
@@ -18,11 +18,11 @@ export const TYPES: Record<TypeObjectif, { libelle: string; Icone: LucideIcon; e
 
 export const SCENARIOS_LIBELLES: Record<Scenario, string> = { prudent: 'Prudent', realiste: 'Réaliste', ambitieux: 'Ambitieux' }
 
-/** Ce que chaque scénario retient (affiché à côté des projections, Plan.md § 7.3). */
-export const REGLES_SCENARIOS: Record<Scenario, string> = {
-  prudent: 'revenus garantis seulement',
-  realiste: 'revenus garantis et probables',
-  ambitieux: 'tous les revenus, même incertains',
+/** Revenus et dépenses flexibles retenus par un scénario, en mots (affichés à côté de chaque projection). */
+export function texteRegle(r: RegleScenario): string {
+  const revenus = ['garantis', ...(r.revenus.includes('probable') ? ['probables'] : []), ...(r.revenus.includes('incertain') ? ['incertains'] : [])]
+  const liste = revenus.length > 1 ? `${revenus.slice(0, -1).join(', ')} et ${revenus.at(-1)}` : revenus[0]
+  return `Revenus ${liste}${r.flexibleMoyenne ? ' ; dépenses flexibles au moins égales à la moyenne réelle des 3 derniers mois' : ''}.`
 }
 
 /** « juillet 2027 », ou « au-delà de 10 ans » quand la projection n'atteint pas la cible. */

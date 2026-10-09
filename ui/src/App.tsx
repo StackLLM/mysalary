@@ -11,6 +11,7 @@ import { PageMois } from './features/mois/PageMois'
 import { PageEditionObjectif } from './features/objectifs/PageEditionObjectif'
 import { PageObjectif } from './features/objectifs/PageObjectif'
 import { PageObjectifs } from './features/objectifs/PageObjectifs'
+import { PageSimulateur } from './features/simulateur/PageSimulateur'
 import { PagePlan } from './features/plan/PagePlan'
 import { PageProfils } from './features/profils/PageProfils'
 import { PageReglages } from './features/reglages/PageReglages'
@@ -63,6 +64,7 @@ function Vues() {
             <Route path="/objectifs/nouveau" element={compte(<PageEditionObjectif />)} />
             <Route path="/objectifs/:id" element={compte(<PageObjectif />)} />
             <Route path="/objectifs/:id/modifier" element={compte(<PageEditionObjectif />)} />
+            <Route path="/simulateur" element={compte(<PageSimulateur />)} />
             {DESTINATIONS.filter((d) => !['/plan', '/mois', '/objectifs'].includes(d.chemin)).map((d) => (
               <Route key={d.chemin} path={d.chemin} element={compte(<PageAVenir titre={d.libelle} lot={d.lot} />)} />
             ))}

@@ -1,3 +1,4 @@
+import { REGLES_SCENARIOS_DEFAUT } from '@mysalary/partage'
 import type { EpargneDto, MouvementEpargneDto, ObjectifDetailDto, ObjectifsDto, SuiviObjectif, Utilisateur } from '@mysalary/partage'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -61,6 +62,7 @@ const liste = (modif: Partial<ObjectifsDto> = {}) =>
     capacite: { prudent: 160_000, realiste: 160_000, ambitieux: 160_000 },
     fondsSecurite: { min: 1_980_000, max: 3_960_000, base: 660_000 },
     comptes: [{ id: 'cih', libelle: 'CIH' }],
+    regles: REGLES_SCENARIOS_DEFAUT,
     ...modif,
   }) as unknown as ObjectifsDto
 
@@ -78,6 +80,7 @@ const detail = (modif: Record<string, unknown> = {}) =>
     versements: [versement],
     capacite: { prudent: 160_000, realiste: 160_000, ambitieux: 160_000 },
     comptes: [{ id: 'cih', libelle: 'CIH' }],
+    regles: REGLES_SCENARIOS_DEFAUT,
   }) as unknown as ObjectifDetailDto
 let detailCourant = detail()
 let epargne: EpargneDto

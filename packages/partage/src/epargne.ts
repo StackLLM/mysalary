@@ -6,6 +6,7 @@ import {
   type EtatEpargne,
   type MouvementEpargne,
   type PointTrajectoireObjectif,
+  type ReglesScenarios,
   type Scenario,
   type SuiviDesObjectifs,
   type SuiviObjectif,
@@ -107,6 +108,8 @@ export interface ObjectifsDto extends SuiviDesObjectifs {
   /** 3 à 6 mois de charges essentielles (lot 6) ; `null` sans charge essentielle. */
   fondsSecurite: { min: number; max: number; base: number } | null
   comptes: { id: string; libelle: string }[]
+  /** Règles des scénarios utilisées (Réglages). */
+  regles: ReglesScenarios
 }
 
 /** Page Objectif (détail). */
@@ -118,6 +121,7 @@ export interface ObjectifDetailDto {
   versements: MouvementEpargneDto[]
   capacite: Record<Scenario, number>
   comptes: { id: string; libelle: string }[]
+  regles: ReglesScenarios
 }
 
 /** Aperçu en direct d'un objectif pas encore créé (projection seule). */

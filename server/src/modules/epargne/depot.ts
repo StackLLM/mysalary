@@ -146,34 +146,35 @@ const comptesCourts = (prisma: PrismaClient, utilisateurId: string) =>
   prisma.compteEpargne.findMany({ where: { utilisateurId }, select: { id: true, libelle: true }, orderBy: { creeLe: 'asc' } })
 
 export async function lister(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile): Promise<ObjectifsDto> {
-  const [{ calendrier, epargne }, charges, comptes] = await Promise.all([
+  const [{ calendrier, epargne, regles }, charges, comptes] = await Promise.all([
     chargerCalendrier(prisma, utilisateurId, aujourdhui),
     prisma.charge.findMany({ where: { utilisateurId } }),
     comptesCourts(prisma, utilisateurId),
   ])
-  const suivi = suiviDesObjectifs(calendrier, epargne, aujourdhui)
+  const suivi = suiviDesObjectifs(calendrier, epargne, aujourdhui, { regles })
   const essentielles = chargesActives(charges.map(versCharge), aujourdhui, suivi.moisCourant).filter((c) => c.essentielle)
   const essentiel = additionner(...essentielles.map(equivalentMensuelCharge))
-  return { ...suivi, aujourdhui, fondsSecurite: essentiel > 0 ? cibleFondsSecurite(essentiel) : null, comptes }
+  return { ...suivi, aujourdhui, fondsSecurite: essentiel > 0 ? cibleFondsSecurite(essentiel) : null, comptes, regles }
 }
 
 export async function detail(prisma: PrismaClient, utilisateurId: string, id: string, aujourdhui: DateCivile): Promise<ObjectifDetailDto> {
   await trouverObjectif(prisma, utilisateurId, id)
-  const [{ calendrier, epargne }, versements, comptes] = await Promise.all([
+  const [{ calendrier, epargne, regles }, versements, comptes] = await Promise.all([
     chargerCalendrier(prisma, utilisateurId, aujourdhui),
     mouvementsDto(prisma, utilisateurId, id),
     comptesCourts(prisma, utilisateurId),
   ])
-  const suivi = suiviDesObjectifs(calendrier, epargne, aujourdhui)
+  const suivi = suiviDesObjectifs(calendrier, epargne, aujourdhui, { regles })
   const objectif = suivi.objectifs.find((o) => o.id === id)!
   return {
     aujourdhui,
     moisCourant: suivi.moisCourant,
     objectif,
-    trajectoire: trajectoireObjectif(calendrier, objectif, epargne, aujourdhui),
+    trajectoire: trajectoireObjectif(calendrier, objectif, epargne, aujourdhui, regles),
     versements,
     capacite: suivi.capacite,
     comptes,
+    regles,
   }
 }
 
@@ -217,7 +218,7 @@ export async function apercu(
   aujourdhui: DateCivile,
   remplace?: string,
 ): Promise<ApercuObjectifDto> {
-  const [{ calendrier, epargne }, priorite] = await Promise.all([chargerCalendrier(prisma, utilisateurId, aujourdhui), prochainePriorite(prisma, utilisateurId)])
+  const [{ calendrier, epargne, regles }, priorite] = await Promise.all([chargerCalendrier(prisma, utilisateurId, aujourdhui), prochainePriorite(prisma, utilisateurId)])
   const existant = remplace ? epargne.objectifs.find((o) => o.id === remplace) : undefined
   if (remplace && !existant) throw introuvable('Objectif')
   const nouveau: Objectif = {
@@ -232,7 +233,7 @@ export async function apercu(
     creeLe: existant?.creeLe ?? aujourdhui,
   }
   const autres = epargne.objectifs.filter((o) => o.id !== nouveau.id)
-  const suivi = suiviDesObjectifs(calendrier, { ...epargne, objectifs: [...autres, nouveau] }, aujourdhui)
+  const suivi = suiviDesObjectifs(calendrier, { ...epargne, objectifs: [...autres, nouveau] }, aujourdhui, { regles })
   return { objectif: suivi.objectifs.find((o) => o.id === nouveau.id)!, capacite: suivi.capacite }
 }
 

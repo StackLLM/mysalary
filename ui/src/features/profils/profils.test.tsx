@@ -1,4 +1,5 @@
 import type { Reglages, Utilisateur } from '@mysalary/partage'
+import { REGLES_SCENARIOS_DEFAUT } from '@mysalary/partage'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -25,7 +26,7 @@ const oussama: Utilisateur = {
   creeLe: '2026-10-07T10:00:00.000Z',
   derniereOuverture: '2026-10-07T12:00:00.000Z',
 }
-const reglages: Reglages = { modePeriode: 'cyclePaie', debutSemaine: 1, reportHebdo: false, animations: true }
+const reglages: Reglages = { modePeriode: 'cyclePaie', debutSemaine: 1, reportHebdo: false, animations: true, reglesScenarios: REGLES_SCENARIOS_DEFAUT }
 
 function serveur(utilisateurs: Utilisateur[]) {
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {

@@ -16,7 +16,7 @@ import { ErreurApi } from '../../lib/api'
 import { conteneurCascade, elementApparition } from '../../lib/animations'
 import { useSaisieRapide } from '../depenses/SaisieRapide'
 import { useObjectifs, useOrdonnerObjectifs, useStatutObjectif } from '../epargne/requetes'
-import { phraseObjectif, REGLES_SCENARIOS, SCENARIOS_LIBELLES, texteEstimation, TYPES } from './saisie'
+import { phraseObjectif, SCENARIOS_LIBELLES, texteEstimation, texteRegle, TYPES } from './saisie'
 
 const GRILLE = 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_352px] xl:gap-12'
 
@@ -130,9 +130,14 @@ function Objectifs({ donnees }: { donnees: ObjectifsDto }) {
                 </>
               }
               action={
-                <Link to="/objectifs/nouveau" className={styleBouton({ variante: 'puce', taille: 'sm' })}>
-                  + Nouvel objectif
-                </Link>
+                <span className="flex flex-wrap gap-2">
+                  <Link to="/simulateur" className={styleBouton({ variante: 'puce', taille: 'sm' })} title="Raccourci : S">
+                    Simuler
+                  </Link>
+                  <Link to="/objectifs/nouveau" className={styleBouton({ variante: 'puce', taille: 'sm' })}>
+                    + Nouvel objectif
+                  </Link>
+                </span>
               }
             />
             {enCours.length === 0 ? (
@@ -197,7 +202,7 @@ function Objectifs({ donnees }: { donnees: ObjectifsDto }) {
               <ul className="flex flex-col gap-2 rounded-bouton bg-interne p-5 text-texte-sm text-gris shadow-bouton">
                 {(['prudent', 'realiste', 'ambitieux'] as const).map((s) => (
                   <li key={s}>
-                    <span className="font-semibold text-encre">{SCENARIOS_LIBELLES[s]}</span> : {REGLES_SCENARIOS[s]}, moins les charges prévues.
+                    <span className="font-semibold text-encre">{SCENARIOS_LIBELLES[s]}</span> : {texteRegle(donnees.regles[s])} Moins les charges prévues.
                   </li>
                 ))}
                 <li>Chaque mois, le versement choisi passe d’abord, puis le reste va à la priorité 1, puis 2…</li>

@@ -5,7 +5,7 @@ import { bilanDuMois } from './bilan'
 import type { Charge } from './charges'
 import { lireCleMois as m, lireDate as d } from './dates'
 import { cibleFondsSecurite, epargneObjectif, etatEpargne, type CompteEpargne, type MouvementEpargne, type Objectif } from './epargne'
-import { capaciteDuMois, CERTITUDES_SCENARIO, repartirCapacite, suiviDesObjectifs, trajectoireObjectif } from './objectifs'
+import { capaciteDuMois, REGLES_SCENARIOS_DEFAUT, repartirCapacite, suiviDesObjectifs, trajectoireObjectif } from './objectifs'
 import { creerCalendrier } from './periodes'
 import type { SourceRevenu } from './revenus'
 import type { PaieEnregistree, VersionContrat } from './salaire'
@@ -143,10 +143,10 @@ describe('répartition de la capacité (R18)', () => {
 describe('capacité par scénario (Plan.md § 7.3)', () => {
   const c = calendrier()
   it('mois en cours : reçu − charges − épargne déjà versée ; mois futur : revenus retenus − charges', () => {
-    expect(capaciteDuMois(c, m('2027-01'), CERTITUDES_SCENARIO.realiste)).toBe(550_000)
-    expect(capaciteDuMois(c, m('2027-02'), CERTITUDES_SCENARIO.prudent)).toBe(650_000)
-    expect(capaciteDuMois(c, m('2027-02'), CERTITUDES_SCENARIO.realiste)).toBe(750_000)
-    expect(capaciteDuMois(c, m('2027-02'), CERTITUDES_SCENARIO.ambitieux)).toBe(950_000)
+    expect(capaciteDuMois(c, m('2027-01'), REGLES_SCENARIOS_DEFAUT.realiste)).toBe(550_000)
+    expect(capaciteDuMois(c, m('2027-02'), REGLES_SCENARIOS_DEFAUT.prudent)).toBe(650_000)
+    expect(capaciteDuMois(c, m('2027-02'), REGLES_SCENARIOS_DEFAUT.realiste)).toBe(750_000)
+    expect(capaciteDuMois(c, m('2027-02'), REGLES_SCENARIOS_DEFAUT.ambitieux)).toBe(950_000)
   })
 })
 

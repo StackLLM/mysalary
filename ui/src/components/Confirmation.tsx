@@ -36,7 +36,10 @@ export function Confirmation({
         <Dialog.Overlay className="fixed inset-0 z-40 bg-encre/20" />
         <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,440px)] -translate-x-1/2 -translate-y-1/2 rounded-carte bg-white p-6 shadow-flottant">
           <Dialog.Title className="text-titre text-encre">{titre}</Dialog.Title>
-          <Dialog.Description className="mt-2 text-texte text-gris">{description}</Dialog.Description>
+          {/* Un div : la description peut contenir une liste (résumé des changements). */}
+          <Dialog.Description asChild>
+            <div className="mt-2 text-texte text-gris">{description}</div>
+          </Dialog.Description>
           {children && <div className="mt-5">{children}</div>}
           <div className="mt-6 flex justify-end gap-3">
             <Bouton variante="contour" taille="md" onClick={onFermer}>

@@ -114,3 +114,23 @@ export const epargneNette = (mouvements: MouvementEpargne[], du: DateCivile, au:
 export function cibleFondsSecurite(essentielMensuel: Centimes): { min: Centimes; max: Centimes; base: Centimes } {
   return { min: centimes(essentielMensuel * 3), max: centimes(essentielMensuel * 6), base: essentielMensuel }
 }
+
+/**
+ * Solde d'épargne à la fin d'une date, reconstitué depuis les soldes déclarés et les mouvements :
+ * après la déclaration, on ajoute les mouvements ; avant, on retire ceux qui ont eu lieu depuis.
+ */
+export function soldeAu(comptes: CompteEpargne[], mouvements: MouvementEpargne[], date: DateCivile): Centimes {
+  return additionner(
+    ...comptes.map((c) => {
+      const liste = mouvements.filter((m) => m.compteId === c.id)
+      if (date >= c.auLe) return additionner(c.solde, ...liste.filter((m) => m.date >= c.auLe && m.date <= date).map((m) => m.montant))
+      return soustraire(c.solde, additionner(...liste.filter((m) => m.date > date && m.date < c.auLe).map((m) => m.montant)))
+    }),
+  )
+}
+
+/** Première date connue de l'épargne (déclaration ou mouvement) : avant, aucun solde n'est reconstitué. */
+export function debutEpargne(comptes: CompteEpargne[], mouvements: MouvementEpargne[]): DateCivile | null {
+  const dates = [...comptes.map((c) => c.auLe), ...mouvements.map((m) => m.date)].sort()
+  return dates[0] ?? null
+}

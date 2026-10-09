@@ -1,4 +1,4 @@
-import { formaterMois, formaterMontant, TYPES_OBJECTIF, type ObjectifDetailDto, type SaisieObjectif, type TypeObjectif } from '@mysalary/partage'
+import { formaterMois, formaterMontant, TYPES_OBJECTIF, type ObjectifDetailDto, type ObjectifsDto, type SaisieObjectif, type TypeObjectif } from '@mysalary/partage'
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -15,7 +15,7 @@ import { conteneurCascade, elementApparition } from '../../lib/animations'
 import { cn } from '../../lib/cn'
 import { useApercuObjectif, useEnregistrerObjectif, useObjectif, useObjectifs } from '../epargne/requetes'
 import { lireMontant, versSaisie } from '../salaire/saisie'
-import { moisSouhaitables, propositions, REGLES_SCENARIOS, RISQUES_PHRASES, SCENARIOS_LIBELLES, texteEstimation, TYPES } from './saisie'
+import { moisSouhaitables, propositions, RISQUES_PHRASES, SCENARIOS_LIBELLES, texteEstimation, texteRegle, TYPES } from './saisie'
 
 const GRILLE = 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_352px] xl:gap-12'
 
@@ -53,6 +53,7 @@ export function PageEditionObjectif() {
           existant={id ? existant.data : undefined}
           moisCourant={liste.data?.moisCourant ?? ''}
           fondsSecurite={liste.data?.fondsSecurite ?? null}
+          regles={liste.data?.regles}
         />
       )}
     </motion.div>
@@ -64,11 +65,13 @@ function Edition({
   existant,
   moisCourant,
   fondsSecurite,
+  regles,
 }: {
   titre: string
   existant?: ObjectifDetailDto
   moisCourant: string
   fondsSecurite: { min: number; max: number; base: number } | null
+  regles?: ObjectifsDto['regles']
 }) {
   const navigate = useNavigate()
   const [parametres] = useSearchParams()
@@ -233,7 +236,7 @@ function Edition({
               <dl className="flex flex-col gap-3">
                 {(['prudent', 'realiste', 'ambitieux'] as const).map((s) => (
                   <div key={s} className="flex items-baseline justify-between gap-3">
-                    <dt className="text-texte-sm text-gris" title={REGLES_SCENARIOS[s]}>
+                    <dt className="text-texte-sm text-gris" title={regles ? texteRegle(regles[s]) : undefined}>
                       {SCENARIOS_LIBELLES[s]}
                     </dt>
                     <dd className={cn('text-texte', s === 'realiste' ? 'font-semibold text-encre' : 'italic text-encre-2')}>{texteEstimation(projection.estimations?.[s] ?? null)}</dd>

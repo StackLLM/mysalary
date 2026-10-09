@@ -34,6 +34,7 @@ model Utilisateur {
   comptesEpargne    CompteEpargne[]
   mouvementsEpargne MouvementEpargne[]
   objectifs         Objectif[]
+  scenarios         Scenario[]
 }
 
 model Reglages {
@@ -44,6 +45,8 @@ model Reglages {
   debutSemaine  Int         @default(1)
   reportHebdo   Boolean     @default(false)
   animations    Boolean     @default(true)
+  /// Règles des scénarios (JSON) ; vide = règles par défaut (lot 11).
+  reglesScenarios String?
   creeLe        DateTime    @default(now())
   modifieLe     DateTime    @updatedAt
 }
@@ -347,4 +350,16 @@ model Objectif {
   creeLe           DateTime           @default(now())
   modifieLe        DateTime           @updatedAt
   mouvements       MouvementEpargne[]
+}
+
+/// Scénario de simulation enregistré : des leviers, jamais des données (lot 11).
+model Scenario {
+  id            String      @id @default(cuid())
+  utilisateurId String
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  nom           String
+  ajustements   String
+  horizon       Int         @default(12)
+  creeLe        DateTime    @default(now())
+  modifieLe     DateTime    @updatedAt
 }

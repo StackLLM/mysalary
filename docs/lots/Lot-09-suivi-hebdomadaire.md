@@ -1,6 +1,6 @@
 # Lot 9 — Suivi hebdomadaire
 
-> Statut : **livré** (09/10/2026), en attente de validation. Références : `Plan.md` § 7.1 (semaines), § 8 (KPI « Reste flexible (semaine) ») · `context.md` R7 · `UX.md` § 4.6, § 5.4.
+> Statut : **clôturé et validé** (09/10/2026). Références : `Plan.md` § 7.1 (semaines), § 8 (KPI « Reste flexible (semaine) ») · `context.md` R7 · `UX.md` § 4.6, § 5.4.
 
 ## Objectif
 
