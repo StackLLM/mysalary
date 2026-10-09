@@ -10,7 +10,7 @@ server/prisma/*.db-journal
 coverage/
 
 # Personal financial data (V0 export and study) — never versioned
-Salaire/
+/Salaire/
 
 # Local editor and agent settings
 .claude/
