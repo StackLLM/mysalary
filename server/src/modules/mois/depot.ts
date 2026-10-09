@@ -35,6 +35,8 @@ export async function bilan(prisma: PrismaClient, utilisateurId: string, aujourd
     : await calculer(prisma, utilisateurId, aujourdhui, cle)
   return {
     ...contenu,
+    // Bilan figé avant le lot 10 : son épargne n'est pas connue.
+    epargne: contenu.epargne ?? null,
     aujourdhui,
     cloture: cloture ? { le: cloture.clotureLe.toISOString(), forcee: cloture.forcee, nonConfirmees: cloture.nonConfirmees } : null,
     journal: evenements,

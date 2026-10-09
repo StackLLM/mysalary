@@ -21,10 +21,11 @@ export const FAMILLES: Record<FamilleBilan, string> = {
   dette: 'Échéances de dettes',
   horsPlan: 'Hors plan',
   autreMois: 'Décalages',
+  epargne: 'Épargne',
 }
 
 /** Statut en mots, jamais par la couleur seule. Les revenus « confirmés » sont reçus, les charges payées. */
-export function statutLigne(l: Pick<LigneBilan, 'statut' | 'famille' | 'prevu'>): { texte: string; ton: Ton } {
+export function statutLigne(l: Pick<LigneBilan, 'statut' | 'famille' | 'prevu'> & { reel?: LigneBilan['reel'] }): { texte: string; ton: Ton } {
   const revenu = l.famille === 'revenu'
   const textes: Record<StatutLigneBilan, { texte: string; ton: Ton }> = {
     confirme: l.prevu === null ? { texte: 'Imprévu', ton: 'info' } : { texte: revenu ? 'Reçu' : 'Payé', ton: 'positif' },
@@ -34,6 +35,11 @@ export function statutLigne(l: Pick<LigneBilan, 'statut' | 'famille' | 'prevu'>)
     enRetard: { texte: 'En retard', ton: 'alerte' },
   }
   if (l.famille === 'enveloppe' && l.statut === 'confirme') return { texte: 'Terminée', ton: 'neutre' }
+  // Épargne : jamais « à confirmer » ; le mois terminé dit si le versement prévu a été fait.
+  if (l.famille === 'epargne') {
+    if (l.statut === 'enCours') return { texte: 'En cours', ton: 'neutre' }
+    return l.prevu === null || (l.reel ?? 0) >= l.prevu ? { texte: 'Versé', ton: 'positif' } : { texte: 'Moins que prévu', ton: 'info' }
+  }
   if (l.famille === 'horsPlan' || l.famille === 'autreMois') return { texte: 'Réel', ton: 'neutre' }
   return textes[l.statut]
 }
@@ -82,6 +88,8 @@ export function confirmation(l: LigneBilan, aujourdhui: string): Confirmation {
       return { type: 'lien', chemin: '/plan?onglet=revenus', libelle: 'Noter le revenu' }
     case 'dette':
       return { type: 'lien', chemin: '/plan?onglet=dettes', libelle: 'Noter le paiement' }
+    case 'objectif':
+      return { type: 'lien', chemin: `/objectifs/${c.id}`, libelle: 'Ouvrir l’objectif' }
   }
 }
 

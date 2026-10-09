@@ -7,7 +7,7 @@ import type { Calendrier, MoisBudgetaire } from './periodes'
  * Le prévu et le réel restent deux colonnes distinctes ; l'écart n'existe que lorsque le réel est connu.
  */
 
-export type FamilleBilan = 'revenu' | 'fixe' | 'enveloppe' | 'ponctuel' | 'dette' | 'horsPlan' | 'autreMois'
+export type FamilleBilan = 'revenu' | 'fixe' | 'enveloppe' | 'ponctuel' | 'dette' | 'horsPlan' | 'autreMois' | 'epargne'
 
 /**
  * - `confirme` : réel connu (reçu, payé, ou réel sans prévu) ;
@@ -24,6 +24,7 @@ export type CibleBilan =
   | { type: 'charge'; id: string; date: DateCivile; categorieId: string }
   | { type: 'ponctuel'; id: string; date: DateCivile; categorieId: string }
   | { type: 'dette'; id: string }
+  | { type: 'objectif'; id: string }
   | null
 
 export interface LigneBilan {
@@ -61,8 +62,13 @@ export interface BilanDuMois {
   totaux: TotauxBilan
   /** Mois en cours : estimation de fin de mois (R23), toujours présentée comme telle. */
   estimation: { revenusAttendus: Centimes; chargesAttendues: Centimes; resteFinDeMois: Centimes } | null
-  /** Lignes prévues pas encore confirmées. */
+  /** Lignes prévues pas encore confirmées (l'épargne n'en fait pas partie). */
   aConfirmer: LigneBilan[]
+  /**
+   * Épargne du mois (R11 : jamais une dépense, hors des charges et des sorties) : prévue = versements mensuels choisis,
+   * réelle = versements − retraits. `null` dans un bilan figé avant le lot 10.
+   */
+  epargne: { prevue: Centimes; reelle: Centimes } | null
 }
 
 const STATUTS_PAIE = { recue: 'confirme', enRetard: 'enRetard', prevue: 'prevu' } as const
@@ -169,14 +175,28 @@ export function bilanDuMois(calendrier: Calendrier, cle: CleMois): BilanDuMois {
   }
 
   charges.sort((a, b) => ORDRE[a.famille] - ORDRE[b.famille] || (a.date ?? '').localeCompare(b.date ?? '') || a.libelle.localeCompare(b.libelle))
-  const lignes = [...revenus, ...charges]
+
+  // Épargne : comme une enveloppe, son écart n'est connu qu'une fois le mois terminé.
+  const epargne = calendrier.epargneDuMois(cle)
+  const lignesEpargne: LigneBilan[] = epargne.lignes.map((l) => ({
+    cle: `epargne:${l.objectifId ?? 'libre'}`,
+    famille: 'epargne',
+    libelle: l.libelle,
+    date: null,
+    prevu: l.prevu,
+    reel: l.reel,
+    ecart: termine && l.prevu !== null ? soustraire(l.reel, l.prevu) : null,
+    statut: termine || l.prevu === null ? 'confirme' : 'enCours',
+    cible: l.objectifId ? { type: 'objectif', id: l.objectifId } : null,
+  }))
+  const lignes = [...revenus, ...charges, ...lignesEpargne]
 
   const revenusPrevus = somme(revenus.map((l) => l.prevu))
   const revenusReels = somme(revenus.map((l) => l.reel))
   const chargesPrevues = somme(charges.map((l) => l.prevu))
   const restePrevu = soustraire(revenusPrevus, chargesPrevues)
   const resteReel = soustraire(revenusReels, sortiesReelles)
-  const aConfirmer = lignes.filter((l) => l.statut === 'prevu' || l.statut === 'enRetard' || l.statut === 'partiel')
+  const aConfirmer = lignes.filter((l) => l.famille !== 'epargne' && (l.statut === 'prevu' || l.statut === 'enRetard' || l.statut === 'partiel'))
 
   let estimation: BilanDuMois['estimation'] = null
   if (mois.statut === 'enCours') {
@@ -195,10 +215,11 @@ export function bilanDuMois(calendrier: Calendrier, cle: CleMois): BilanDuMois {
     totaux: { revenusPrevus, revenusReels, chargesPrevues, sortiesReelles, restePrevu, resteReel, ecart: termine ? soustraire(resteReel, restePrevu) : null },
     estimation,
     aConfirmer,
+    epargne: { prevue: epargne.prevue, reelle: epargne.reelle },
   }
 }
 
-const ORDRE: Record<FamilleBilan, number> = { revenu: 0, fixe: 1, enveloppe: 2, ponctuel: 3, dette: 4, horsPlan: 5, autreMois: 6 }
+const ORDRE: Record<FamilleBilan, number> = { revenu: 0, fixe: 1, enveloppe: 2, ponctuel: 3, dette: 4, horsPlan: 5, autreMois: 6, epargne: 7 }
 
 export interface PointRythme {
   date: DateCivile

@@ -444,6 +444,15 @@ function DetailSemaine({
               <Montant valeur={s.chargesPayees} className="font-semibold text-encre" />
             </dd>
           </div>
+          {/* Épargne : jamais une dépense (R11). Absente des semaines figées avant le lot 10. */}
+          {typeof s.epargne === 'number' && s.epargne !== 0 && (
+            <div className="flex justify-between gap-3">
+              <dt className="text-gris">Mis de côté cette semaine</dt>
+              <dd>
+                <Montant valeur={s.epargne} className="font-semibold text-encre" />
+              </dd>
+            </div>
+          )}
         </dl>
       </section>
     </div>

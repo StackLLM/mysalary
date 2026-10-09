@@ -4,6 +4,7 @@ import type { PrismaClient } from '@prisma/client'
 import Fastify, { type FastifyServerOptions } from 'fastify'
 import { routesCharges } from './modules/charges/routes'
 import { routesDepenses } from './modules/depenses/routes'
+import { routesEpargne } from './modules/epargne/routes'
 import { routesMois } from './modules/mois/routes'
 import { routesReglages } from './modules/reglages/routes'
 import { routesRevenus } from './modules/revenus/routes'
@@ -43,6 +44,7 @@ export async function construireApp({ prisma, logger = false, horloge }: Options
         await compte.register(routesRevenus)
         await compte.register(routesCharges)
         await compte.register(routesDepenses)
+        await compte.register(routesEpargne)
       })
     },
     { prefix: PREFIXE_API },

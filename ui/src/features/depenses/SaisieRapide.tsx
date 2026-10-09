@@ -6,11 +6,12 @@ import { Bouton } from '../../components/Bouton'
 import { Champ, ChampMontant } from '../../components/Champ'
 import { Panneau } from '../../components/Panneau'
 import { Pilule } from '../../components/Pilule'
-import { Selection } from '../../components/Selection'
+import { Choix, Selection } from '../../components/Selection'
 import { ErreurApi } from '../../lib/api'
 import { dateDuJour } from '../../lib/dates'
 import { useCompte } from '../../state/compte'
 import { ChampCategorie } from '../charges/ChampCategorie'
+import { FormulaireVersement } from '../epargne/FormulaireVersement'
 import { IconeCategorie } from '../charges/IconeCategorie'
 import { useCategories } from '../charges/requetes'
 import { useUtilisateurCourant } from '../profils/requetes'
@@ -21,6 +22,8 @@ import { categoriesFrequentes, cleDe, HORS_PLAN, lienPropose, optionsLien, versL
 interface ContexteSaisie {
   /** Ouvre la saisie : vide (à une date proposée, sinon aujourd'hui), ou pour modifier une dépense. */
   ouvrir: (depense?: DepenseDto, options?: { date?: string }) => void
+  /** Ouvre la saisie d'un versement d'épargne (lot 10), éventuellement vers un objectif. */
+  ouvrirVersement: (options?: { objectifId?: string }) => void
 }
 
 const Contexte = createContext<ContexteSaisie | null>(null)
@@ -37,15 +40,18 @@ function frappeOccupee(e: KeyboardEvent): boolean {
   return Boolean(cible?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"], [role="menu"]'))
 }
 
+type Mode = 'depense' | 'epargne'
+
 /**
- * Saisie rapide d'une dépense (UX.md § 4.3), accessible partout : bouton +, touche N.
- * Elle n'existe que lorsqu'un compte est ouvert.
+ * Saisie rapide (UX.md § 4.3), accessible partout : bouton +, touche N. Une dépense, ou un versement d'épargne
+ * (jamais une dépense, R11). Elle n'existe que lorsqu'un compte est ouvert.
  */
 export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
-  const [etat, setEtat] = useState<{ depense?: DepenseDto; date?: string; cle: number } | null>(null)
+  const [etat, setEtat] = useState<{ mode: Mode; depense?: DepenseDto; date?: string; objectifId?: string; cle: number } | null>(null)
   const actif = Boolean(useCompte().id && useUtilisateurCourant())
   const surProfils = useLocation().pathname === '/profils'
-  const ouvrir = useCallback((depense?: DepenseDto, options?: { date?: string }) => setEtat({ depense, date: options?.date, cle: Date.now() }), [])
+  const ouvrir = useCallback((depense?: DepenseDto, options?: { date?: string }) => setEtat({ mode: 'depense', depense, date: options?.date, cle: Date.now() }), [])
+  const ouvrirVersement = useCallback((options?: { objectifId?: string }) => setEtat({ mode: 'epargne', objectifId: options?.objectifId, cle: Date.now() }), [])
 
   useEffect(() => {
     if (!actif || surProfils) return
@@ -59,8 +65,11 @@ export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
   }, [actif, surProfils, ouvrir])
 
   const valeur = useMemo(
-    () => ({ ouvrir: (d?: DepenseDto, options?: { date?: string }) => (actif ? ouvrir(d, options) : toast('Ouvre d’abord ton compte.')) }),
-    [actif, ouvrir],
+    () => ({
+      ouvrir: (d?: DepenseDto, options?: { date?: string }) => (actif ? ouvrir(d, options) : toast('Ouvre d’abord ton compte.')),
+      ouvrirVersement: (options?: { objectifId?: string }) => (actif ? ouvrirVersement(options) : toast('Ouvre d’abord ton compte.')),
+    }),
+    [actif, ouvrir, ouvrirVersement],
   )
 
   return (
@@ -70,10 +79,27 @@ export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
         <Panneau
           ouvert={etat !== null}
           onFermer={() => setEtat(null)}
-          titre={etat?.depense ? 'Modifier la dépense' : 'Nouvelle dépense'}
-          description={etat?.depense ? undefined : 'Ce qui est sorti vraiment. Entrée pour valider.'}
+          titre={etat?.depense ? 'Modifier la dépense' : etat?.mode === 'epargne' ? 'Mettre de côté' : 'Nouvelle dépense'}
+          description={etat?.depense ? undefined : etat?.mode === 'epargne' ? 'Un versement réel vers ton épargne. Entrée pour valider.' : 'Ce qui est sorti vraiment. Entrée pour valider.'}
         >
-          {etat && <FormulaireDepense key={etat.cle} initiale={etat.depense} dateProposee={etat.date} onTermine={() => setEtat(null)} onAutre={() => ouvrir()} />}
+          {etat && !etat.depense && (
+            <div className="mb-6">
+              <Choix
+                libelle="Je note"
+                valeur={etat.mode}
+                onChange={(mode) => setEtat({ ...etat, mode, cle: Date.now() })}
+                options={[
+                  { valeur: 'depense', libelle: 'Une dépense' },
+                  { valeur: 'epargne', libelle: 'De l’épargne' },
+                ]}
+              />
+            </div>
+          )}
+          {etat?.mode === 'epargne' ? (
+            <FormulaireVersement key={etat.cle} objectifId={etat.objectifId} onTermine={() => setEtat(null)} />
+          ) : (
+            etat && <FormulaireDepense key={etat.cle} initiale={etat.depense} dateProposee={etat.date} onTermine={() => setEtat(null)} onAutre={() => ouvrir()} />
+          )}
         </Panneau>
       )}
     </Contexte.Provider>

@@ -26,6 +26,7 @@ import type { z } from 'zod'
 import { ErreurApi, introuvable } from '../../lib/erreurs'
 import { versCharge, versDette, versPaiement, versPonctuel } from '../charges/conversion'
 import { versDepense } from '../depenses/conversion'
+import { versCompte, versMouvement, versObjectif } from '../epargne/conversion'
 import { bornesFigees } from '../mois/clotures'
 import { versRevenuRecu, versSource } from '../revenus/conversion'
 
@@ -115,7 +116,7 @@ export async function supprimerContrat(prisma: PrismaClient, utilisateurId: stri
 
 /** Charge tout ce qu'il faut au moteur pour calculer paies et mois du compte. */
 export async function chargerCalendrier(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile) {
-  const [contrats, paies, reglages, sources, recus, charges, ponctuels, dettes, paiementsDettes, depenses, moisClotures] = await Promise.all([
+  const [contrats, paies, reglages, sources, recus, charges, ponctuels, dettes, paiementsDettes, depenses, moisClotures, comptes, mouvements, objectifs] = await Promise.all([
     prisma.contratSalaire.findMany({ where: { utilisateurId } }),
     prisma.paie.findMany({ where: { utilisateurId }, include: { lignes: true } }),
     prisma.reglages.findUnique({ where: { utilisateurId } }),
@@ -127,7 +128,11 @@ export async function chargerCalendrier(prisma: PrismaClient, utilisateurId: str
     prisma.paiementDette.findMany({ where: { utilisateurId } }),
     prisma.depense.findMany({ where: { utilisateurId } }),
     bornesFigees(prisma, utilisateurId),
+    prisma.compteEpargne.findMany({ where: { utilisateurId }, orderBy: { creeLe: 'asc' } }),
+    prisma.mouvementEpargne.findMany({ where: { utilisateurId } }),
+    prisma.objectif.findMany({ where: { utilisateurId } }),
   ])
+  const epargne = { comptes: comptes.map(versCompte), mouvementsEpargne: mouvements.map(versMouvement), objectifs: objectifs.map(versObjectif) }
   return {
     calendrier: creerCalendrier({
       mode: (reglages?.modePeriode ?? 'cyclePaie') as ModePeriode,
@@ -141,8 +146,12 @@ export async function chargerCalendrier(prisma: PrismaClient, utilisateurId: str
       paiementsDettes: paiementsDettes.map(versPaiement),
       depenses: depenses.map(versDepense),
       moisClotures,
+      objectifs: epargne.objectifs,
+      mouvementsEpargne: epargne.mouvementsEpargne,
       aujourdhui,
     }),
+    /** Épargne et objectifs (lot 10), pour les projections. */
+    epargne,
     debutSemaine: reglages?.debutSemaine ?? 1,
     reportHebdo: reglages?.reportHebdo ?? false,
   }

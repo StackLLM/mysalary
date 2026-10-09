@@ -31,6 +31,9 @@ model Utilisateur {
   depenses          Depense[]
   clotures          ClotureMois[]
   journalClotures   JournalCloture[]
+  comptesEpargne    CompteEpargne[]
+  mouvementsEpargne MouvementEpargne[]
+  objectifs         Objectif[]
 }
 
 model Reglages {
@@ -293,4 +296,55 @@ model JournalCloture {
   le            DateTime    @default(now())
 
   @@index([utilisateurId, cle])
+}
+
+/// Compte d'épargne : solde déclaré (réel) à une date (R12).
+model CompteEpargne {
+  id            String             @id @default(cuid())
+  utilisateurId String
+  utilisateur   Utilisateur        @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  libelle       String
+  solde         Int
+  auLe          String
+  mouvements    MouvementEpargne[]
+  creeLe        DateTime           @default(now())
+  modifieLe     DateTime           @updatedAt
+}
+
+/// Versement (+), retrait (−) ou achat (objectif réalisé, R19) : réel, jamais une dépense (R11).
+model MouvementEpargne {
+  id            String        @id @default(cuid())
+  utilisateurId String
+  utilisateur   Utilisateur   @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  compteId      String
+  compte        CompteEpargne @relation(fields: [compteId], references: [id], onDelete: Restrict)
+  objectifId    String?
+  objectif      Objectif?     @relation(fields: [objectifId], references: [id], onDelete: SetNull)
+  type          String
+  date          String
+  montant       Int
+  libelle       String        @default("")
+  note          String?
+  creeLe        DateTime      @default(now())
+
+  @@index([utilisateurId, date])
+}
+
+/// Objectif d'épargne (R16) ; « atteint » se calcule, il n'est pas stocké.
+model Objectif {
+  id               String             @id @default(cuid())
+  utilisateurId    String
+  utilisateur      Utilisateur        @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  libelle          String
+  type             String             @default("autre")
+  montantCible     Int
+  montantInitial   Int                @default(0)
+  dateCible        String?
+  priorite         Int
+  versementMensuel Int?
+  statut           String             @default("actif")
+  realiseLe        String?
+  creeLe           DateTime           @default(now())
+  modifieLe        DateTime           @updatedAt
+  mouvements       MouvementEpargne[]
 }

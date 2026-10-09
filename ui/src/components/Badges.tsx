@@ -36,7 +36,7 @@ const RISQUES = {
 export function BadgeRisque({ risque, className }: { risque: Risque; className?: string }) {
   const { texte, style, Icone } = RISQUES[risque]
   return (
-    <span className={cn('inline-flex items-center gap-1 rounded-pilule px-2.5 py-1 text-mention', style, className)}>
+    <span className={cn('inline-flex items-center gap-1 whitespace-nowrap rounded-pilule px-2.5 py-1 text-mention', style, className)}>
       <Icone className="h-3.5 w-3.5" aria-hidden />
       {texte}
     </span>

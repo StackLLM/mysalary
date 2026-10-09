@@ -54,6 +54,8 @@ export interface SuiviSemaine extends Semaine {
   /** Réel : charges fixes, ponctuels et dettes payés dans la semaine. */
   chargesPayees: Centimes
   charges: ChargeDeSemaine[]
+  /** Réel : versements − retraits d'épargne de la semaine (jamais une dépense). */
+  epargne: Centimes
   tendance: TendanceSemaine | null
 }
 
@@ -159,6 +161,7 @@ export function suiviDesSemaines(calendrier: Calendrier, cle: CleMois, { debutSe
       chargesPrevues: somme(charges),
       chargesPayees: additionner(somme(sorties.depenses.filter((d) => !flexible(d.imputation))), somme(sorties.paiementsDettes)),
       charges,
+      epargne: calendrier.epargneEntre(s.debut, s.fin),
       tendance: tendance(s, joursEcoules, depense),
     }
   })

@@ -1,6 +1,7 @@
 import { additionner, centimes, repartir, soustraire, type Centimes } from './argent'
 import { chargeCeMois, dateDeCharge, enveloppeActive, etatDette, type Charge, type Dette, type EtatDette, type PaiementDette, type Ponctuel } from './charges'
 import { couvrir, somme, type Depense, type Imputation, type StatutCouverture } from './depenses'
+import { epargneNette, epargneObjectif, type MouvementEpargne, type Objectif } from './epargne'
 import {
   ajouterJours,
   decalerMois,
@@ -102,6 +103,17 @@ export interface DonneesCharges {
   depenses?: Depense[]
 }
 
+/** Une ligne d'épargne d'un mois : versement prévu à un objectif et/ou versements réels (R11 : jamais une dépense). */
+export interface LigneEpargne {
+  /** `null` : épargne libre (sans objectif). */
+  objectifId: string | null
+  libelle: string
+  /** Versement mensuel choisi (au plus le restant au début du mois) ; `null` si rien n'était prévu. */
+  prevu: Centimes | null
+  /** Versements − retraits du mois (réel). */
+  reel: Centimes
+}
+
 /** Bornes figées d'un mois clôturé. */
 export interface BornesFigees {
   cle: CleMois
@@ -168,8 +180,17 @@ export function creerCalendrier({
   paiementsDettes = [],
   depenses = [],
   moisClotures = [],
+  objectifs = [],
+  mouvementsEpargne = [],
   ...donnees
-}: DonneesSalaire & DonneesCharges & { mode: ModePeriode; revenusRecus?: RevenuRecu[]; moisClotures?: BornesFigees[] }) {
+}: DonneesSalaire &
+  DonneesCharges & {
+    mode: ModePeriode
+    revenusRecus?: RevenuRecu[]
+    moisClotures?: BornesFigees[]
+    objectifs?: Objectif[]
+    mouvementsEpargne?: MouvementEpargne[]
+  }) {
   const paies = creerCalendrierPaie(donnees)
   /** Sans contrat, le cycle de paie n'est pas défini : on retombe sur le mois civil. */
   const cycle = mode === 'cyclePaie' && paies.aContrat
@@ -455,6 +476,32 @@ export function creerCalendrier({
     }
   }
 
+  /**
+   * Épargne d'un mois budgétaire : par objectif, le versement mensuel prévu (objectif actif, créé avant la fin du mois,
+   * au plus ce qui restait à épargner au début du mois) et les versements réels ; l'épargne libre à part.
+   */
+  function epargneDuMois(cle: CleMois): { lignes: LigneEpargne[]; prevue: Centimes; reelle: Centimes } {
+    const periode = mois(cle)
+    const dans = (m: MouvementEpargne) => m.type !== 'achat' && m.date >= periode.debut && m.date <= periode.fin
+    const lignes: LigneEpargne[] = []
+    for (const o of [...objectifs].sort((a, b) => a.priorite - b.priorite)) {
+      const reel = additionner(...mouvementsEpargne.filter((m) => m.objectifId === o.id && dans(m)).map((m) => m.montant))
+      let prevu: Centimes | null = null
+      if (o.versementMensuel && o.statut === 'actif' && o.creeLe <= periode.fin) {
+        const restant = Math.max(0, o.montantCible - epargneObjectif(o, mouvementsEpargne, ajouterJours(periode.debut, -1)))
+        prevu = restant > 0 ? centimes(Math.min(o.versementMensuel, restant)) : null
+      }
+      if (prevu !== null || reel !== 0) lignes.push({ objectifId: o.id, libelle: o.libelle, prevu, reel })
+    }
+    const libre = additionner(...mouvementsEpargne.filter((m) => m.objectifId === null && dans(m)).map((m) => m.montant))
+    if (libre !== 0) lignes.push({ objectifId: null, libelle: 'Épargne libre', prevu: null, reel: libre })
+    return {
+      lignes,
+      prevue: additionner(...lignes.map((l) => l.prevu ?? centimes(0))),
+      reelle: epargneNette(mouvementsEpargne, periode.debut, periode.fin),
+    }
+  }
+
   /** Date de la première dépense notée : avant, aucune moyenne n'a de sens. */
   const debutSuivi: DateCivile | null = depenses.reduce<DateCivile | null>((min, d) => (min === null || d.date < min ? d.date : min), null)
 
@@ -468,6 +515,9 @@ export function creerCalendrier({
     echeancesDettes,
     sortiesEntre,
     debutSuivi,
+    epargneDuMois,
+    /** Épargne nette (réelle) entre deux dates incluses. */
+    epargneEntre: (du: DateCivile, au: DateCivile) => epargneNette(mouvementsEpargne, du, au),
     etatDette: (id: string) => etats.get(id) ?? null,
     /** Vrai si l'utilisateur a choisi le cycle de paie mais n'a pas encore de contrat. */
     sansContrat: mode === 'cyclePaie' && !paies.aContrat,

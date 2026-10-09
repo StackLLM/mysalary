@@ -191,6 +191,22 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
                 { libelle: 'Revenus reçus', valeur: <Montant valeur={totaux.revenusReels} />, fort: true },
                 { libelle: 'Sorties réelles', valeur: <Montant valeur={totaux.sortiesReelles} /> },
                 { libelle: 'Reste prévu', valeur: <Montant valeur={totaux.restePrevu} /> },
+                // L'épargne n'est pas une sortie (R11) : elle est montrée à part, prévue et réelle.
+                ...(bilan.epargne
+                  ? [
+                      {
+                        libelle: 'Épargne',
+                        valeur: (
+                          <>
+                            <Montant valeur={bilan.epargne.reelle} />
+                            <span className="text-gris"> / </span>
+                            <Montant valeur={bilan.epargne.prevue} className="text-gris" />
+                            <span className="text-mention text-gris"> prévu</span>
+                          </>
+                        ),
+                      },
+                    ]
+                  : []),
               ]}
               total={{ libelle: `Reste réel en ${court}`, valeur: <Montant valeur={totaux.resteReel} /> }}
             />

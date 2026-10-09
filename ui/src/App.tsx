@@ -8,6 +8,9 @@ import { Notifications } from './components/Notifications'
 import { PageAVenir } from './features/a-venir/PageAVenir'
 import { FournisseurSaisieRapide, useSaisieRapide } from './features/depenses/SaisieRapide'
 import { PageMois } from './features/mois/PageMois'
+import { PageEditionObjectif } from './features/objectifs/PageEditionObjectif'
+import { PageObjectif } from './features/objectifs/PageObjectif'
+import { PageObjectifs } from './features/objectifs/PageObjectifs'
 import { PagePlan } from './features/plan/PagePlan'
 import { PageProfils } from './features/profils/PageProfils'
 import { PageReglages } from './features/reglages/PageReglages'
@@ -56,7 +59,11 @@ function Vues() {
             <Route path="/reglages" element={compte(<PageReglages />)} />
             <Route path="/plan" element={compte(<PagePlan />)} />
             <Route path="/mois" element={compte(<PageMois />)} />
-            {DESTINATIONS.filter((d) => d.chemin !== '/plan' && d.chemin !== '/mois').map((d) => (
+            <Route path="/objectifs" element={compte(<PageObjectifs />)} />
+            <Route path="/objectifs/nouveau" element={compte(<PageEditionObjectif />)} />
+            <Route path="/objectifs/:id" element={compte(<PageObjectif />)} />
+            <Route path="/objectifs/:id/modifier" element={compte(<PageEditionObjectif />)} />
+            {DESTINATIONS.filter((d) => !['/plan', '/mois', '/objectifs'].includes(d.chemin)).map((d) => (
               <Route key={d.chemin} path={d.chemin} element={compte(<PageAVenir titre={d.libelle} lot={d.lot} />)} />
             ))}
             <Route path="*" element={<PageAVenir titre="Page introuvable" />} />

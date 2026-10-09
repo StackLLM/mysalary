@@ -9,6 +9,8 @@ import {
   moisDe,
   plafondPaiement,
   type Centimes,
+  type Charge,
+  type CleMois,
   type DateCivile,
   type GroupeCategorie,
 } from '@mysalary/moteur'
@@ -282,6 +284,10 @@ export async function supprimerPaiement(prisma: PrismaClient, utilisateurId: str
 
 // --- Résumé ---
 
+/** Charges encore en cours : sans fin, ou finissant ce mois-ci ou plus tard. */
+export const chargesActives = (charges: Charge[], aujourdhui: DateCivile, moisCourant: CleMois) =>
+  charges.filter((c) => !c.fin || c.fin >= (c.nature === 'fixe' ? moisDe(aujourdhui) : moisCourant))
+
 export async function resume(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile): Promise<ResumeChargesDto> {
   await assurerCategories(prisma, utilisateurId)
   const [{ calendrier }, categories, charges, dettes] = await Promise.all([
@@ -301,9 +307,7 @@ export async function resume(prisma: PrismaClient, utilisateurId: string, aujour
     parGroupe[groupe] = centimes(parGroupe[groupe] + l.montant)
   }
 
-  const actives = charges
-    .map(versCharge)
-    .filter((c) => !c.fin || c.fin >= (c.nature === 'fixe' ? moisDe(aujourdhui) : courant.cle))
+  const actives = chargesActives(charges.map(versCharge), aujourdhui, courant.cle)
   const somme = (liste: typeof actives) => additionner(...liste.map(equivalentMensuelCharge))
 
   return {
