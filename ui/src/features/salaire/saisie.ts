@@ -82,6 +82,12 @@ export function statutPaie(paie: PaieDto, aujourdhui: string, { court = false } 
 }
 
 /** Douze mois affichés : trois avant le mois courant, huit après, décalables par six. */
+/** « 2026-09 » → « Sept. 2026 » : le tableau des paies a 7 colonnes (cumul, lot 13). */
+export const moisAbrege = (cle: string) => {
+  const court = formaterDate(`${cle}-01`, 'court').replace(/^1 /, '')
+  return `${court.charAt(0).toUpperCase()}${court.slice(1)} ${cle.slice(0, 4)}`
+}
+
 export function fenetreMois(moisCourant: string, decalage: number): { du: string; au: string } {
   const du = decalerMois(lireCleMois(moisCourant), decalage - 3)
   return { du, au: decalerMois(du, 11) }

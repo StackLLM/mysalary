@@ -210,7 +210,8 @@ Règles appliquées à chaque lot :
 - **Livré** :
   - moteur `cumulDesMois` : report, revenus, charges, épargne, reste et cumul de fin de mois ; réel (passé), estimation (en cours), prévu en réaliste (futur) ;
   - solde de départ du compte courant au début d'un mois (Réglages › Compte courant), sinon 0 au premier mois suivi ;
-  - Mois › Vue d'ensemble : « Report / Solde de départ », « Reste du mois », « Cumul fin de mois » ; route `GET /cumul?du=&au=`.
+  - Mois › Vue d'ensemble : « Report / Solde de départ », « Reste du mois », « Cumul fin de mois » ; route `GET /cumul?du=&au=` ;
+  - Mon plan › Salaire : colonne « Cumul fin de mois » dans le tableau des Paies.
 - **Décision** : le cumul suppose que ce qui n'est pas versé à un objectif reste sur le compte ; les Objectifs supposent qu'il est épargné. Deux hypothèses, affichées comme telles.
 
 ## 4. Lots à venir (14 à 22)

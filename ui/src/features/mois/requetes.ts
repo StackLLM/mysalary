@@ -1,4 +1,4 @@
-import type { BilanDto, SaisieCloture, SemainesDto } from '@mysalary/partage'
+import type { BilanDto, CumulDto, SaisieCloture, SemainesDto } from '@mysalary/partage'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
@@ -17,6 +17,17 @@ export function useBilan(cle: string | null) {
     queryKey: [...mois, 'bilan', cle],
     queryFn: () => api.lire<BilanDto>(`/mois/${cle}/bilan`),
     enabled: actif && Boolean(cle),
+    placeholderData: keepPreviousData,
+  })
+}
+
+/** Cumul de mois en mois (lot 13) sur une plage : recalculé dès qu'un mois change. */
+export function useCumul(du: string, au: string) {
+  const { mois, actif } = useCles()
+  return useQuery({
+    queryKey: [...mois, 'cumul', du, au],
+    queryFn: () => api.lire<CumulDto>(`/cumul?du=${du}&au=${au}`),
+    enabled: actif,
     placeholderData: keepPreviousData,
   })
 }

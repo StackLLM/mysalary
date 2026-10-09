@@ -45,6 +45,7 @@ Migration `cumul_depart`. `revenusDuMois` est sorti de `capaciteDuMois` (même r
 ## Interface
 
 - **Mois › Vue d'ensemble** : sous le bandeau, trois cases — « Report de septembre » (ou « Solde de départ » au premier mois), « Reste du mois », « Cumul fin de mois » — et une phrase qui dit d'où vient le chiffre (réel, estimation, prévu). Un mois d'avant le suivi le dit.
+- **Mon plan › Salaire & primes, tableau des Paies** (ajouté à ta demande) : 5e colonne « Cumul fin de mois » ; réel en noir, estimation et prévu en gris italique (mot en infobulle, légende sous le tableau), « — » avant le début du suivi. Mois abrégés (« Sept. 2026 ») pour que rien ne soit coupé à 1342 px ; sous 1024 px, le tableau défile dans sa carte.
 - **Réglages › Compte courant** : mois (les 13 derniers) et solde ; « Enregistrer le solde », « Retirer », « Annuler » dans le toast.
 
 ## Tests
