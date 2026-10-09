@@ -1,7 +1,7 @@
 # MySalary — Progression
 
 > Suivi de la construction de MySalary, lot par lot. Mis à jour à chaque lot.
-> État au 08/10/2026 : **lots 0 à 7 clôturés et validés**, **lot 8 livré, en attente de validation**, lots 9 à 19 à venir.
+> État au 09/10/2026 : **lots 0 à 8 clôturés et validés**, **lot 9 livré, en attente de validation**, lots 10 à 19 à venir.
 >
 > - Plan global de l'application (vision, architecture, données, règles métier) : [`Plan.md`](../Plan.md), à la racine.
 > - Bilan détaillé de chaque lot livré (périmètre, règles, tests, bugs corrigés) : [`docs/lots/`](lots/).
@@ -18,9 +18,9 @@
 | 5 | [Autres revenus](#lot-5--autres-revenus) | 2 — Cœur métier | ✅ Clôturé | 07/10/2026 | 138 | [Lot-05-revenus.md](lots/Lot-05-revenus.md) |
 | 6 | [Charges, enveloppes, ponctuels, dettes](#lot-6--charges-enveloppes-ponctuels-dettes) | 2 — Cœur métier | ✅ Clôturé | 08/10/2026 | 166 | [Lot-06-charges-dettes.md](lots/Lot-06-charges-dettes.md) |
 | 7 | [Dépenses réelles](#lot-7--dépenses-réelles) | 2 — Cœur métier | ✅ Clôturé | 08/10/2026 | 194 | [Lot-07-depenses.md](lots/Lot-07-depenses.md) |
-| 8 | [Suivi mensuel](#lot-8--suivi-mensuel) | 2 — Cœur métier | 🟡 Livré, à valider | — | 209 | [Lot-08-suivi-mensuel.md](lots/Lot-08-suivi-mensuel.md) |
-| 9 | [Suivi hebdomadaire](#lot-9--suivi-hebdomadaire) | 2 — Cœur métier | ⏳ Prochain | — | — | — |
-| 10 | [Épargne & objectifs](#lot-10--épargne--objectifs) | 2 — Cœur métier | À venir | — | — | — |
+| 8 | [Suivi mensuel](#lot-8--suivi-mensuel) | 2 — Cœur métier | ✅ Clôturé | 09/10/2026 | 209 | [Lot-08-suivi-mensuel.md](lots/Lot-08-suivi-mensuel.md) |
+| 9 | [Suivi hebdomadaire](#lot-9--suivi-hebdomadaire) | 2 — Cœur métier | 🟡 Livré, à valider | — | 232 | [Lot-09-suivi-hebdomadaire.md](lots/Lot-09-suivi-hebdomadaire.md) |
+| 10 | [Épargne & objectifs](#lot-10--épargne--objectifs) | 2 — Cœur métier | ⏳ Prochain | — | — | — |
 | 11 | [Simulateur & scénarios](#lot-11--simulateur--scénarios) | 3 — Intelligence et vues | À venir | — | — | — |
 | 12 | [Recommandations & KPI](#lot-12--recommandations--kpi) | 3 — Intelligence et vues | À venir | — | — | — |
 | 13 | [Aujourd'hui](#lot-13--aujourdhui) | 3 — Intelligence et vues | À venir | — | — | — |
@@ -36,9 +36,9 @@
 Autres sections :
 
 - [1. Méthode et règles de travail](#1-méthode-et-règles-de-travail)
-- [2. Lots clôturés](#2-lots-clôturés-0-à-7)
+- [2. Lots clôturés](#2-lots-clôturés-0-à-8)
 - [3. Lot livré, en attente de validation](#3-lot-livré-en-attente-de-validation)
-- [4. Lots à venir](#4-lots-à-venir-9-à-19)
+- [4. Lots à venir](#4-lots-à-venir-10-à-19)
 - [5. Points reportés, rangés par lot](#5-points-reportés-rangés-par-lot)
 - [6. Historique des commits](#6-historique-des-commits)
 - [7. Questions ouvertes](#7-questions-ouvertes)
@@ -59,7 +59,7 @@ Règles appliquées à chaque lot :
 - Serveur et interface écoutent seulement sur `127.0.0.1` (ports 3010 et 6010).
 - Code versionné dans le dépôt privé `github.com/oussamaalmouallim/mysalary` : commits en anglais, au nom de l'auteur. Le dossier `Salaire/` (données personnelles réelles), la base SQLite, `.env` et `.claude/` ne sont jamais versionnés.
 
-## 2. Lots clôturés (0 à 7)
+## 2. Lots clôturés (0 à 8)
 
 ### Lot 0 — Cadrage
 
@@ -145,11 +145,9 @@ Règles appliquées à chaque lot :
   - en-tête compact entre 1024 et 1280 px.
 - **Écarts** : ajout du champ `echeance` à `Depense` ; les paiements de dettes restent saisis dans Mon plan › Dettes.
 
-## 3. Lot livré, en attente de validation
-
 ### Lot 8 — Suivi mensuel
 
-- **Statut** : 🟡 livré le 08/10/2026, en attente de validation · 209 tests · `docs/lots/Lot-08-suivi-mensuel.md`.
+- **Statut** : ✅ clôturé le 09/10/2026 · 209 tests · `docs/lots/Lot-08-suivi-mensuel.md`.
 - **Livré** :
   - Mois › Vue d'ensemble : reste réel et reste prévu séparés, écart d'un mois terminé, estimation de fin de mois pour le mois en cours (R23) ;
   - tableau prévu / réel / écart par ligne (paie, revenus à part et libres, charges fixes, enveloppes, ponctuels, échéances, hors plan), action « Payé » ou « Confirmer » ;
@@ -158,18 +156,21 @@ Règles appliquées à chaque lot :
   - lignes empilées sous 640 px ; boutons de clôture et de réouverture non rouges.
 - **Écarts** : le prévu d'une échéance de dette est le montant de l'échéancier ; les paiements faits un autre mois apparaissent sur une ligne dédiée (« Payé ce mois pour un autre mois » / « Déjà payé un autre mois »).
 
-## 4. Lots à venir (9 à 19)
+## 3. Lot livré, en attente de validation
 
 ### Lot 9 — Suivi hebdomadaire
 
-- **Objectif** : répondre à « Est-ce que je tiens ma semaine ? » (UX.md § 4.6, § 5.4).
-- **Périmètre prévu** :
-  - onglet Mois › Semaines (déjà présent, vide) : une ligne par semaine du mois budgétaire ;
-  - par semaine : budget flexible (enveloppes réparties au prorata des jours), charges prévues datées, dépenses réelles, reste, écart, tendance contre la moyenne des 4 semaines précédentes ;
-  - semaines partielles marquées (« 3 jours ») ; réponse en tête (« Oui, avec 340 DH d'avance ») ;
-  - report du reste d'une semaine sur la suivante, selon le réglage du lot 3 (désactivé par défaut) ;
-  - KPI « Reste flexible (semaine) » et montant par jour (`Plan.md` § 8) ; état vide sans enveloppe → lien vers Mon plan.
-- **S'appuie sur** : semaines et répartition (lot 4), enveloppes (lot 6), dépenses (lot 7).
+- **Statut** : 🟡 livré le 09/10/2026, en attente de validation · 232 tests · `docs/lots/Lot-09-suivi-hebdomadaire.md`.
+- **Livré** :
+  - Mois › Semaines : réponse en tête (« Oui, avec 340 DH d'avance » / « 120 DH au-dessus du rythme prévu »), budget flexible du mois, prévu à date, dépensé ;
+  - une ligne par semaine (lundi → dimanche, ou selon le réglage) : disponible, dépensé, reste, écart, tendance contre la moyenne des 4 semaines précédentes ; semaines partielles « 3 jours » au prorata des jours ;
+  - semaine ouverte : dépenses par jour (modifier), charges datées avec statut, « + Ajouter » daté dans la semaine ;
+  - KPI « Reste flexible (semaine) » et montant par jour ; report du reste sur la semaine suivante si le réglage est activé (jamais d'un mois à l'autre) ;
+  - état vide sans enveloppe → Mon plan ; semaines figées à la clôture du mois.
+- **Écarts** : le hors plan compte dans le flexible ; budgets au centime près (pas d'arrondi caché) ; les mois clôturés avant le lot 9 n'ont pas de semaines figées.
+- **Corrigé en passant** : un réglage modifié rafraîchit les mois affichés ; détail d'une dépense sans répétition de la catégorie ; dossiers `salaire` du code jamais versionnés à cause de la règle `Salaire/` du `.gitignore` (règle ancrée à la racine, dossiers ajoutés, clone propre vérifié).
+
+## 4. Lots à venir (10 à 19)
 
 ### Lot 10 — Épargne & objectifs
 
@@ -254,15 +255,16 @@ Tout ce qu'un lot livré a laissé de côté, et le lot qui doit le reprendre.
 
 | Point | Noté au | Lot prévu |
 |---|---|---|
-| Budget hebdomadaire et montant par jour | lot 4 | 9 |
-| Report du reste d'une semaine (réglage déjà présent) | lot 3 | 9 |
 | Lignes d'épargne dans le bilan mensuel | lot 8 | 10 |
 | Saisie rapide d'un versement d'objectif | lot 7 | 10 |
+| Épargne par semaine dans Mois › Semaines | lot 9 | 10 |
 | Scénarios complets (moyenne réelle des dépenses en prudent, règles modifiables) | lot 5 | 11 |
 | Règles des scénarios dans les Réglages | lot 3 | 11 |
 | Cloche des notifications (aujourd'hui sans effet) | lot 2 | 12 |
+| Alerte « budget flexible de la semaine dépassé » | lot 9 | 12 |
 | Carte « Paie prévue aujourd'hui » | lot 4 | 13 |
 | Saisie rapide d'un revenu reçu | lot 7 | 13 |
+| Bilan de la semaine passée sur Aujourd'hui, le lundi | lot 9 | 13 |
 | Calendrier des revenus et des charges | lot 5 | 14 |
 | Graphique annuel | lot 8 | 15 |
 | Export avant suppression d'un compte ; réinitialisation d'un compte | lot 3 | 17 |
@@ -291,6 +293,9 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `c02afe2` | Lot 7 : dépenses réelles |
 | `2ec4ea6` | Lot 8 : suivi mensuel et clôture |
 | `420b1dd` | Plan : sommaire des lots et points reportés |
+| `77d42e4` | Suivi des lots déplacé dans `docs/plan.md` |
+| `eb66ce2` | Lot 9 : suivi hebdomadaire |
+| `b6416bc` | Correctif : modules `salaire` versionnés (règle `.gitignore` ancrée à la racine) |
 
 ## 7. Questions ouvertes
 
