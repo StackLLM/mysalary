@@ -1,4 +1,4 @@
-import type { Alerte, Confiance, DateCivile, IndicateursDuMois, Recommandation, Risque } from '@mysalary/moteur'
+import type { Alerte, Confiance, DateCivile, EvenementJour, IndicateursDuMois, Recommandation, Risque, SuiviSemaine } from '@mysalary/moteur'
 import { deMois, formaterDate, formaterMois, formaterMontant } from './format'
 
 export type { Alerte, Confiance, EcartPlan, IndicateurObjectif, IndicateursDuMois, PartVariable, Recommandation, ResteADepenser, ResteSemaine, Taux } from '@mysalary/moteur'
@@ -36,6 +36,25 @@ export interface ConseilsDto {
 
 export interface IndicateursDto extends IndicateursDuMois {
   aujourdhui: DateCivile
+}
+
+/**
+ * Page Aujourd'hui (lot 16, UX.md § 5.2) : tout « où j'en suis » en une lecture.
+ * Les chiffres viennent du moteur (indicateurs, alertes, recommandations, prochains jours, semaine passée).
+ */
+export interface AujourdhuiDto {
+  aujourdhui: DateCivile
+  /** Aucun salaire défini : la page invite à l'ajouter (état vide). */
+  sansContrat: boolean
+  indicateurs: IndicateursDuMois
+  /** Ce qui demande une action (paie à confirmer, échéance en retard…). */
+  alertes: AlerteDto[]
+  /** 1 à 3 recommandations. */
+  recommandations: RecommandationDto[]
+  /** 7 prochains jours : revenus et charges datés. */
+  prochainsJours: EvenementJour[]
+  /** Le premier jour d'une semaine : bilan de la semaine qui vient de finir. */
+  semainePassee: SuiviSemaine | null
 }
 
 export const CONFIANCES: Record<Confiance, { libelle: string; explication: string }> = {

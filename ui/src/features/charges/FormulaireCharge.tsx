@@ -1,5 +1,5 @@
-import type { FrequenceCharge, NatureCharge, RepartitionEnveloppe } from '@mysalary/moteur'
-import { CERTITUDES, formaterMois, type ChargeDto, type PonctuelDto, type SaisieCharge, type SaisiePonctuel } from '@mysalary/partage'
+import { budgetEnveloppe, centimes, type FrequenceCharge, type NatureCharge, type UniteEnveloppe } from '@mysalary/moteur'
+import { CERTITUDES, formaterMois, formaterMontant, type ChargeDto, type PonctuelDto, type SaisieCharge, type SaisiePonctuel } from '@mysalary/partage'
 import type { Certitude } from '@mysalary/moteur'
 import { useState, type FormEvent } from 'react'
 import { Bouton } from '../../components/Bouton'
@@ -10,7 +10,7 @@ import { ErreurApi } from '../../lib/api'
 import { CERTITUDES_INFO } from '../revenus/saisie'
 import { lireMontant, moisProposes, versSaisie } from '../salaire/saisie'
 import { ChampCategorie } from './ChampCategorie'
-import { apercuRepartition, REPARTITIONS } from './saisie'
+import { UNITES } from './saisie'
 
 const FREQUENCES: { valeur: FrequenceCharge; libelle: string }[] = [
   { valeur: 'mensuelle', libelle: 'Chaque mois' },
@@ -37,7 +37,7 @@ interface ProprietesCharge {
   aujourdhui: string
   /** Mois budgétaire en cours : début proposé pour une enveloppe. */
   moisCourant: string
-  /** Jours du mois budgétaire en cours : aperçu de la division d'une enveloppe. */
+  /** Jours du mois budgétaire en cours : total du mois d'une enveloppe saisie par semaine ou par jour. */
   nbJours?: number
   chargement?: boolean
   onEnregistrer: (saisie: SaisieCharge) => Promise<unknown>
@@ -55,7 +55,7 @@ export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, nbJ
   const [debut, setDebut] = useState<string>(initial?.debut ?? (fixe ? aujourdhui.slice(0, 7) : moisCourant))
   const [fin, setFin] = useState<string>(initial?.fin ?? '')
   const [essentielle, setEssentielle] = useState(initial?.essentielle ?? fixe)
-  const [repartition, setRepartition] = useState<RepartitionEnveloppe>(initial?.repartition ?? 'jour')
+  const [unite, setUnite] = useState<UniteEnveloppe>(initial?.unite ?? 'mois')
   const [erreurs, setErreurs] = useState<Record<string, string>>({})
 
   async function soumettre(e: FormEvent) {
@@ -83,7 +83,7 @@ export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, nbJ
         debut,
         fin: fin || null,
         essentielle,
-        repartition: fixe ? 'jour' : repartition,
+        unite: fixe ? 'mois' : unite,
       })
     } catch (erreur) {
       setErreurs(erreursDe(erreur))
@@ -101,37 +101,29 @@ export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, nbJ
       />
       <ChampCategorie valeur={categorieId} onChange={setCategorieId} erreur={erreurs.categorieId} />
 
-      <div className="grid gap-5 sm:grid-cols-2">
+      {!fixe && (
+        <Choix
+          libelle="Je fixe mon budget"
+          valeur={unite}
+          onChange={setUnite}
+          options={(['mois', 'semaine', 'jour'] as const).map((u) => ({ valeur: u, libelle: UNITES[u].libelle }))}
+        />
+      )}
+
+      {/* Enveloppe : le montant prend toute la largeur, pour que l'explication et le total du mois restent lisibles. */}
+      <div className={fixe ? 'grid gap-5 sm:grid-cols-2' : 'grid gap-5'}>
         <ChampMontant
-          libelle={fixe ? 'Montant' : 'Budget par mois'}
-          placeholder={fixe ? '100' : '1 500'}
+          libelle={fixe ? 'Montant' : UNITES[unite].champ}
+          placeholder={fixe ? '100' : unite === 'jour' ? '50' : unite === 'semaine' ? '350' : '1 500'}
           value={montant}
           onChange={(e) => setMontant(e.target.value)}
           erreur={erreurs.montant}
-          aide={fixe ? undefined : 'Pour un mois budgétaire, de paie à paie.'}
+          aide={fixe ? undefined : <AideBudget montant={montant} unite={unite} nbJours={nbJours} />}
         />
         {fixe && (
           <Champ libelle="Jour du paiement" type="number" inputMode="numeric" min={1} max={31} value={jour} onChange={(e) => setJour(e.target.value)} erreur={erreurs.jour} aide="31 = dernier jour du mois." />
         )}
       </div>
-
-      {!fixe && (
-        <Choix
-          libelle="Diviser le budget"
-          valeur={repartition}
-          onChange={setRepartition}
-          options={(['jour', 'semaine'] as const).map((r) => ({ valeur: r, libelle: REPARTITIONS[r].libelle }))}
-          aide={
-            <>
-              {REPARTITIONS[repartition].explication}
-              {(() => {
-                const lu = lireMontant(montant)
-                return 'valeur' in lu && lu.valeur > 0 ? <span className="font-semibold text-encre-2"> {apercuRepartition(lu.valeur, repartition, nbJours)} ce mois-ci.</span> : null
-              })()}
-            </>
-          }
-        />
-      )}
 
       {fixe && (
         <Selection libelle="Fréquence" value={frequence} onChange={(e) => setFrequence(e.target.value as FrequenceCharge)}>
@@ -225,5 +217,21 @@ export function FormulairePonctuel({ initial, aujourdhui, chargement, onEnregist
         {initial ? 'Enregistrer les changements' : 'Ajouter ce ponctuel'}
       </Bouton>
     </form>
+  )
+}
+
+/** Sous le montant d'une enveloppe : ce que veut dire l'unité, et le total qui en découle sur le mois en cours (somme, jamais une division). */
+function AideBudget({ montant, unite, nbJours }: { montant: string; unite: UniteEnveloppe; nbJours: number }) {
+  const lu = lireMontant(montant)
+  const total = unite !== 'mois' && 'valeur' in lu && lu.valeur > 0 ? budgetEnveloppe({ montant: centimes(lu.valeur), unite }, nbJours) : null
+  return (
+    <>
+      {UNITES[unite].explication}
+      {total !== null && (
+        <span className="block font-semibold text-encre-2">
+          Soit {formaterMontant(total)} sur ce mois ({nbJours} jours{unite === 'semaine' ? ', semaines coupées par le mois au prorata de leurs jours' : ''}).
+        </span>
+      )}
+    </>
   )
 }

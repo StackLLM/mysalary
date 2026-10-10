@@ -1,6 +1,6 @@
 # Lot 15 — Semaines en cartes
 
-> Statut : **livré** (10/10/2026), en attente de validation. Demande du 09/10/2026 : « améliore l'UI de la vue semaine par semaine, sur la même idée que le calendrier : chaque semaine porte ses infos sur sa carte, et un clic montre ce qu'on doit voir ».
+> Statut : **clôturé** le 11/10/2026 (livré le 10/10/2026). Demande du 09/10/2026 : « améliore l'UI de la vue semaine par semaine, sur la même idée que le calendrier : chaque semaine porte ses infos sur sa carte, et un clic montre ce qu'on doit voir ».
 
 ## Objectif
 
@@ -63,14 +63,16 @@ Compte « Essai » (supprimé ensuite), octobre 2026, enveloppes courses 1 500 D
 - [x] Prévu et réel toujours nommés, jamais par la couleur seule.
 - [x] Vérifié à 1342 px et 375 px.
 
-## Ajout du 11/10/2026 : diviser une enveloppe par jour ou par semaine
+## Ajout du 11/10/2026 : budget d'enveloppe fixé par mois, par semaine ou par jour
 
-Demande : « pour les enveloppes, l'utilisateur règle la division de leur montant : par jour ou par semaine ».
+Demande : « le montant, c'est l'utilisateur qui le règle ; ne laisse pas le système diviser le montant de l'enveloppe ; c'est l'utilisateur qui choisit pour la semaine et pour le jour ». (Une première version qui divisait le budget du mois par jour ou par semaine a été remplacée.)
 
-- **Mon plan › Charges & enveloppes** : dans le formulaire d'une enveloppe, « Diviser le budget : Par jour / Par semaine », avec l'explication et un aperçu (« ≈ 338,70 DH par semaine ce mois-ci »). Le tableau a une colonne « Division » (« Par semaine · ≈ 338,70 / sem. »).
-- **Par jour** (comme avant) : le budget arrive un peu chaque jour ; le prévu à date et l'écart suivent les jours écoulés.
-- **Par semaine** : chaque semaine reçoit sa part (au prorata de ses jours dans le mois), disponible en entier dès son premier jour. Le lundi, toute la semaine est déjà là.
-- **Le total du mois ne change pas** ; seul le rythme change : prévu à date, écart, réponse « Est-ce que je tiens mon budget ? », repère de la barre de la semaine en cours, courbe du rythme du mois et KPI d'écart. Les enveloppes par jour et par semaine se mélangent.
-- **Données** : `Charge.repartition` (« jour » par défaut, migration `enveloppe_repartition`, charges existantes inchangées) ; une charge fixe reste « jour ». Moteur : `budgetEnveloppesParJour`, utilisé par les semaines et le rythme du mois.
-- **Tests** : moteur (même budget par semaine, disponible dès le premier jour, mélange, rythme), serveur (enregistrement, semaines, rythme, valeur refusée), interface (choix et aperçu, envoi).
-
+- **Mon plan › Charges & enveloppes**, formulaire d'une enveloppe : « Je fixe mon budget : Par mois / Par semaine / Par jour ». Le champ suit (« Budget par semaine ») ; dessous, l'explication et le total qui en découle sur le mois en cours, par addition (« Soit 1 550 DH sur ce mois (31 jours…) »).
+- **Tableau des enveloppes** : « Budget » (le montant saisi, « 350 DH / sem. ») et « Ce mois » (le total du mois en cours).
+- **Règles (moteur, `budgetEnveloppe`)** — MySalary additionne, il ne divise jamais le montant saisi :
+  - par jour : le montant chaque jour ; budget du mois = montant × jours du mois ;
+  - par semaine : le montant chaque semaine complète, disponible dès son premier jour ; une semaine coupée par le début ou la fin du mois budgétaire reçoit ses seuls jours (montant × jours ÷ 7), pour ne pas compter deux fois une semaine à cheval sur deux mois ;
+  - par mois (par défaut, comme avant) : le montant du mois, qui arrive au fil des jours dans le suivi de la semaine.
+- **Partout** : semaines (budget, disponible, écart, repère de la barre), rythme du mois, bilan, cumul, résumé des charges et fonds de sécurité utilisent ce budget du mois.
+- **Données** : `Charge.unite` (« mois » par défaut) remplace `repartition` (migration `enveloppe_unite`, écrite à la main : copie de toutes les charges, montants inchangés, unité « mois »). Une charge fixe reste « mois ».
+- **Tests** : moteur (par semaine, par jour, mélange, rythme, budget du mois, équivalent mensuel), serveur (enregistrement, liste, semaines, rythme, unité refusée), interface (choix, champ, total du mois, envoi). 343 tests au total.

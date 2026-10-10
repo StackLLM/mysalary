@@ -1,5 +1,5 @@
 import { additionner, centimes, repartir, soustraire, type Centimes } from './argent'
-import { chargeCeMois, dateDeCharge, enveloppeActive, etatDette, type Charge, type RepartitionEnveloppe, type Dette, type EtatDette, type PaiementDette, type Ponctuel } from './charges'
+import { budgetEnveloppe, chargeCeMois, dateDeCharge, enveloppeActive, etatDette, type Charge, type UniteEnveloppe, type Dette, type EtatDette, type PaiementDette, type Ponctuel } from './charges'
 import { couvrir, somme, type Depense, type Imputation, type StatutCouverture } from './depenses'
 import { epargneNette, epargneObjectif, type MouvementEpargne, type Objectif } from './epargne'
 import {
@@ -149,8 +149,10 @@ export interface SuiviEnveloppe {
   depense: Centimes
   /** Budget − dépensé ; négatif si dépassé. */
   reste: Centimes
-  /** Division du budget dans le mois : par jour ou par semaine. */
-  repartition: RepartitionEnveloppe
+  /** Unité du montant saisi (le budget du mois en est la somme) : par mois, par semaine ou par jour. */
+  unite: UniteEnveloppe
+  /** Montant saisi, dans son unité. */
+  montantSaisi: Centimes
 }
 
 export interface DepenseImputee extends Depense {
@@ -320,7 +322,7 @@ export function creerCalendrier({
     for (const c of charges) {
       if (c.nature === 'enveloppe') {
         if (enveloppeActive(c, cle)) {
-          lignes.push({ origine: 'enveloppe', id: c.id, libelle: c.libelle, categorieId: c.categorieId, date: null, montant: c.montant, essentielle: c.essentielle, certitude: 'garanti' })
+          lignes.push({ origine: 'enveloppe', id: c.id, libelle: c.libelle, categorieId: c.categorieId, date: null, montant: budgetEnveloppe(c, periode.nbJours), essentielle: c.essentielle, certitude: 'garanti' })
         }
         continue
       }
@@ -415,7 +417,8 @@ export function creerCalendrier({
       .filter((c) => c.nature === 'enveloppe' && enveloppeActive(c, cle))
       .map((c) => {
         const depense = somme(reelles.filter((d) => d.chargeId === c.id))
-        return { id: c.id, libelle: c.libelle, categorieId: c.categorieId, budget: c.montant, depense, reste: soustraire(c.montant, depense), repartition: c.repartition ?? 'jour' }
+        const budget = budgetEnveloppe(c, periode.nbJours)
+        return { id: c.id, libelle: c.libelle, categorieId: c.categorieId, budget, depense, reste: soustraire(budget, depense), unite: c.unite ?? 'mois', montantSaisi: c.montant }
       })
 
     const paiements = paiementsDettes.filter((p) => parDette.has(p.detteId) && dans(p.date)).sort((a, b) => b.date.localeCompare(a.date))

@@ -1,4 +1,4 @@
-import type { ChargeDto, ChargePrevue, Echeance, GroupeCategorie, RepartitionEnveloppe } from '@mysalary/partage'
+import type { ChargeDto, ChargePrevue, Echeance, GroupeCategorie, UniteEnveloppe } from '@mysalary/partage'
 import { centimes, echeancier, estDateCivile } from '@mysalary/moteur'
 import { formaterDate, formaterMois, formaterMontant } from '@mysalary/partage'
 import type { Ton } from '../salaire/saisie'
@@ -51,22 +51,14 @@ export function libelleFinDette(etat: { soldee: boolean; finPrevue: string | nul
 /** Part d'un total, entre 0 et 1 (barres de progression et de répartition). */
 export const part = (valeur: number, total: number) => (total > 0 ? Math.min(1, Math.max(0, valeur / total)) : 0)
 
-/** Budget d'une enveloppe par jour du mois budgétaire, arrondi au centime inférieur (indicatif). */
-export const montantParJour = (montant: number, nbJours: number) => (nbJours > 0 ? Math.floor(montant / nbJours) : 0)
-
-/** Budget d'une enveloppe pour une semaine complète (7 jours) du mois budgétaire, arrondi au centime inférieur (indicatif). */
-export const montantParSemaine = (montant: number, nbJours: number) => (nbJours > 0 ? Math.floor((montant * 7) / nbJours) : 0)
-
-/** Division du budget d'une enveloppe, en mots (Mon plan › Charges). */
-export const REPARTITIONS: Record<RepartitionEnveloppe, { libelle: string; unite: string; court: string; explication: string }> = {
-  jour: { libelle: 'Par jour', unite: 'jour', court: 'j', explication: 'Le budget arrive un peu chaque jour : le rythme de la semaine suit les jours écoulés.' },
-  semaine: { libelle: 'Par semaine', unite: 'semaine', court: 'sem.', explication: 'La part de chaque semaine est disponible en entier dès son premier jour.' },
-}
-
-/** Aperçu de la division : « ≈ 48,38 DH par jour » ou « ≈ 338,70 DH par semaine ». */
-export function apercuRepartition(montant: number, repartition: RepartitionEnveloppe, nbJours: number): string {
-  const valeur = repartition === 'semaine' ? montantParSemaine(montant, nbJours) : montantParJour(montant, nbJours)
-  return `≈ ${formaterMontant(valeur)} par ${REPARTITIONS[repartition].unite}`
+/**
+ * Unité du budget d'une enveloppe, choisie par l'utilisateur (Mon plan › Charges).
+ * MySalary ne divise pas ce montant : il l'additionne sur les jours ou les semaines du mois.
+ */
+export const UNITES: Record<UniteEnveloppe, { libelle: string; champ: string; court: string; explication: string }> = {
+  mois: { libelle: 'Par mois', champ: 'Budget par mois', court: 'mois', explication: 'Pour un mois budgétaire, de paie à paie. Le suivi de la semaine le voit arriver au fil des jours.' },
+  semaine: { libelle: 'Par semaine', champ: 'Budget par semaine', court: 'sem.', explication: 'Disponible en entier dès le premier jour de chaque semaine.' },
+  jour: { libelle: 'Par jour', champ: 'Budget par jour', court: 'jour', explication: 'Disponible chaque jour.' },
 }
 
 export const dateOuMois = (l: ChargePrevue) => (l.date ? formaterDate(l.date, 'court') : 'Tout le mois')

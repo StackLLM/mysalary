@@ -165,7 +165,7 @@ function Semaines({
               titre="Semaine par semaine"
               sousTitre={
                 <>
-                  Tes enveloppes réparties par jour ou par semaine, face à ce que tu as <span className="font-semibold text-encre-2">vraiment</span> dépensé. Ouvre une semaine pour son détail.
+                  Tes enveloppes semaine par semaine, face à ce que tu as <span className="font-semibold text-encre-2">vraiment</span> dépensé. Ouvre une semaine pour son détail.
                 </>
               }
             />
@@ -610,7 +610,7 @@ function CarteCalcul({ donnees }: { donnees: SemainesDto }) {
   return (
     <Carte titre="Sur quoi repose ce calcul ?">
       <ul className="flex list-disc flex-col gap-2 pl-4 text-texte-sm text-gris">
-        <li>Le budget flexible, ce sont tes enveloppes du mois. Chacune est divisée par jour (le budget arrive chaque jour) ou par semaine (la part de la semaine est là dès son premier jour), selon son réglage dans Mon plan › Charges. Une semaine de 3 jours reçoit 3 jours de budget.</li>
+        <li>Le budget flexible, ce sont tes enveloppes, avec le montant que tu as fixé dans Mon plan › Charges : par semaine (disponible dès le premier jour de la semaine), par jour, ou par mois (qui arrive au fil des jours). Une semaine coupée par le début ou la fin du mois reçoit ses seuls jours.</li>
         <li>Le dépensé compte les dépenses liées à une enveloppe et les dépenses hors plan. Les charges fixes et les dettes sont à part.</li>
         <li>La tendance compare ton dépensé par jour à la moyenne des 4 semaines précédentes.</li>
         <li>

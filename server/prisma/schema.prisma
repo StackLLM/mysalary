@@ -190,8 +190,8 @@ model Charge {
   debut         String
   fin           String?
   essentielle   Boolean     @default(false)
-  /// Enveloppe : division du montant dans le mois, « jour » ou « semaine ».
-  repartition   String      @default("jour")
+  /// Enveloppe : unité du montant saisi, « mois », « semaine » ou « jour » (MySalary additionne, sans diviser).
+  unite         String      @default("mois")
   depenses      Depense[]
   creeLe        DateTime    @default(now())
   modifieLe     DateTime    @updatedAt

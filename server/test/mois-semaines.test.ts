@@ -53,26 +53,30 @@ describe('semaines du mois', () => {
     expect(s.reponse).toEqual({ type: 'retard', montant: 5_000 })
   })
 
-  it('enveloppe divisée par semaine : la part de la semaine est là dès son premier jour (semaines et rythme du mois)', async () => {
+  it('montant d’enveloppe saisi par semaine ou par jour : additionné, disponible dès le début de la semaine', async () => {
     const { id, cat, courses } = await compte()
-    await ok(id, 'PUT', `/charges/${courses}`, { libelle: 'Courses', categorieId: cat('Alimentation'), nature: 'enveloppe', montant: 310_000, debut: '2027-01', repartition: 'semaine' })
+    // 700 DH par semaine, saisis par l'utilisateur.
+    await ok(id, 'PUT', `/charges/${courses}`, { libelle: 'Courses', categorieId: cat('Alimentation'), nature: 'enveloppe', montant: 70_000, unite: 'semaine', debut: '2027-01' })
+    const transport = (await ok(id, 'POST', '/charges', { libelle: 'Transport', categorieId: cat('Transport'), nature: 'enveloppe', montant: 1_000, unite: 'jour', debut: '2027-01' })).id
     const charges = (await appeler(id, 'GET', '/charges')).json() as ChargeDto[]
-    expect(charges.find((c) => c.id === courses)).toMatchObject({ repartition: 'semaine' })
+    expect(charges.find((c) => c.id === courses)).toMatchObject({ montant: 70_000, unite: 'semaine', equivalentMensuel: 310_000 })
+    expect(charges.find((c) => c.id === transport)).toMatchObject({ montant: 1_000, unite: 'jour', equivalentMensuel: 31_000 })
+
     const s = await semaines(id)
-    // Mêmes budgets par semaine ; semaine en cours (3 jours écoulés) : ses 700 DH comptent déjà.
-    expect(s.semaines.map((x) => x.budget)).toEqual([10_000, 70_000, 70_000, 70_000, 70_000, 20_000])
-    expect(s.semaines[2]).toMatchObject({ statut: 'enCours', ecart: 65_000 })
-    expect(s.budgetADate).toBe(150_000)
-    expect(s.reponse).toEqual({ type: 'avance', montant: 35_000 })
+    // Courses : 700 DH par semaine complète (semaines coupées par le mois : leurs jours) ; transport : 10 DH par jour.
+    expect(s.semaines.map((x) => x.budget)).toEqual([11_000, 77_000, 77_000, 77_000, 77_000, 22_000])
+    expect(s.budget).toBe(341_000)
+    // Semaine en cours, 3 jours écoulés : 700 DH de courses déjà là + 3 jours de transport.
+    expect(s.semaines[2]).toMatchObject({ statut: 'enCours', ecart: 73_000 - 5_000 })
     const bilan = (await appeler(id, 'GET', '/mois/2027-01/bilan')).json() as BilanDto
     const jour = (date: string) => bilan.rythme.find((p) => p.date === date)!.prevu
-    expect(jour('2027-01-04') - jour('2027-01-03')).toBe(70_000)
-    expect(jour('2027-01-05') - jour('2027-01-04')).toBe(0)
+    expect(jour('2027-01-04') - jour('2027-01-03')).toBe(71_000)
+    expect(jour('2027-01-05') - jour('2027-01-04')).toBe(1_000)
 
-    // Une charge fixe n'a pas de division : toujours « jour ».
-    const loyer = (await ok(id, 'POST', '/charges', { libelle: 'Loyer', categorieId: cat('Logement'), nature: 'fixe', montant: 350_000, jour: 5, debut: '2027-01', repartition: 'semaine' })).id
-    expect(((await appeler(id, 'GET', '/charges')).json() as ChargeDto[]).find((c) => c.id === loyer)).toMatchObject({ repartition: 'jour' })
-    expect((await appeler(id, 'POST', '/charges', { libelle: 'X', categorieId: cat('Loisirs'), nature: 'enveloppe', montant: 1_000, debut: '2027-01', repartition: 'mois' })).statusCode).toBe(400)
+    // Une charge fixe n'a pas d'unité : toujours « mois ». Unité inconnue refusée.
+    const loyer = (await ok(id, 'POST', '/charges', { libelle: 'Loyer', categorieId: cat('Logement'), nature: 'fixe', montant: 350_000, jour: 5, debut: '2027-01', unite: 'semaine' })).id
+    expect(((await appeler(id, 'GET', '/charges')).json() as ChargeDto[]).find((c) => c.id === loyer)).toMatchObject({ unite: 'mois' })
+    expect((await appeler(id, 'POST', '/charges', { libelle: 'X', categorieId: cat('Loisirs'), nature: 'enveloppe', montant: 1_000, debut: '2027-01', unite: 'annee' })).statusCode).toBe(400)
   })
 
   it('suit le début de semaine et le report des réglages', async () => {

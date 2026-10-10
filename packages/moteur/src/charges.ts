@@ -19,18 +19,18 @@ export const FREQUENCES_CHARGE = ['mensuelle', 'trimestrielle', 'annuelle', 'moi
 export type FrequenceCharge = (typeof FREQUENCES_CHARGE)[number]
 
 /**
- * Division du montant d'une enveloppe dans le mois : `jour` (le budget arrive jour après jour)
- * ou `semaine` (la part de chaque semaine est disponible dès son premier jour).
+ * Unité du montant d'une enveloppe, choisie par l'utilisateur : budget par mois, par semaine ou par jour.
+ * MySalary ne divise jamais ce montant : il l'additionne sur les jours et les semaines du mois.
  */
-export const REPARTITIONS_ENVELOPPE = ['jour', 'semaine'] as const
-export type RepartitionEnveloppe = (typeof REPARTITIONS_ENVELOPPE)[number]
+export const UNITES_ENVELOPPE = ['mois', 'semaine', 'jour'] as const
+export type UniteEnveloppe = (typeof UNITES_ENVELOPPE)[number]
 
 export interface Charge {
   id: string
   libelle: string
   categorieId: string
   nature: NatureCharge
-  /** Par versement (fixe) ou par mois budgétaire (enveloppe). */
+  /** Par versement (fixe) ; enveloppe : par mois, par semaine ou par jour selon `unite`. */
   montant: Centimes
   /** Fixe seulement ; une enveloppe est toujours mensuelle. */
   frequence: FrequenceCharge
@@ -41,8 +41,8 @@ export interface Charge {
   debut: CleMois
   fin: CleMois | null
   essentielle: boolean
-  /** Enveloppe seulement ; `jour` si absent. */
-  repartition?: RepartitionEnveloppe
+  /** Enveloppe seulement : unité du montant saisi ; `mois` si absent. */
+  unite?: UniteEnveloppe
 }
 
 export interface Ponctuel {
@@ -85,9 +85,24 @@ export function enveloppeActive(charge: Pick<Charge, 'debut' | 'fin'>, moisBudge
 
 const VERSEMENTS_PAR_AN: Record<Exclude<FrequenceCharge, 'moisChoisis'>, number> = { mensuelle: 12, trimestrielle: 4, annuelle: 1 }
 
-/** Équivalent mensuel d'une charge fixe ; une enveloppe vaut son montant. */
-export function equivalentMensuelCharge(charge: Pick<Charge, 'nature' | 'montant' | 'frequence' | 'mois'>): Centimes {
-  if (charge.nature === 'enveloppe') return charge.montant
+/** Jours d'un mois moyen (365 / 12) : équivalent mensuel d'une enveloppe hors d'un mois précis. */
+export const JOURS_MOIS_MOYEN = 365 / 12
+
+/**
+ * Budget d'une enveloppe pour un mois budgétaire de `nbJours` jours, à partir du montant saisi :
+ * par mois, tel quel ; par jour, montant × jours ; par semaine, montant par semaine complète
+ * (les semaines coupées par le début ou la fin du mois reçoivent leurs jours : montant × jours ÷ 7).
+ */
+export function budgetEnveloppe(charge: Pick<Charge, 'montant' | 'unite'>, nbJours: number): Centimes {
+  const unite = charge.unite ?? 'mois'
+  if (unite === 'jour') return centimes(Math.round(charge.montant * nbJours))
+  if (unite === 'semaine') return centimes(Math.round((charge.montant * nbJours) / 7))
+  return charge.montant
+}
+
+/** Équivalent mensuel d'une charge fixe ; une enveloppe : son budget sur un mois (moyen, ou de `nbJours` jours). */
+export function equivalentMensuelCharge(charge: Pick<Charge, 'nature' | 'montant' | 'frequence' | 'mois' | 'unite'>, nbJours = JOURS_MOIS_MOYEN): Centimes {
+  if (charge.nature === 'enveloppe') return budgetEnveloppe(charge, nbJours)
   const parAn = charge.frequence === 'moisChoisis' ? charge.mois.length : VERSEMENTS_PAR_AN[charge.frequence]
   return centimes(Math.round((charge.montant * parAn) / 12))
 }

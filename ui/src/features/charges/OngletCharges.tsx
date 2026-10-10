@@ -28,7 +28,7 @@ import {
   useSupprimerCharge,
   useSupprimerPonctuel,
 } from './requetes'
-import { dateOuMois, GROUPES, libelleQuandCharge, montantParJour, montantParSemaine, ORIGINES, part, REPARTITIONS } from './saisie'
+import { dateOuMois, GROUPES, libelleQuandCharge, ORIGINES, part, UNITES } from './saisie'
 
 const COLONNES = 'grid grid-cols-[minmax(0,1.3fr)_minmax(0,1.55fr)_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)_28px] items-center gap-2.5'
 
@@ -205,11 +205,11 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
             titre="Enveloppes"
             sousTitre={
               <>
-                Un budget <span className="font-semibold text-encre-2">par mois</span>, dépensé au fil des jours : nourriture, transport, loisirs.
+                Un budget que tu fixes <span className="font-semibold text-encre-2">par mois, par semaine ou par jour</span> : nourriture, transport, loisirs.
               </>
             }
             onAjouter={() => setEdition({ type: 'enveloppe' })}
-            entetes={['Enveloppe', 'Période', 'Catégorie', 'Par mois', 'Division']}
+            entetes={['Enveloppe', 'Période', 'Catégorie', 'Budget', 'Ce mois']}
             vide="Aucune enveloppe. Elles servent au suivi de la semaine."
           >
             {enveloppes.map((c) => (
@@ -219,16 +219,13 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
                   <span className="font-medium">{c.active ? `Dès ${formaterMois(c.debut)}${c.fin ? ` → ${formaterMois(c.fin)}` : ''}` : 'Terminée'}</span>
                 </Cellule>
                 {categorie(c.categorieId)}
-                <Cellule className="px-3" prefixe="DH">
-                  <Montant valeur={c.montant} sansDevise />
-                </Cellule>
-                <Cellule className="px-3" attenue titre={`${REPARTITIONS[c.repartition ?? 'jour'].explication} Sur les ${resume.mois.nbJours} jours de ${nomMois}.`}>
-                  <span className="flex flex-col leading-tight">
-                    <span className="font-medium text-encre-2">{REPARTITIONS[c.repartition ?? 'jour'].libelle}</span>
-                    <span className="whitespace-nowrap text-mention">
-                      ≈ <Montant valeur={c.repartition === 'semaine' ? montantParSemaine(c.montant, resume.mois.nbJours) : montantParJour(c.montant, resume.mois.nbJours)} sansDevise /> / {REPARTITIONS[c.repartition ?? 'jour'].court}
-                    </span>
+                <Cellule className="px-3" titre={UNITES[c.unite ?? 'mois'].explication}>
+                  <span className="whitespace-nowrap">
+                    <Montant valeur={c.montant} /> <span className="text-mention text-gris">/ {UNITES[c.unite ?? 'mois'].court}</span>
                   </span>
+                </Cellule>
+                <Cellule className="px-3" prefixe="DH" attenue titre={`Budget de ${nomMois} (${resume.mois.nbJours} jours) : le montant saisi, additionné sur le mois.`}>
+                  <Montant valeur={c.equivalentMensuel} sansDevise />
                 </Cellule>
                 {menu(c.libelle, () => setEdition({ type: 'enveloppe', charge: c }), () => setSuppression({ type: 'charge', id: c.id, libelle: c.libelle }))}
               </li>

@@ -3,7 +3,7 @@ import {
   FREQUENCES_CHARGE,
   GROUPES_CATEGORIE,
   NATURES_CHARGE,
-  REPARTITIONS_ENVELOPPE,
+  UNITES_ENVELOPPE,
   type Centimes,
   type Charge,
   type ChargePrevue,
@@ -19,8 +19,8 @@ import {
 import { z } from 'zod'
 import { schemaCleMois, schemaDateCivile } from './salaire'
 
-export { FREQUENCES_CHARGE, GROUPES_CATEGORIE, NATURES_CHARGE, REPARTITIONS_ENVELOPPE }
-export type { ChargePrevue, Echeance, FrequenceCharge, GroupeCategorie, NatureCharge, RepartitionEnveloppe } from '@mysalary/moteur'
+export { FREQUENCES_CHARGE, GROUPES_CATEGORIE, NATURES_CHARGE, UNITES_ENVELOPPE }
+export type { ChargePrevue, Echeance, FrequenceCharge, GroupeCategorie, NatureCharge, UniteEnveloppe } from '@mysalary/moteur'
 
 const MAXIMUM = 1_000_000_000
 
@@ -99,8 +99,8 @@ export const schemaCharge = z
     debut: schemaCleMois,
     fin: schemaCleMois.nullable().default(null),
     essentielle: z.boolean().default(false),
-    /** Enveloppe : diviser le montant par jour ou par semaine (ignoré pour une charge fixe). */
-    repartition: z.enum(REPARTITIONS_ENVELOPPE, { error: 'Division inconnue.' }).default('jour'),
+    /** Enveloppe : le montant est saisi par mois, par semaine ou par jour (ignoré pour une charge fixe). */
+    unite: z.enum(UNITES_ENVELOPPE, { error: 'Unité inconnue.' }).default('mois'),
   })
   .superRefine((v, ctx) => {
     if (v.nature === 'fixe' && v.jour === null) ctx.addIssue({ code: 'custom', path: ['jour'], message: 'Indique le jour du paiement.' })
@@ -112,7 +112,7 @@ export const schemaCharge = z
   .transform((v) =>
     v.nature === 'enveloppe'
       ? { ...v, frequence: 'mensuelle' as const, mois: [], jour: null }
-      : { ...v, mois: v.frequence === 'moisChoisis' ? [...new Set(v.mois)].sort((a, b) => a - b) : [], repartition: 'jour' as const },
+      : { ...v, mois: v.frequence === 'moisChoisis' ? [...new Set(v.mois)].sort((a, b) => a - b) : [], unite: 'mois' as const },
   )
 export type SaisieCharge = z.input<typeof schemaCharge>
 

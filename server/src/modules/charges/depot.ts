@@ -129,7 +129,8 @@ export async function listerCharges(prisma: PrismaClient, utilisateurId: string,
     prisma.charge.findMany({ where: { utilisateurId }, orderBy: { creeLe: 'asc' } }),
     chargerCalendrier(prisma, utilisateurId, aujourdhui),
   ])
-  const moisBudget = calendrier.moisCourant().cle
+  const courant = calendrier.moisCourant()
+  const moisBudget = courant.cle
   return lignes.map((l) => {
     const c = versCharge(l)
     // Fin d'une fixe : mois civil ; fin d'une enveloppe : mois budgétaire.
@@ -138,7 +139,8 @@ export async function listerCharges(prisma: PrismaClient, utilisateurId: string,
       ...c,
       montant: l.montant,
       creeLe: l.creeLe.toISOString(),
-      equivalentMensuel: equivalentMensuelCharge(c),
+      // Enveloppe : son budget sur le mois en cours (montant saisi par mois, par semaine ou par jour, additionné).
+      equivalentMensuel: equivalentMensuelCharge(c, courant.nbJours),
       prochaineDate: prochaineDate(c, aujourdhui),
       active: !c.fin || c.fin >= reference,
     }
@@ -312,7 +314,7 @@ export async function resume(prisma: PrismaClient, utilisateurId: string, aujour
   }
 
   const actives = chargesActives(charges.map(versCharge), aujourdhui, courant.cle)
-  const somme = (liste: typeof actives) => additionner(...liste.map(equivalentMensuelCharge))
+  const somme = (liste: typeof actives) => additionner(...liste.map((c) => equivalentMensuelCharge(c, courant.nbJours)))
 
   return {
     aujourdhui,

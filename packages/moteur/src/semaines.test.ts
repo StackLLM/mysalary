@@ -9,6 +9,8 @@ import type { PaieEnregistree, VersionContrat } from './salaire'
 import { suiviDesSemaines } from './semaines'
 import { rythmeDuMois } from './bilan'
 import { budgetEnveloppesParJour } from './enveloppes'
+import { prochainsJours, semainePassee } from './aujourdhui'
+import { budgetEnveloppe, equivalentMensuelCharge } from './charges'
 
 // Paie le 27 qui finance le mois suivant : « janvier 2027 » va du dim. 27 déc. au mar. 26 janv. (31 jours).
 // Semaines du lundi : 27 déc. (1 jour) · 28 déc.–3 janv. · 4–10 · 11–17 · 18–24 · 25–26 (2 jours).
@@ -101,27 +103,38 @@ describe('semaines d’un mois en cours', () => {
   })
 })
 
-describe('enveloppe divisée par semaine', () => {
-  const parSemaine = { ...courses, repartition: 'semaine' as const }
+describe('montant d’enveloppe saisi par semaine ou par jour', () => {
+  // L'utilisateur saisit 700 DH par semaine : MySalary additionne, il ne divise pas.
+  const parSemaine = { ...courses, montant: centimes(70_000), unite: 'semaine' as const }
   const s = suivre('2027-01-06', { charges: [loyer, parSemaine] })
 
-  it('même budget par semaine, mais disponible en entier dès le premier jour de la semaine', () => {
+  it('par semaine : 700 DH chaque semaine complète, disponibles dès son premier jour ; semaines coupées par le mois au prorata de leurs jours', () => {
     expect(s.semaines.map((x) => x.budget)).toEqual([10_000, 70_000, 70_000, 70_000, 70_000, 20_000])
-    // Semaine en cours, 3 jours écoulés : toute la semaine compte déjà (700 DH) pour 350 DH dépensés.
+    expect(s.budget).toBe(310_000)
+    // Semaine en cours, 3 jours écoulés : ses 700 DH sont déjà là pour 350 DH dépensés.
     expect(s.semaines[2]).toMatchObject({ disponible: 70_000, reste: 35_000, ecart: 35_000 })
     expect(s.budgetADate).toBe(150_000)
     expect(s.reponse).toEqual({ type: 'avance', montant: 115_000 })
   })
 
-  it('jour par jour : la part de la semaine tombe sur son premier jour ; total du mois inchangé ; mélange possible', () => {
-    const cal = calendrier('2027-01-06', { charges: [loyer, parSemaine, { ...courses, id: 'transport', montant: centimes(31_000) }] })
+  it('par jour : le montant du jour chaque jour ; budget du mois = montant × jours ; mélange avec le mois et la semaine', () => {
+    const transport = { ...courses, id: 'transport', libelle: 'Transport', montant: centimes(1_000), unite: 'jour' as const }
+    const cal = calendrier('2027-01-06', { charges: [loyer, parSemaine, transport] })
+    expect(cal.suiviDuMois(m('2027-01')).enveloppes.map((e) => [e.id, e.unite, e.montantSaisi, e.budget])).toEqual([
+      ['courses', 'semaine', 70_000, 310_000],
+      ['transport', 'jour', 1_000, 31_000],
+    ])
+    expect(cal.chargesDuMois(m('2027-01')).totaux.enveloppe).toBe(341_000)
     const parJour = budgetEnveloppesParJour(cal, m('2027-01'))
     // 27 déc. (case 0), 28 déc. (case 1), 4 janv. (case 8) : débuts de semaine.
     expect([parJour[0], parJour[1], parJour[2], parJour[8], parJour[9]]).toEqual([11_000, 71_000, 1_000, 71_000, 1_000])
-    expect(parJour.reduce((t, x) => t + x, 0)).toBe(341_000)
-    // Le rythme du mois suit la même division : au 4 janv., la part de la semaine est déjà comptée.
     const rythme = rythmeDuMois(cal, m('2027-01'), d('2027-01-06'))
     expect(rythme.find((p) => p.date === '2027-01-04')!.prevu - rythme.find((p) => p.date === '2027-01-03')!.prevu).toBe(71_000)
+  })
+
+  it('budget d’un mois selon l’unité ; équivalent mensuel sur un mois moyen', () => {
+    expect([budgetEnveloppe({ montant: centimes(150_000) }, 31), budgetEnveloppe({ montant: centimes(5_000), unite: 'jour' }, 30), budgetEnveloppe({ montant: centimes(35_000), unite: 'semaine' }, 28)]).toEqual([150_000, 150_000, 140_000])
+    expect(equivalentMensuelCharge({ nature: 'enveloppe', montant: centimes(5_000), unite: 'jour', frequence: 'mensuelle', mois: [] })).toBe(152_083)
   })
 })
 
@@ -199,5 +212,25 @@ describe('propriété', () => {
         expect(s.semaines.reduce((t, x) => t + x.budget, 0)).toBe(montant)
       }),
     )
+  })
+})
+
+describe('page Aujourd’hui (lot 16)', () => {
+  it('7 prochains jours : revenus et charges datés, à cheval sur deux mois budgétaires', () => {
+    // 22 janv. → 28 janv. : la paie de février tombe le 27 (mois budgétaire suivant).
+    const cal = calendrier('2027-01-22')
+    expect(prochainsJours(cal, d('2027-01-22')).map((e) => [e.date, e.type, e.libelle, e.statut])).toEqual([['2027-01-27', 'revenu', 'Salaire', 'prevu']])
+    // 3 → 9 janv. : le loyer du 5 (déjà payé), rien d'autre.
+    expect(prochainsJours(calendrier('2027-01-03'), d('2027-01-03')).map((e) => [e.date, e.libelle, e.statut])).toEqual([['2027-01-05', 'Loyer', 'confirme']])
+    expect(prochainsJours(cal, d('2027-01-22'), 3)).toEqual([])
+  })
+
+  it('bilan de la semaine passée : le premier jour de la semaine seulement', () => {
+    // Lundi 11 janv. : la semaine du 4 au 10 janv. vient de finir.
+    expect(semainePassee(calendrier('2027-01-11'), d('2027-01-11'))).toMatchObject({ debut: '2027-01-04', fin: '2027-01-10', statut: 'passe', budget: 70_000, depense: 35_000, ecart: 35_000 })
+    expect(semainePassee(calendrier('2027-01-12'), d('2027-01-12'))).toBeNull()
+    // Semaines du dimanche : le dimanche 10 janv., la semaine du 3 au 9 vient de finir.
+    expect(semainePassee(calendrier('2027-01-10'), d('2027-01-10'), { debutSemaine: 7 })).toMatchObject({ debut: '2027-01-03', fin: '2027-01-09' })
+    expect(semainePassee(calendrier('2027-01-11', { charges: [loyer] }), d('2027-01-11'))).toBeNull()
   })
 })

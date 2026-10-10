@@ -6,6 +6,7 @@ import { GardeCompte } from './components/GardeCompte'
 import { MiseEnPage } from './components/MiseEnPage'
 import { Notifications } from './components/Notifications'
 import { PageAVenir } from './features/a-venir/PageAVenir'
+import { PageAujourdhui } from './features/aujourdhui/PageAujourdhui'
 import { FournisseurSaisieRapide, useSaisieRapide } from './features/depenses/SaisieRapide'
 import { PageMois } from './features/mois/PageMois'
 import { PageEditionObjectif } from './features/objectifs/PageEditionObjectif'
@@ -59,6 +60,7 @@ function Vues() {
                 </Suspense>
               }
             />
+            <Route path="/" element={compte(<PageAujourdhui />)} />
             <Route path="/reglages" element={compte(<PageReglages />)} />
             <Route path="/plan" element={compte(<PagePlan />)} />
             <Route path="/mois" element={compte(<PageMois />)} />
@@ -67,7 +69,7 @@ function Vues() {
             <Route path="/objectifs/:id" element={compte(<PageObjectif />)} />
             <Route path="/objectifs/:id/modifier" element={compte(<PageEditionObjectif />)} />
             <Route path="/simulateur" element={compte(<PageSimulateur />)} />
-            {DESTINATIONS.filter((d) => !['/plan', '/mois', '/objectifs'].includes(d.chemin)).map((d) => (
+            {DESTINATIONS.filter((d) => !['/', '/plan', '/mois', '/objectifs'].includes(d.chemin)).map((d) => (
               <Route key={d.chemin} path={d.chemin} element={compte(<PageAVenir titre={d.libelle} lot={d.lot} />)} />
             ))}
             <Route path="*" element={<PageAVenir titre="Page introuvable" />} />

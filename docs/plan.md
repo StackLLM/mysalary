@@ -1,7 +1,7 @@
 # MySalary — Progression
 
 > Suivi de la construction de MySalary, lot par lot. Mis à jour à chaque lot.
-> État au 10/10/2026 : **lots 0 à 14 clôturés et validés**, **lot 15 livré, en attente de validation**, lots 16 à 22 à venir. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
+> État au 11/10/2026 : **lots 0 à 15 clôturés et validés**, **lot 16 livré, en attente de validation**, lots 17 à 22 à venir. Depuis le 11/10/2026, c'est toi qui commites : je donne seulement les messages de commit. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
 >
 > - Plan global de l'application (vision, architecture, données, règles métier) : [`Plan.md`](../Plan.md), à la racine.
 > - Bilan détaillé de chaque lot livré (périmètre, règles, tests, bugs corrigés) : [`docs/lots/`](lots/).
@@ -25,9 +25,9 @@
 | 12 | [Recommandations & KPI](#lot-12--recommandations--kpi) | 3 — Intelligence et vues | ✅ Clôturé | 09/10/2026 | 314 | [Lot-12-recommandations-kpi.md](lots/Lot-12-recommandations-kpi.md) |
 | 13 | [Cumul du reste de mois en mois](#lot-13--cumul-du-reste-de-mois-en-mois) | 3 — Intelligence et vues | ✅ Clôturé | 10/10/2026 | 323 | [Lot-13-cumul.md](lots/Lot-13-cumul.md) |
 | 14 | [Objectifs › vue Calendrier de l'année](#lot-14--objectifs--vue-calendrier-de-lannée) | 3 — Intelligence et vues | ✅ Clôturé | 10/10/2026 | 329 | [Lot-14-calendrier-annee.md](lots/Lot-14-calendrier-annee.md) |
-| 15 | [Semaines en cartes](#lot-15--semaines-en-cartes) | 3 — Intelligence et vues | 🟡 Livré, à valider | — | 331 | [Lot-15-semaines-cartes.md](lots/Lot-15-semaines-cartes.md) |
-| 16 | [Aujourd'hui](#lot-16--aujourdhui) | 3 — Intelligence et vues | ⏳ Prochain | — | — | — |
-| 17 | [Calendrier](#lot-17--calendrier) | 3 — Intelligence et vues | À venir | — | — | — |
+| 15 | [Semaines en cartes](#lot-15--semaines-en-cartes) | 3 — Intelligence et vues | ✅ Clôturé | 11/10/2026 | 343 | [Lot-15-semaines-cartes.md](lots/Lot-15-semaines-cartes.md) |
+| 16 | [Aujourd'hui](#lot-16--aujourdhui) | 3 — Intelligence et vues | 🟡 Livré, à valider | — | 353 | [Lot-16-aujourdhui.md](lots/Lot-16-aujourdhui.md) |
+| 17 | [Calendrier](#lot-17--calendrier) | 3 — Intelligence et vues | ⏳ Prochain | — | — | — |
 | 18 | [Année](#lot-18--année) | 3 — Intelligence et vues | À venir | — | — | — |
 | 19 | [Onboarding & import V0](#lot-19--onboarding--import-v0) | 4 — Entrée et finitions | À venir | — | — | — |
 | 20 | [Export & sauvegarde](#lot-20--export--sauvegarde) | 4 — Entrée et finitions | À venir | — | — | — |
@@ -39,9 +39,9 @@
 Autres sections :
 
 - [1. Méthode et règles de travail](#1-méthode-et-règles-de-travail)
-- [2. Lots clôturés](#2-lots-clôturés-0-à-14)
+- [2. Lots clôturés](#2-lots-clôturés-0-à-15)
 - [3. Lots livrés, en attente de validation](#3-lots-livrés-en-attente-de-validation)
-- [4. Lots à venir](#4-lots-à-venir-16-à-22)
+- [4. Lots à venir](#4-lots-à-venir-17-à-22)
 - [5. Points reportés, rangés par lot](#5-points-reportés-rangés-par-lot)
 - [6. Historique des commits](#6-historique-des-commits)
 - [7. Questions ouvertes](#7-questions-ouvertes)
@@ -62,7 +62,7 @@ Règles appliquées à chaque lot :
 - Serveur et interface écoutent seulement sur `127.0.0.1` (ports 3010 et 6010).
 - Code versionné dans le dépôt privé `github.com/oussamaalmouallim/mysalary` : commits en anglais, au nom de l'auteur. Le dossier `Salaire/` (données personnelles réelles), la base SQLite, `.env` et `.claude/` ne sont jamais versionnés.
 
-## 2. Lots clôturés (0 à 14)
+## 2. Lots clôturés (0 à 15)
 
 ### Lot 0 — Cadrage
 
@@ -224,29 +224,29 @@ Règles appliquées à chaque lot :
 - **Revu le 11/10/2026** (ta demande) : chaque mois devient un vrai calendrier (paie, charges datées par jour, aujourd'hui), ligne « Reste » (revenus − charges) sur chaque carte et dans la fenêtre, graphique du cumul sur l'année, les 12 mois affichés ; route `GET /annee/:annee`.
 - **Correctif du 11/10/2026** : pages blanches en changeant de page (hook appelé sous condition dans la saisie rapide, transition qui attendait la sortie de la page précédente) ; chaque page a maintenant un filet d'erreur avec « Recharger ».
 
-## 3. Lots livrés, en attente de validation
-
 ### Lot 15 — Semaines en cartes
 
-- **Statut** : 🟡 livré le 10/10/2026, en attente de validation · 331 tests · `docs/lots/Lot-15-semaines-cartes.md`.
+- **Statut** : ✅ clôturé le 11/10/2026 · 343 tests (avec l'ajout des enveloppes) · `docs/lots/Lot-15-semaines-cartes.md`.
 - **Livré** :
   - Mois › Semaines : le tableau devient une grille de cartes, une par semaine : reste (ou disponible prévu), barre du dépensé avec repère du rythme, dépensé, disponible, écart, tendance, nombre de charges datées, épargne ; passée, en cours (cerclée), à venir (pointillés) ;
   - fenêtre de la semaine : budget, report, disponible, dépensé, reste ; jour, montant par jour, écart et tendance expliqués ; dépenses jour par jour (modifier, « + Ajouter » à la bonne date), charges datées, payé, épargne ; semaine précédente / suivante ;
   - carte « Cette semaine » : bouton « Voir le détail de la semaine » ; bloc « Lire une carte » à la place des barres « Dépensé par semaine ».
 - **Écarts** : aucune semaine n'est ouverte d'office ; calculs inchangés (lot 9).
-- **Ajout du 11/10/2026** (ta demande) : chaque enveloppe se divise **par jour** (comme avant) ou **par semaine** (la part de la semaine est disponible dès son premier jour) ; réglage dans Mon plan › Charges, suivi par les semaines, le rythme du mois et l'écart à date.
+- **Ajout du 11/10/2026** (ta demande) : le budget d'une enveloppe est **fixé par l'utilisateur par mois, par semaine ou par jour** ; MySalary l'additionne sur le mois sans jamais le diviser (une semaine coupée par le mois reçoit ses seuls jours) ; suivi par les semaines, le rythme du mois, le bilan et le cumul.
 
-## 4. Lots à venir (16 à 22)
+## 3. Lots livrés, en attente de validation
 
 ### Lot 16 — Aujourd'hui
 
-- **Objectif** : « où j'en suis » en 5 secondes (UX.md § 5.2) ; remplace la page d'attente actuelle.
-- **Périmètre prévu** :
-  - carte héro : reste à dépenser ce mois, jours restants, montant par jour ;
-  - reste flexible de la semaine et barre de rythme ; bilan de la semaine passée le lundi ;
-  - actions attendues : paie à confirmer (carte « Paie prévue aujourd'hui »), charges du jour, échéances ;
-  - épargne du mois, objectif prioritaire, 7 prochains jours, 1 à 3 recommandations ;
-  - saisie rapide d'un revenu reçu.
+- **Statut** : 🟡 livré le 11/10/2026, en attente de validation · 353 tests · `docs/lots/Lot-16-aujourdhui.md`.
+- **Livré** :
+  - héros : reste à dépenser du mois, par jour, jours restants ; reste de la semaine et sa barre ; phrase du calcul ;
+  - « À faire » : paie à confirmer (confirmée sur place), échéances en retard, dépassements ; « 7 prochains jours » groupés par jour ; bilan de la semaine passée le premier jour de la semaine ;
+  - épargne du mois, objectif prioritaire, 1 à 3 suggestions ; ajouter une dépense, noter un revenu reçu, ouvrir le mois ; état vide sans salaire ;
+  - moteur `prochainsJours`, `semainePassee` ; route `GET /aujourdhui`.
+- **Écart** : une seule lecture pour la page (une erreur affiche « Réessayer » pour toute la page, pas carte par carte).
+
+## 4. Lots à venir (17 à 22)
 
 ### Lot 17 — Calendrier
 
@@ -351,6 +351,8 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `da91250` | Plan : correctif des pages blanches et calendrier revu |
 | `6348af8` | Correctif : l'application reste affichée après un rechargement à chaud ; filet d'erreur global |
 | `245f514` | Enveloppes divisées par jour ou par semaine |
+| — (à commiter) | Budget d'enveloppe fixé par mois, par semaine ou par jour (remplace la division) |
+| — (à commiter) | Lot 16 : page Aujourd'hui |
 
 ## 7. Questions ouvertes
 

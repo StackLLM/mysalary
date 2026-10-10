@@ -11,4 +11,6 @@ export async function routesConseils(app: FastifyInstance) {
     return depot.lireIndicateurs(app.prisma, utilisateurDe(requete), app.aujourdhui(), mois === undefined ? undefined : valider(schemaCleMois, mois))
   })
   app.get('/recommandations', async (requete) => depot.lireConseils(app.prisma, utilisateurDe(requete), app.aujourdhui()))
+  // Page Aujourd'hui (lot 16).
+  app.get('/aujourdhui', async (requete) => depot.lireAujourdhui(app.prisma, utilisateurDe(requete), app.aujourdhui()))
 }

@@ -137,7 +137,7 @@ describe('Mon plan › Charges & enveloppes', () => {
         debut: '2027-01',
         fin: null,
         essentielle: true,
-        repartition: 'jour',
+        unite: 'mois',
       }),
     )
   })
@@ -152,25 +152,25 @@ describe('Mon plan › Charges & enveloppes', () => {
     fireEvent.change(await screen.findByLabelText('Libellé'), { target: { value: 'Sorties' } })
     await waitFor(() => expect(screen.getByRole('option', { name: 'Loisirs' })).toBeInTheDocument())
     fireEvent.change(screen.getByLabelText('Catégorie'), { target: { value: 'c-loi' } })
-    fireEvent.change(screen.getByLabelText('Budget par mois'), { target: { value: '800' } })
-    // Division du budget : par jour par défaut ; l'aperçu suit le choix.
-    expect(screen.getByRole('radio', { name: 'Par jour' })).toHaveAttribute('aria-checked', 'true')
+    // Budget par mois par défaut ; l'utilisateur choisit de le fixer par semaine : le champ suit, le total du mois s'en déduit (somme).
+    expect(screen.getByRole('radio', { name: 'Par mois' })).toHaveAttribute('aria-checked', 'true')
     fireEvent.click(screen.getByRole('radio', { name: 'Par semaine' }))
-    expect(screen.getByText(/disponible en entier dès son premier jour/).textContent!.replace(/\s+/g, ' ')).toContain('≈ 180,64 DH par semaine ce mois-ci.')
+    fireEvent.change(screen.getByLabelText('Budget par semaine'), { target: { value: '200' } })
+    expect(screen.getByText(/Disponible en entier dès le premier jour/).textContent!.replace(/\s+/g, ' ')).toContain('Soit 885,71 DH sur ce mois (31 jours')
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter cette enveloppe' }))
     await waitFor(() =>
       expect(api.creer).toHaveBeenCalledWith('/charges', {
         libelle: 'Sorties',
         categorieId: 'c-loi',
         nature: 'enveloppe',
-        montant: 80_000,
+        montant: 20_000,
         frequence: 'mensuelle',
         mois: [],
         jour: null,
         debut: '2027-01',
         fin: null,
         essentielle: false,
-        repartition: 'semaine',
+        unite: 'semaine',
       }),
     )
 
