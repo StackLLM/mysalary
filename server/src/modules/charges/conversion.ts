@@ -27,6 +27,7 @@ export function versCharge(l: LigneCharge): Charge {
     debut: lireCleMois(l.debut),
     fin: l.fin ? lireCleMois(l.fin) : null,
     essentielle: l.essentielle,
+    repartition: l.repartition === 'semaine' ? 'semaine' : 'jour',
   }
 }
 

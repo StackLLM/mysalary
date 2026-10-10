@@ -146,7 +146,7 @@ export function indicateurs(calendrier: Calendrier, donnees: DonneesObjectifs, c
     const montant = soustraire(totaux.sortiesReelles, totaux.chargesPrevues)
     ecart = { montant, pourcentage: ratio(montant, totaux.chargesPrevues), prevu: totaux.chargesPrevues, reel: totaux.sortiesReelles, base: 'mois' }
   } else if (mois.statut === 'enCours') {
-    const point = rythmeDuMois(calendrier, cle, aujourdhui).find((p) => p.date === aujourdhui)
+    const point = rythmeDuMois(calendrier, cle, aujourdhui, debutSemaine).find((p) => p.date === aujourdhui)
     if (point && point.reel !== null) {
       const montant = soustraire(point.reel, point.prevu)
       ecart = { montant, pourcentage: ratio(montant, point.prevu), prevu: point.prevu, reel: point.reel, base: 'aDate' }

@@ -137,6 +137,7 @@ describe('Mon plan › Charges & enveloppes', () => {
         debut: '2027-01',
         fin: null,
         essentielle: true,
+        repartition: 'jour',
       }),
     )
   })
@@ -152,6 +153,10 @@ describe('Mon plan › Charges & enveloppes', () => {
     await waitFor(() => expect(screen.getByRole('option', { name: 'Loisirs' })).toBeInTheDocument())
     fireEvent.change(screen.getByLabelText('Catégorie'), { target: { value: 'c-loi' } })
     fireEvent.change(screen.getByLabelText('Budget par mois'), { target: { value: '800' } })
+    // Division du budget : par jour par défaut ; l'aperçu suit le choix.
+    expect(screen.getByRole('radio', { name: 'Par jour' })).toHaveAttribute('aria-checked', 'true')
+    fireEvent.click(screen.getByRole('radio', { name: 'Par semaine' }))
+    expect(screen.getByText(/disponible en entier dès son premier jour/).textContent!.replace(/\s+/g, ' ')).toContain('≈ 180,64 DH par semaine ce mois-ci.')
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter cette enveloppe' }))
     await waitFor(() =>
       expect(api.creer).toHaveBeenCalledWith('/charges', {
@@ -165,6 +170,7 @@ describe('Mon plan › Charges & enveloppes', () => {
         debut: '2027-01',
         fin: null,
         essentielle: false,
+        repartition: 'semaine',
       }),
     )
 

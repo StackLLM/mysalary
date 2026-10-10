@@ -21,7 +21,7 @@ import { detailDepense, journal, libelleDepense, libelleJour } from '../depenses
 import type { Ton } from '../salaire/saisie'
 import { EnteteMois } from './EnteteMois'
 import { useSemaines } from './requetes'
-import { dansSemaine, datesSemaine, dateProposee, joursSemaine, plus, reponseSemaines, texteTendance } from './saisie'
+import { dansSemaine, datesSemaine, dateProposee, joursSemaine, plus, reponseSemaines, rythmeSemaine, texteTendance } from './saisie'
 
 const TONS: Record<Ton, string> = { positif: 'text-positif', alerte: 'text-alerte', info: 'text-info', neutre: 'text-gris' }
 const FONDS: Record<Ton, string> = { positif: 'bg-positif-fond text-positif', alerte: 'bg-alerte-fond text-alerte', info: 'bg-info-fond text-info', neutre: 'bg-teinte text-encre-2' }
@@ -165,7 +165,7 @@ function Semaines({
               titre="Semaine par semaine"
               sousTitre={
                 <>
-                  Tes enveloppes réparties jour par jour, face à ce que tu as <span className="font-semibold text-encre-2">vraiment</span> dépensé. Ouvre une semaine pour son détail.
+                  Tes enveloppes réparties par jour ou par semaine, face à ce que tu as <span className="font-semibold text-encre-2">vraiment</span> dépensé. Ouvre une semaine pour son détail.
                 </>
               }
             />
@@ -281,7 +281,7 @@ function CarteSemaine({ semaine: s, onOuvrir }: { semaine: SuiviSemaine; onOuvri
 
       <span className="relative mt-3 block h-1.5 rounded-pilule bg-teinte-fort" aria-hidden>
         <span className={cn('absolute inset-y-0 left-0 rounded-pilule', depasse ? 'bg-alerte' : 'bg-primaire')} style={{ width: `${Math.round(part(s.depense, s.disponible) * 100)}%` }} />
-        {s.statut === 'enCours' && <span className="absolute -inset-y-1 w-0.5 rounded-pilule bg-encre" style={{ left: `${Math.round((s.joursEcoules / s.nbJours) * 100)}%` }} />}
+        {s.statut === 'enCours' && <span className="absolute -inset-y-1 w-0.5 rounded-pilule bg-encre" style={{ left: `${Math.round(rythmeSemaine(s) * 100)}%` }} />}
       </span>
 
       <span className="mt-3 hidden gap-1.5 text-texte-sm sm:grid sm:mt-4">
@@ -582,7 +582,7 @@ function CarteSemaineCourante({ semaine: s, onOuvrir }: { semaine: SuiviSemaine;
       <BarreProgression
         className="mt-5"
         valeur={part(s.depense, s.disponible)}
-        rythme={s.joursEcoules / s.nbJours}
+        rythme={rythmeSemaine(s)}
         libelle={`${Math.round(part(s.depense, s.disponible) * 100)} % du disponible dépensé, jour ${s.joursEcoules} sur ${s.nbJours}`}
       />
       <p className="mt-2 text-mention text-gris">
@@ -610,7 +610,7 @@ function CarteCalcul({ donnees }: { donnees: SemainesDto }) {
   return (
     <Carte titre="Sur quoi repose ce calcul ?">
       <ul className="flex list-disc flex-col gap-2 pl-4 text-texte-sm text-gris">
-        <li>Le budget flexible, ce sont tes enveloppes du mois, réparties jour par jour. Une semaine de 3 jours reçoit 3 jours de budget.</li>
+        <li>Le budget flexible, ce sont tes enveloppes du mois. Chacune est divisée par jour (le budget arrive chaque jour) ou par semaine (la part de la semaine est là dès son premier jour), selon son réglage dans Mon plan › Charges. Une semaine de 3 jours reçoit 3 jours de budget.</li>
         <li>Le dépensé compte les dépenses liées à une enveloppe et les dépenses hors plan. Les charges fixes et les dettes sont à part.</li>
         <li>La tendance compare ton dépensé par jour à la moyenne des 4 semaines précédentes.</li>
         <li>

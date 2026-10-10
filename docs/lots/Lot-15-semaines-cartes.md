@@ -62,3 +62,15 @@ Compte « Essai » (supprimé ensuite), octobre 2026, enveloppes courses 1 500 D
 - [x] `npm run verifier` passe.
 - [x] Prévu et réel toujours nommés, jamais par la couleur seule.
 - [x] Vérifié à 1342 px et 375 px.
+
+## Ajout du 11/10/2026 : diviser une enveloppe par jour ou par semaine
+
+Demande : « pour les enveloppes, l'utilisateur règle la division de leur montant : par jour ou par semaine ».
+
+- **Mon plan › Charges & enveloppes** : dans le formulaire d'une enveloppe, « Diviser le budget : Par jour / Par semaine », avec l'explication et un aperçu (« ≈ 338,70 DH par semaine ce mois-ci »). Le tableau a une colonne « Division » (« Par semaine · ≈ 338,70 / sem. »).
+- **Par jour** (comme avant) : le budget arrive un peu chaque jour ; le prévu à date et l'écart suivent les jours écoulés.
+- **Par semaine** : chaque semaine reçoit sa part (au prorata de ses jours dans le mois), disponible en entier dès son premier jour. Le lundi, toute la semaine est déjà là.
+- **Le total du mois ne change pas** ; seul le rythme change : prévu à date, écart, réponse « Est-ce que je tiens mon budget ? », repère de la barre de la semaine en cours, courbe du rythme du mois et KPI d'écart. Les enveloppes par jour et par semaine se mélangent.
+- **Données** : `Charge.repartition` (« jour » par défaut, migration `enveloppe_repartition`, charges existantes inchangées) ; une charge fixe reste « jour ». Moteur : `budgetEnveloppesParJour`, utilisé par les semaines et le rythme du mois.
+- **Tests** : moteur (même budget par semaine, disponible dès le premier jour, mélange, rythme), serveur (enregistrement, semaines, rythme, valeur refusée), interface (choix et aperçu, envoi).
+

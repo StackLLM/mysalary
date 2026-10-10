@@ -234,6 +234,7 @@ Règles appliquées à chaque lot :
   - fenêtre de la semaine : budget, report, disponible, dépensé, reste ; jour, montant par jour, écart et tendance expliqués ; dépenses jour par jour (modifier, « + Ajouter » à la bonne date), charges datées, payé, épargne ; semaine précédente / suivante ;
   - carte « Cette semaine » : bouton « Voir le détail de la semaine » ; bloc « Lire une carte » à la place des barres « Dépensé par semaine ».
 - **Écarts** : aucune semaine n'est ouverte d'office ; calculs inchangés (lot 9).
+- **Ajout du 11/10/2026** (ta demande) : chaque enveloppe se divise **par jour** (comme avant) ou **par semaine** (la part de la semaine est disponible dès son premier jour) ; réglage dans Mon plan › Charges, suivi par les semaines, le rythme du mois et l'écart à date.
 
 ## 4. Lots à venir (16 à 22)
 

@@ -7,6 +7,8 @@ import type { Depense } from './depenses'
 import { creerCalendrier } from './periodes'
 import type { PaieEnregistree, VersionContrat } from './salaire'
 import { suiviDesSemaines } from './semaines'
+import { rythmeDuMois } from './bilan'
+import { budgetEnveloppesParJour } from './enveloppes'
 
 // Paie le 27 qui finance le mois suivant : « janvier 2027 » va du dim. 27 déc. au mar. 26 janv. (31 jours).
 // Semaines du lundi : 27 déc. (1 jour) · 28 déc.–3 janv. · 4–10 · 11–17 · 18–24 · 25–26 (2 jours).
@@ -96,6 +98,30 @@ describe('semaines d’un mois en cours', () => {
     expect(s.reponse).toEqual({ type: 'avance', montant: 75_000 })
     const retard = suivre('2027-01-06', { depenses: [...DEPENSES, depense('fete', 100_000, '2027-01-06')] })
     expect(retard.reponse).toEqual({ type: 'retard', montant: 25_000 })
+  })
+})
+
+describe('enveloppe divisée par semaine', () => {
+  const parSemaine = { ...courses, repartition: 'semaine' as const }
+  const s = suivre('2027-01-06', { charges: [loyer, parSemaine] })
+
+  it('même budget par semaine, mais disponible en entier dès le premier jour de la semaine', () => {
+    expect(s.semaines.map((x) => x.budget)).toEqual([10_000, 70_000, 70_000, 70_000, 70_000, 20_000])
+    // Semaine en cours, 3 jours écoulés : toute la semaine compte déjà (700 DH) pour 350 DH dépensés.
+    expect(s.semaines[2]).toMatchObject({ disponible: 70_000, reste: 35_000, ecart: 35_000 })
+    expect(s.budgetADate).toBe(150_000)
+    expect(s.reponse).toEqual({ type: 'avance', montant: 115_000 })
+  })
+
+  it('jour par jour : la part de la semaine tombe sur son premier jour ; total du mois inchangé ; mélange possible', () => {
+    const cal = calendrier('2027-01-06', { charges: [loyer, parSemaine, { ...courses, id: 'transport', montant: centimes(31_000) }] })
+    const parJour = budgetEnveloppesParJour(cal, m('2027-01'))
+    // 27 déc. (case 0), 28 déc. (case 1), 4 janv. (case 8) : débuts de semaine.
+    expect([parJour[0], parJour[1], parJour[2], parJour[8], parJour[9]]).toEqual([11_000, 71_000, 1_000, 71_000, 1_000])
+    expect(parJour.reduce((t, x) => t + x, 0)).toBe(341_000)
+    // Le rythme du mois suit la même division : au 4 janv., la part de la semaine est déjà comptée.
+    const rythme = rythmeDuMois(cal, m('2027-01'), d('2027-01-06'))
+    expect(rythme.find((p) => p.date === '2027-01-04')!.prevu - rythme.find((p) => p.date === '2027-01-03')!.prevu).toBe(71_000)
   })
 })
 

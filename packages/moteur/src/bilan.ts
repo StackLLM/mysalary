@@ -1,5 +1,6 @@
-import { additionner, centimes, repartir, soustraire, type Centimes } from './argent'
+import { additionner, centimes, soustraire, type Centimes } from './argent'
 import { ajouterJours, decalerMois, ecartJours, type CleMois, type DateCivile } from './dates'
+import { budgetEnveloppesParJour } from './enveloppes'
 import type { Calendrier, MoisBudgetaire } from './periodes'
 
 /**
@@ -223,22 +224,19 @@ const ORDRE: Record<FamilleBilan, number> = { revenu: 0, fixe: 1, enveloppe: 2, 
 
 export interface PointRythme {
   date: DateCivile
-  /** Charges prévues cumulées : datées à leur date, enveloppes réparties sur les jours. */
+  /** Charges prévues cumulées : datées à leur date, enveloppes réparties par jour ou par semaine. */
   prevu: Centimes
   /** Sorties réelles cumulées ; `null` après aujourd'hui. */
   reel: Centimes | null
 }
 
 /** Rythme du mois : sorties réelles cumulées contre le prévu cumulé, jour par jour. */
-export function rythmeDuMois(calendrier: Calendrier, cle: CleMois, aujourdhui: DateCivile): PointRythme[] {
+export function rythmeDuMois(calendrier: Calendrier, cle: CleMois, aujourdhui: DateCivile, debutSemaine = 1): PointRythme[] {
   const mois = calendrier.mois(cle)
-  const prevues = calendrier.chargesDuMois(cle).lignes
   const suivi = calendrier.suiviDuMois(cle)
   const jours = Array.from({ length: mois.nbJours }, (_, i) => ajouterJours(mois.debut, i))
-  const enveloppes = repartir(
-    additionner(...prevues.filter((l) => l.origine === 'enveloppe').map((l) => l.montant)),
-    jours.map(() => 1),
-  )
+  // Enveloppes : par jour, ou la part de chaque semaine dès son premier jour (réglage de chaque enveloppe).
+  const enveloppes = budgetEnveloppesParJour(calendrier, cle, debutSemaine)
   // Prévu daté : le montant de l'échéancier pour les dettes (pas le reste attendu), comme dans le bilan.
   const datees = new Map<DateCivile, number>()
   for (const l of suivi.lignes) datees.set(l.date, (datees.get(l.date) ?? 0) + l.montant)

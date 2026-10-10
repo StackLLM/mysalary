@@ -190,6 +190,8 @@ model Charge {
   debut         String
   fin           String?
   essentielle   Boolean     @default(false)
+  /// Enveloppe : division du montant dans le mois, « jour » ou « semaine ».
+  repartition   String      @default("jour")
   depenses      Depense[]
   creeLe        DateTime    @default(now())
   modifieLe     DateTime    @updatedAt

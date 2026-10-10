@@ -28,7 +28,7 @@ import {
   useSupprimerCharge,
   useSupprimerPonctuel,
 } from './requetes'
-import { dateOuMois, GROUPES, libelleQuandCharge, montantParJour, ORIGINES, part } from './saisie'
+import { dateOuMois, GROUPES, libelleQuandCharge, montantParJour, montantParSemaine, ORIGINES, part, REPARTITIONS } from './saisie'
 
 const COLONNES = 'grid grid-cols-[minmax(0,1.3fr)_minmax(0,1.55fr)_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)_28px] items-center gap-2.5'
 
@@ -209,7 +209,7 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
               </>
             }
             onAjouter={() => setEdition({ type: 'enveloppe' })}
-            entetes={['Enveloppe', 'Période', 'Catégorie', 'Par mois', 'Par jour']}
+            entetes={['Enveloppe', 'Période', 'Catégorie', 'Par mois', 'Division']}
             vide="Aucune enveloppe. Elles servent au suivi de la semaine."
           >
             {enveloppes.map((c) => (
@@ -222,8 +222,13 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
                 <Cellule className="px-3" prefixe="DH">
                   <Montant valeur={c.montant} sansDevise />
                 </Cellule>
-                <Cellule className="px-3" prefixe="DH" attenue titre={`Sur les ${resume.mois.nbJours} jours de ${nomMois}`}>
-                  ≈ <Montant valeur={montantParJour(c.montant, resume.mois.nbJours)} sansDevise />
+                <Cellule className="px-3" attenue titre={`${REPARTITIONS[c.repartition ?? 'jour'].explication} Sur les ${resume.mois.nbJours} jours de ${nomMois}.`}>
+                  <span className="flex flex-col leading-tight">
+                    <span className="font-medium text-encre-2">{REPARTITIONS[c.repartition ?? 'jour'].libelle}</span>
+                    <span className="whitespace-nowrap text-mention">
+                      ≈ <Montant valeur={c.repartition === 'semaine' ? montantParSemaine(c.montant, resume.mois.nbJours) : montantParJour(c.montant, resume.mois.nbJours)} sansDevise /> / {REPARTITIONS[c.repartition ?? 'jour'].court}
+                    </span>
+                  </span>
                 </Cellule>
                 {menu(c.libelle, () => setEdition({ type: 'enveloppe', charge: c }), () => setSuppression({ type: 'charge', id: c.id, libelle: c.libelle }))}
               </li>
@@ -350,6 +355,7 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
             initial={edition.charge}
             aujourdhui={resume.aujourdhui}
             moisCourant={resume.mois.cle}
+            nbJours={resume.mois.nbJours}
             chargement={enregistrerCharge.isPending}
             onEnregistrer={async (saisie) => {
               await enregistrerCharge.mutateAsync({ ...saisie, id: edition.charge?.id })

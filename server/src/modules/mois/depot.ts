@@ -19,7 +19,7 @@ async function calculer(prisma: PrismaClient, utilisateurId: string, aujourdhui:
   const { calendrier, debutSemaine, reportHebdo } = await chargerCalendrier(prisma, utilisateurId, aujourdhui)
   return {
     ...bilanDuMois(calendrier, cle),
-    rythme: rythmeDuMois(calendrier, cle, aujourdhui),
+    rythme: rythmeDuMois(calendrier, cle, aujourdhui, debutSemaine),
     semaines: suiviDesSemaines(calendrier, cle, { debutSemaine, report: reportHebdo, aujourdhui }),
   }
 }

@@ -18,6 +18,13 @@ export type NatureCharge = (typeof NATURES_CHARGE)[number]
 export const FREQUENCES_CHARGE = ['mensuelle', 'trimestrielle', 'annuelle', 'moisChoisis'] as const satisfies readonly Frequence[]
 export type FrequenceCharge = (typeof FREQUENCES_CHARGE)[number]
 
+/**
+ * Division du montant d'une enveloppe dans le mois : `jour` (le budget arrive jour après jour)
+ * ou `semaine` (la part de chaque semaine est disponible dès son premier jour).
+ */
+export const REPARTITIONS_ENVELOPPE = ['jour', 'semaine'] as const
+export type RepartitionEnveloppe = (typeof REPARTITIONS_ENVELOPPE)[number]
+
 export interface Charge {
   id: string
   libelle: string
@@ -34,6 +41,8 @@ export interface Charge {
   debut: CleMois
   fin: CleMois | null
   essentielle: boolean
+  /** Enveloppe seulement ; `jour` si absent. */
+  repartition?: RepartitionEnveloppe
 }
 
 export interface Ponctuel {

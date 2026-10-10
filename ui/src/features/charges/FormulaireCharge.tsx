@@ -1,4 +1,4 @@
-import type { FrequenceCharge, NatureCharge } from '@mysalary/moteur'
+import type { FrequenceCharge, NatureCharge, RepartitionEnveloppe } from '@mysalary/moteur'
 import { CERTITUDES, formaterMois, type ChargeDto, type PonctuelDto, type SaisieCharge, type SaisiePonctuel } from '@mysalary/partage'
 import type { Certitude } from '@mysalary/moteur'
 import { useState, type FormEvent } from 'react'
@@ -10,6 +10,7 @@ import { ErreurApi } from '../../lib/api'
 import { CERTITUDES_INFO } from '../revenus/saisie'
 import { lireMontant, moisProposes, versSaisie } from '../salaire/saisie'
 import { ChampCategorie } from './ChampCategorie'
+import { apercuRepartition, REPARTITIONS } from './saisie'
 
 const FREQUENCES: { valeur: FrequenceCharge; libelle: string }[] = [
   { valeur: 'mensuelle', libelle: 'Chaque mois' },
@@ -36,12 +37,14 @@ interface ProprietesCharge {
   aujourdhui: string
   /** Mois budgétaire en cours : début proposé pour une enveloppe. */
   moisCourant: string
+  /** Jours du mois budgétaire en cours : aperçu de la division d'une enveloppe. */
+  nbJours?: number
   chargement?: boolean
   onEnregistrer: (saisie: SaisieCharge) => Promise<unknown>
 }
 
 /** Charge fixe (datée, récurrente) ou enveloppe (budget par mois budgétaire). */
-export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, chargement, onEnregistrer }: ProprietesCharge) {
+export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, nbJours = 30, chargement, onEnregistrer }: ProprietesCharge) {
   const fixe = nature === 'fixe'
   const [libelle, setLibelle] = useState(initial?.libelle ?? '')
   const [categorieId, setCategorieId] = useState(initial?.categorieId ?? '')
@@ -52,6 +55,7 @@ export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, cha
   const [debut, setDebut] = useState<string>(initial?.debut ?? (fixe ? aujourdhui.slice(0, 7) : moisCourant))
   const [fin, setFin] = useState<string>(initial?.fin ?? '')
   const [essentielle, setEssentielle] = useState(initial?.essentielle ?? fixe)
+  const [repartition, setRepartition] = useState<RepartitionEnveloppe>(initial?.repartition ?? 'jour')
   const [erreurs, setErreurs] = useState<Record<string, string>>({})
 
   async function soumettre(e: FormEvent) {
@@ -79,6 +83,7 @@ export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, cha
         debut,
         fin: fin || null,
         essentielle,
+        repartition: fixe ? 'jour' : repartition,
       })
     } catch (erreur) {
       setErreurs(erreursDe(erreur))
@@ -109,6 +114,24 @@ export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, cha
           <Champ libelle="Jour du paiement" type="number" inputMode="numeric" min={1} max={31} value={jour} onChange={(e) => setJour(e.target.value)} erreur={erreurs.jour} aide="31 = dernier jour du mois." />
         )}
       </div>
+
+      {!fixe && (
+        <Choix
+          libelle="Diviser le budget"
+          valeur={repartition}
+          onChange={setRepartition}
+          options={(['jour', 'semaine'] as const).map((r) => ({ valeur: r, libelle: REPARTITIONS[r].libelle }))}
+          aide={
+            <>
+              {REPARTITIONS[repartition].explication}
+              {(() => {
+                const lu = lireMontant(montant)
+                return 'valeur' in lu && lu.valeur > 0 ? <span className="font-semibold text-encre-2"> {apercuRepartition(lu.valeur, repartition, nbJours)} ce mois-ci.</span> : null
+              })()}
+            </>
+          }
+        />
+      )}
 
       {fixe && (
         <Selection libelle="Fréquence" value={frequence} onChange={(e) => setFrequence(e.target.value as FrequenceCharge)}>

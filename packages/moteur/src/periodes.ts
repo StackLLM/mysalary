@@ -1,5 +1,5 @@
 import { additionner, centimes, repartir, soustraire, type Centimes } from './argent'
-import { chargeCeMois, dateDeCharge, enveloppeActive, etatDette, type Charge, type Dette, type EtatDette, type PaiementDette, type Ponctuel } from './charges'
+import { chargeCeMois, dateDeCharge, enveloppeActive, etatDette, type Charge, type RepartitionEnveloppe, type Dette, type EtatDette, type PaiementDette, type Ponctuel } from './charges'
 import { couvrir, somme, type Depense, type Imputation, type StatutCouverture } from './depenses'
 import { epargneNette, epargneObjectif, type MouvementEpargne, type Objectif } from './epargne'
 import {
@@ -149,6 +149,8 @@ export interface SuiviEnveloppe {
   depense: Centimes
   /** Budget − dépensé ; négatif si dépassé. */
   reste: Centimes
+  /** Division du budget dans le mois : par jour ou par semaine. */
+  repartition: RepartitionEnveloppe
 }
 
 export interface DepenseImputee extends Depense {
@@ -413,7 +415,7 @@ export function creerCalendrier({
       .filter((c) => c.nature === 'enveloppe' && enveloppeActive(c, cle))
       .map((c) => {
         const depense = somme(reelles.filter((d) => d.chargeId === c.id))
-        return { id: c.id, libelle: c.libelle, categorieId: c.categorieId, budget: c.montant, depense, reste: soustraire(c.montant, depense) }
+        return { id: c.id, libelle: c.libelle, categorieId: c.categorieId, budget: c.montant, depense, reste: soustraire(c.montant, depense), repartition: c.repartition ?? 'jour' }
       })
 
     const paiements = paiementsDettes.filter((p) => parDette.has(p.detteId) && dans(p.date)).sort((a, b) => b.date.localeCompare(a.date))

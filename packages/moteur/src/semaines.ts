@@ -1,6 +1,7 @@
-import { additionner, centimes, repartir, soustraire, type Centimes } from './argent'
+import { additionner, centimes, soustraire, type Centimes } from './argent'
 import { ajouterJours, ecartJours, type CleMois, type DateCivile } from './dates'
 import { somme, type StatutCouverture } from './depenses'
+import { budgetEnveloppesParJour } from './enveloppes'
 import { semainesDe, type Calendrier, type MoisBudgetaire, type Semaine, type StatutPeriode } from './periodes'
 
 /**
@@ -93,10 +94,8 @@ export function suiviDesSemaines(calendrier: Calendrier, cle: CleMois, { debutSe
   const mois = calendrier.mois(cle)
   const jours = Array.from({ length: mois.nbJours }, (_, i) => ajouterJours(mois.debut, i))
   const budget = additionner(...calendrier.suiviDuMois(cle).enveloppes.map((e) => e.budget))
-  const parJourDuMois = repartir(
-    budget,
-    jours.map(() => 1),
-  )
+  // Chaque enveloppe suit sa division (par jour ou par semaine) : le total du mois ne change pas, seul le rythme.
+  const parJourDuMois = budgetEnveloppesParJour(calendrier, cle, debutSemaine)
   const budgetDu = (du: DateCivile, au: DateCivile) => additionner(...jours.flatMap((j, i) => (j >= du && j <= au ? [parJourDuMois[i]!] : [])))
 
   /** Dépensé flexible entre deux dates incluses. */
