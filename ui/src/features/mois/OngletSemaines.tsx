@@ -1,12 +1,13 @@
 import { deMois, formaterDate, formaterMontant, type CategorieDto, type SemainesDto, type SuiviDepensesDto, type SuiviSemaine } from '@mysalary/partage'
 import { motion } from 'framer-motion'
-import { ChevronDown } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BarreProgression } from '../../components/BarreProgression'
 import { Bouton, styleBouton } from '../../components/Bouton'
 import { Carte, Separateur, TitreSection } from '../../components/Carte'
 import { CarteBandeau } from '../../components/CarteBandeau'
+import { Fenetre } from '../../components/Fenetre'
 import { BlocTotaux } from '../../components/Elements'
 import { Kpi } from '../../components/Kpi'
 import { Montant } from '../../components/Montant'
@@ -24,7 +25,7 @@ import { dansSemaine, datesSemaine, dateProposee, joursSemaine, plus, reponseSem
 
 const TONS: Record<Ton, string> = { positif: 'text-positif', alerte: 'text-alerte', info: 'text-info', neutre: 'text-gris' }
 const FONDS: Record<Ton, string> = { positif: 'bg-positif-fond text-positif', alerte: 'bg-alerte-fond text-alerte', info: 'bg-info-fond text-info', neutre: 'bg-teinte text-encre-2' }
-const COLONNES = 'grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.8fr)_28px] items-center gap-3'
+const STATUTS_SEMAINE = { passe: 'Passée', enCours: 'En cours', aVenir: 'À venir' } as const
 const GRILLE = 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_352px] xl:gap-12'
 
 /** Mois › Semaines (UX.md § 4.6, § 5.4) : est-ce que je tiens mon rythme ? */
@@ -71,7 +72,7 @@ function Semaines({
   changerMois: (cle: string) => void
 }) {
   const { mois, aujourdhui } = donnees
-  const [ouverte, setOuverte] = useState<number | null>(donnees.courante)
+  const [ouverte, setOuverte] = useState<number | null>(null)
   const courante = donnees.semaines.find((s) => s.numero === donnees.courante) ?? null
   const reponse = reponseSemaines(donnees.reponse)
   const titre = `Semaines ${deMois(mois.cle, { annee: false })}`
@@ -102,6 +103,8 @@ function Semaines({
   }
 
   const aVenir = mois.statut === 'aVenir'
+  const index = donnees.semaines.findIndex((s) => s.numero === ouverte)
+  const selection = index >= 0 ? donnees.semaines[index]! : null
   const total =
     donnees.reponse.type === 'avance' || donnees.reponse.type === 'marge'
       ? { libelle: donnees.reponse.type === 'avance' ? 'Avance sur le rythme' : 'Marge du mois', valeur: <Montant valeur={donnees.reponse.montant} /> }
@@ -162,62 +165,36 @@ function Semaines({
               titre="Semaine par semaine"
               sousTitre={
                 <>
-                  Tes enveloppes réparties jour par jour, face à ce que tu as <span className="font-semibold text-encre-2">vraiment</span> dépensé.
+                  Tes enveloppes réparties jour par jour, face à ce que tu as <span className="font-semibold text-encre-2">vraiment</span> dépensé. Ouvre une semaine pour son détail.
                 </>
               }
             />
-            <div className="mt-5">
-              <div className={cn(COLONNES, 'hidden border-y border-filet px-4 py-4 text-texte-sm text-gris sm:grid')}>
-                <span>Semaine</span>
-                <span className="text-right">Disponible</span>
-                <span className="text-right">Dépensé</span>
-                <span className="text-right">Reste</span>
-                <span className="text-right">Écart</span>
-                <span className="text-right">Tendance</span>
-                <span aria-hidden />
-              </div>
-              <ul className="flex flex-col pt-3">
-                {donnees.semaines.map((s) => (
-                  <LigneSemaine
-                    key={s.numero}
-                    semaine={s}
-                    ouverte={ouverte === s.numero}
-                    onBasculer={() => setOuverte(ouverte === s.numero ? null : s.numero)}
-                    suivi={suivi}
-                    categories={categories}
-                    aujourdhui={aujourdhui}
-                    lectureSeule={verrouille || aVenir}
-                  />
-                ))}
-              </ul>
-            </div>
+            <ul className="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3" aria-label="Semaines du mois">
+              {donnees.semaines.map((s) => (
+                <li key={s.numero}>
+                  <CarteSemaine semaine={s} onOuvrir={() => setOuverte(s.numero)} />
+                </li>
+              ))}
+            </ul>
           </section>
 
           <Separateur className="my-7" />
 
           <div className="grid gap-8 md:grid-cols-2 md:gap-12">
             <div className="min-w-0">
-              <h3 className="mb-4 text-titre text-encre">Dépensé par semaine</h3>
-              <div className="flex flex-col gap-4 rounded-bouton bg-interne p-5 shadow-bouton">
-                {donnees.semaines.map((s) => (
-                  <div key={s.numero}>
-                    <div className="flex items-baseline justify-between gap-3 text-texte">
-                      <span className="truncate font-medium text-encre">
-                        Semaine {s.numero} <span className="text-texte-sm font-normal text-gris">· {datesSemaine(s)}</span>
-                      </span>
-                      <span className="shrink-0 text-texte-sm text-gris">
-                        {s.statut === 'aVenir' ? '—' : <Montant valeur={s.depense} className="font-semibold text-encre" />} / <Montant valeur={s.disponible} />
-                      </span>
-                    </div>
-                    <BarreProgression
-                      className="mt-2"
-                      valeur={part(s.depense, s.disponible)}
-                      rythme={s.statut === 'enCours' ? s.joursEcoules / s.nbJours : undefined}
-                      libelle={`Semaine ${s.numero} : ${Math.round(part(s.depense, s.disponible) * 100)} % du disponible dépensé`}
-                    />
-                  </div>
-                ))}
-              </div>
+              <h3 className="mb-4 text-titre text-encre">Lire une carte</h3>
+              <ul className="flex flex-col gap-2.5 rounded-bouton bg-interne p-5 text-texte-sm text-gris shadow-bouton">
+                <li>
+                  <span className="font-semibold text-encre">Reste</span> : disponible de la semaine moins ce que tu as dépensé. En rouge s’il est dépassé.
+                </li>
+                <li>
+                  <span className="font-semibold text-encre">Barre</span> : part du disponible dépensée ; le petit trait marque où tu devrais être aujourd’hui.
+                </li>
+                <li>
+                  <span className="font-semibold text-encre">Écart</span> : budget des jours écoulés moins dépensé. Positif, tu as de l’avance.
+                </li>
+                <li>Semaine en cours cerclée ; semaine à venir en pointillés, avec son seul budget prévu.</li>
+              </ul>
             </div>
             <BlocTotaux
               lignes={[
@@ -232,113 +209,244 @@ function Semaines({
       </motion.div>
 
       <motion.div variants={elementApparition} className="flex min-w-0 flex-col gap-8">
-        {courante && <CarteSemaineCourante semaine={courante} />}
+        {courante && <CarteSemaineCourante semaine={courante} onOuvrir={() => setOuverte(courante.numero)} />}
         <CarteCalcul donnees={donnees} />
       </motion.div>
+
+      {selection && (
+        <FenetreSemaine
+          semaine={selection}
+          suivi={suivi}
+          categories={categories}
+          aujourdhui={aujourdhui}
+          lectureSeule={verrouille || aVenir}
+          onFermer={() => setOuverte(null)}
+          precedent={index > 0 ? () => setOuverte(donnees.semaines[index - 1]!.numero) : null}
+          suivant={index < donnees.semaines.length - 1 ? () => setOuverte(donnees.semaines[index + 1]!.numero) : null}
+        />
+      )}
     </div>
   )
 }
 
-function LigneSemaine({
-  semaine: s,
-  ouverte,
-  onBasculer,
-  suivi,
-  categories,
-  aujourdhui,
-  lectureSeule,
-}: {
-  semaine: SuiviSemaine
-  ouverte: boolean
-  onBasculer: () => void
-  suivi: SuiviDepensesDto
-  categories: CategorieDto[]
-  aujourdhui: string
-  lectureSeule: boolean
-}) {
+const STYLES_STATUT = {
+  passe: 'border border-filet bg-white',
+  enCours: 'border border-filet bg-white ring-2 ring-primaire ring-offset-2 ring-offset-white',
+  aVenir: 'border border-dashed border-filet-fort bg-interne',
+} as const
+
+/** Une semaine en carte (lot 15) : reste, barre de rythme, écart et tendance ; un clic ouvre la fenêtre. */
+function CarteSemaine({ semaine: s, onOuvrir }: { semaine: SuiviSemaine; onOuvrir: () => void }) {
   const aVenir = s.statut === 'aVenir'
   const tendance = texteTendance(s.tendance)
   const partielle = joursSemaine(s)
-  const idDetail = `semaine-${s.numero}`
-  const tirets = <span className="font-normal text-gris">—</span>
+  const statut = STATUTS_SEMAINE[s.statut]
+  const depasse = !aVenir && s.reste < 0
+  const etiquette = aVenir
+    ? `Semaine ${s.numero}, ${datesSemaine(s)} : ${formaterMontant(s.disponible)} disponibles, à venir. Voir le détail.`
+    : `Semaine ${s.numero}, ${datesSemaine(s)} : reste ${formaterMontant(s.reste)}, ${statut.toLowerCase()}. Voir le détail.`
   return (
-    <li className={cn('rounded-champ', ouverte ? 'bg-interne' : 'odd:bg-interne')}>
-      <button
-        type="button"
-        onClick={onBasculer}
-        aria-expanded={ouverte}
-        aria-controls={idDetail}
-        aria-label={`Semaine ${s.numero}, ${datesSemaine(s)}`}
-        className={cn(COLONNES, 'flex w-full flex-wrap gap-x-4 gap-y-1 rounded-champ px-4 py-3 text-left text-texte focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sauge sm:grid sm:gap-3')}
-      >
-        <span className="order-1 min-w-0 flex-1">
-          <span className="flex items-center gap-2">
-            <span className="truncate font-medium text-encre">Semaine {s.numero}</span>
-            {s.statut === 'enCours' && <span className="rounded-pilule bg-sauge-100 px-2 py-0.5 text-mention font-medium text-sauge-700">En cours</span>}
-          </span>
+    <button
+      type="button"
+      onClick={onOuvrir}
+      aria-label={etiquette}
+      className={cn(
+        'group flex h-full w-full flex-col rounded-bouton p-3.5 text-left shadow-bouton transition-all duration-200 hover:-translate-y-0.5 hover:shadow-carte focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sauge sm:p-5',
+        STYLES_STATUT[s.statut],
+      )}
+    >
+      <span className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+        <span className="min-w-0">
+          <span className="block text-titre-carte font-semibold text-encre">Semaine {s.numero}</span>
           <span className="block text-mention text-gris">
             {datesSemaine(s)}
             {partielle && ` · ${partielle}`}
           </span>
         </span>
-        {/* Sous 640 px : tendance à droite du libellé, montants sur la ligne suivante. */}
-        <span className={cn('order-2 shrink-0 text-texte-sm font-medium sm:order-6 sm:text-right sm:text-texte', TONS[tendance.ton])} title={tendance.detail}>
-          <span className="sr-only">Tendance : </span>
-          {tendance.texte}
-        </span>
-        <ChevronDown className={cn('order-2 h-4 w-4 shrink-0 self-center text-gris transition-transform sm:order-7 sm:justify-self-end', ouverte && 'rotate-180')} aria-hidden />
-        <span className="order-3 basis-full sm:hidden" aria-hidden />
-        <span className="order-4 text-texte-sm text-gris sm:order-2 sm:text-right sm:text-texte">
-          <span className="sm:hidden">Dispo. </span>
-          <Montant valeur={s.disponible} />
-          {s.report !== 0 && (
-            <span className="block text-mention">
-              dont report {plus(s.report)}
-              <Montant valeur={s.report} />
-            </span>
-          )}
-        </span>
-        <span className="order-4 text-texte-sm font-semibold text-encre sm:order-3 sm:text-right sm:text-texte">
-          <span className="font-normal text-gris sm:hidden">Dépensé </span>
-          {aVenir ? tirets : <Montant valeur={s.depense} />}
-        </span>
-        <span className={cn('order-4 text-texte-sm sm:order-4 sm:text-right sm:text-texte', !aVenir && s.reste < 0 ? 'font-semibold text-alerte' : 'text-encre')}>
-          <span className="font-normal text-gris sm:hidden">Reste </span>
-          {aVenir ? tirets : <Montant valeur={s.reste} />}
-        </span>
         <span
           className={cn(
-            'order-4 text-texte-sm sm:order-5 sm:text-right sm:text-texte',
-            s.ecart === null || s.ecart === 0 ? 'text-gris' : s.ecart > 0 ? 'text-positif' : 'text-alerte',
-            s.ecart === null && 'hidden sm:block',
+            'inline-flex shrink-0 items-center rounded-pilule px-2 py-0.5 text-mention',
+            s.statut === 'enCours' ? 'bg-primaire text-white' : s.statut === 'aVenir' ? 'border border-filet-fort text-gris' : 'bg-teinte text-encre-2',
           )}
         >
-          <span className="sm:hidden">Écart </span>
-          {s.ecart === null ? (
-            '—'
-          ) : (
-            <>
-              {plus(s.ecart)}
-              <Montant valeur={s.ecart} />
-            </>
-          )}
+          {statut}
         </span>
+      </span>
+
+      <span className="mt-3 block text-mention text-gris sm:mt-5">{aVenir ? 'Disponible (prévu)' : 'Reste'}</span>
+      <Montant
+        valeur={aVenir ? s.disponible : s.reste}
+        className={cn('mt-0.5 block text-[19px] font-bold leading-7 tracking-tight sm:text-[26px] sm:leading-8', depasse ? 'text-alerte' : 'text-encre', aVenir && 'italic text-encre-2')}
+      />
+
+      <span className="relative mt-3 block h-1.5 rounded-pilule bg-teinte-fort" aria-hidden>
+        <span className={cn('absolute inset-y-0 left-0 rounded-pilule', depasse ? 'bg-alerte' : 'bg-primaire')} style={{ width: `${Math.round(part(s.depense, s.disponible) * 100)}%` }} />
+        {s.statut === 'enCours' && <span className="absolute -inset-y-1 w-0.5 rounded-pilule bg-encre" style={{ left: `${Math.round((s.joursEcoules / s.nbJours) * 100)}%` }} />}
+      </span>
+
+      <span className="mt-3 hidden gap-1.5 text-texte-sm sm:grid sm:mt-4">
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="text-gris">Dépensé</span>
+          {aVenir ? <span className="text-gris">—</span> : <Montant valeur={s.depense} className="font-medium text-encre-2" />}
+        </span>
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="text-gris">Disponible</span>
+          <Montant valeur={s.disponible} className="text-gris" />
+        </span>
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="text-gris">Écart</span>
+          <span className={cn(s.ecart === null || s.ecart === 0 ? 'text-gris' : s.ecart > 0 ? 'text-positif' : 'text-alerte')}>
+            {s.ecart === null ? (
+              '—'
+            ) : (
+              <>
+                {plus(s.ecart)}
+                <Montant valeur={s.ecart} />
+              </>
+            )}
+          </span>
+        </span>
+      </span>
+
+      <span className="mt-3 flex flex-wrap gap-1.5 sm:mt-4">
+        {s.tendance && (
+          <span className={cn('inline-flex items-center rounded-pilule px-2 py-0.5 text-mention', FONDS[tendance.ton])} title={tendance.detail}>
+            <span className="sr-only">Tendance : </span>
+            {tendance.texte}
+          </span>
+        )}
+        {s.charges.length > 0 && (
+          <span className="inline-flex items-center rounded-pilule bg-info-fond px-2 py-0.5 text-mention text-info">
+            {s.charges.length} charge{s.charges.length > 1 ? 's' : ''}
+          </span>
+        )}
+        {s.epargne > 0 && <span className="inline-flex items-center rounded-pilule bg-sauge-100 px-2 py-0.5 text-mention text-sauge-700">Épargne</span>}
+      </span>
+
+      <span className="mt-auto hidden pt-4 text-mention font-semibold text-lien opacity-70 transition-opacity group-hover:opacity-100 sm:block">Voir le détail →</span>
+    </button>
+  )
+}
+
+/** Fenêtre d'une semaine (lot 15) : le calcul du reste, puis les dépenses jour par jour et les charges datées. */
+function FenetreSemaine({
+  semaine: s,
+  suivi,
+  categories,
+  aujourdhui,
+  lectureSeule,
+  onFermer,
+  precedent,
+  suivant,
+}: {
+  semaine: SuiviSemaine
+  suivi: SuiviDepensesDto
+  categories: CategorieDto[]
+  aujourdhui: string
+  lectureSeule: boolean
+  onFermer: () => void
+  precedent: (() => void) | null
+  suivant: (() => void) | null
+}) {
+  const aVenir = s.statut === 'aVenir'
+  const restants = s.nbJours - s.joursEcoules + 1
+  const tendance = texteTendance(s.tendance)
+  const partielle = joursSemaine(s)
+  const cases = [
+    { cle: 'budget', libelle: 'Budget (prévu)', valeur: s.budget, signe: '' },
+    ...(s.report !== 0 ? [{ cle: 'report', libelle: 'Report', valeur: s.report, signe: plus(s.report) }] : []),
+    { cle: 'disponible', libelle: 'Disponible', valeur: s.disponible, signe: '' },
+    { cle: 'depense', libelle: 'Dépensé', valeur: s.depense, signe: s.depense > 0 ? '−' : '' },
+  ]
+  const navigation = (
+    <div className="flex items-center gap-1">
+      <button type="button" aria-label="Semaine précédente" disabled={!precedent} onClick={precedent ?? undefined} className="grid h-10 w-10 place-items-center rounded-pilule text-gris hover:bg-teinte hover:text-encre disabled:opacity-30">
+        <ChevronLeft className="h-4 w-4" />
       </button>
-      {ouverte && <DetailSemaine id={idDetail} semaine={s} suivi={suivi} categories={categories} aujourdhui={aujourdhui} lectureSeule={lectureSeule || aVenir} />}
-    </li>
+      <button type="button" aria-label="Semaine suivante" disabled={!suivant} onClick={suivant ?? undefined} className="grid h-10 w-10 place-items-center rounded-pilule text-gris hover:bg-teinte hover:text-encre disabled:opacity-30">
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </div>
+  )
+  return (
+    <Fenetre
+      ouvert
+      onFermer={onFermer}
+      titre={`Semaine ${s.numero}`}
+      description={
+        <span className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-pilule bg-teinte px-2 py-0.5 text-mention text-encre-2">{STATUTS_SEMAINE[s.statut]}</span>
+          <span>
+            {datesSemaine(s)}
+            {partielle && ` · ${partielle}`}
+          </span>
+        </span>
+      }
+      entete={navigation}
+      pied={
+        <Bouton variante="contour" onClick={onFermer}>
+          Fermer
+        </Bouton>
+      }
+    >
+      <section aria-label="Calcul de la semaine">
+        <div className={cn('grid grid-cols-2 gap-2', cases.length === 4 ? 'sm:grid-cols-4' : 'sm:grid-cols-3')}>
+          {cases.map((c) => (
+            <div key={c.cle} className="min-w-0 rounded-champ bg-interne px-3 py-2.5 shadow-bouton">
+              <span className="block truncate text-mention text-gris">{c.libelle}</span>
+              <span className={cn('block text-texte font-semibold tabular-nums', c.cle === 'budget' ? 'italic text-encre-2' : 'text-encre')}>
+                {c.signe}
+                <Montant valeur={c.valeur} />
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className={cn('mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-champ px-4 py-3 ring-1', !aVenir && s.reste < 0 ? 'bg-alerte-fond ring-alerte/20' : 'bg-sauge-50 ring-sauge-200')}>
+          <span className={cn('text-texte-sm font-semibold', !aVenir && s.reste < 0 ? 'text-alerte' : 'text-sauge-700')}>= Reste de la semaine{aVenir ? ' (prévu)' : ''}</span>
+          <Montant valeur={aVenir ? s.disponible : s.reste} className={cn('text-titre font-bold', !aVenir && s.reste < 0 ? 'text-alerte' : 'text-encre')} />
+        </div>
+        <ul className="mt-3 flex flex-col gap-1 text-texte-sm text-gris">
+          {s.statut === 'enCours' && (
+            <li>
+              Jour {s.joursEcoules} sur {s.nbJours} ·{' '}
+              {s.reste > 0 ? (
+                <>
+                  tu peux dépenser <Montant valeur={s.parJour ?? 0} className="font-semibold text-encre" /> par jour pendant {restants} jour{restants > 1 ? 's' : ''}.
+                </>
+              ) : (
+                'le disponible de la semaine est dépensé.'
+              )}
+            </li>
+          )}
+          {s.ecart !== null && (
+            <li>
+              Écart sur le rythme :{' '}
+              <span className={cn('font-semibold', s.ecart === 0 ? 'text-encre' : s.ecart > 0 ? 'text-positif' : 'text-alerte')}>
+                {plus(s.ecart)}
+                <Montant valeur={s.ecart} />
+              </span>{' '}
+              ({s.statut === 'enCours' ? 'budget des jours écoulés' : 'budget de la semaine'} moins dépensé).
+            </li>
+          )}
+          <li>
+            Tendance : <span className={cn('font-semibold', TONS[tendance.ton])}>{tendance.texte}</span>. {tendance.detail}
+          </li>
+        </ul>
+      </section>
+      <Separateur className="my-5" />
+      <DetailSemaine semaine={s} suivi={suivi} categories={categories} aujourdhui={aujourdhui} lectureSeule={lectureSeule || aVenir} />
+    </Fenetre>
   )
 }
 
 /** Semaine ouverte : charges datées et dépenses, jour par jour (UX.md § 5.4, « ouvrir une semaine »). */
 function DetailSemaine({
-  id,
   semaine: s,
   suivi,
   categories,
   aujourdhui,
   lectureSeule,
 }: {
-  id: string
   semaine: SuiviSemaine
   suivi: SuiviDepensesDto
   categories: CategorieDto[]
@@ -350,7 +458,7 @@ function DetailSemaine({
   const dans = dansSemaine(s)
   const liste = journal(suivi.depenses.filter(dans), suivi.paiementsDettes.filter(dans), null)
   return (
-    <div id={id} className="grid gap-6 px-4 pb-5 pt-2 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] md:gap-8">
+    <div className="grid gap-6 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] md:gap-8">
       <section aria-label={`Dépenses de la semaine ${s.numero}`} className="min-w-0">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h4 className="text-mention font-semibold uppercase tracking-wide text-gris">Dépenses</h4>
@@ -460,7 +568,7 @@ function DetailSemaine({
 }
 
 /** KPI « Reste flexible (semaine) » (Plan.md § 8) et rythme de la semaine en cours. */
-function CarteSemaineCourante({ semaine: s }: { semaine: SuiviSemaine }) {
+function CarteSemaineCourante({ semaine: s, onOuvrir }: { semaine: SuiviSemaine; onOuvrir: () => void }) {
   const restants = s.nbJours - s.joursEcoules + 1
   const ecart = s.ecart ?? 0
   return (
@@ -490,6 +598,9 @@ function CarteSemaineCourante({ semaine: s }: { semaine: SuiviSemaine }) {
           <>Le disponible de la semaine est dépensé. Il reste {restants} jour{restants > 1 ? 's' : ''}.</>
         )}
       </p>
+      <Bouton variante="blanc" className="mt-5 w-full" onClick={onOuvrir}>
+        Voir le détail de la semaine
+      </Bouton>
     </Carte>
   )
 }

@@ -1,7 +1,7 @@
 # MySalary — Progression
 
 > Suivi de la construction de MySalary, lot par lot. Mis à jour à chaque lot.
-> État au 10/10/2026 : **lots 0 à 13 clôturés et validés**, **lot 14 livré, en attente de validation**, lots 15 à 22 à venir. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
+> État au 10/10/2026 : **lots 0 à 14 clôturés et validés**, **lot 15 livré, en attente de validation**, lots 16 à 22 à venir. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
 >
 > - Plan global de l'application (vision, architecture, données, règles métier) : [`Plan.md`](../Plan.md), à la racine.
 > - Bilan détaillé de chaque lot livré (périmètre, règles, tests, bugs corrigés) : [`docs/lots/`](lots/).
@@ -24,9 +24,9 @@
 | 11 | [Simulateur & scénarios](#lot-11--simulateur--scénarios) | 3 — Intelligence et vues | ✅ Clôturé | 09/10/2026 | 288 | [Lot-11-simulateur.md](lots/Lot-11-simulateur.md) |
 | 12 | [Recommandations & KPI](#lot-12--recommandations--kpi) | 3 — Intelligence et vues | ✅ Clôturé | 09/10/2026 | 314 | [Lot-12-recommandations-kpi.md](lots/Lot-12-recommandations-kpi.md) |
 | 13 | [Cumul du reste de mois en mois](#lot-13--cumul-du-reste-de-mois-en-mois) | 3 — Intelligence et vues | ✅ Clôturé | 10/10/2026 | 323 | [Lot-13-cumul.md](lots/Lot-13-cumul.md) |
-| 14 | [Objectifs › vue Calendrier de l'année](#lot-14--objectifs--vue-calendrier-de-lannée) | 3 — Intelligence et vues | 🟡 Livré, à valider | — | 329 | [Lot-14-calendrier-annee.md](lots/Lot-14-calendrier-annee.md) |
-| 15 | [Semaines en cartes](#lot-15--semaines-en-cartes) | 3 — Intelligence et vues | ⏳ Prochain | — | — | — |
-| 16 | [Aujourd'hui](#lot-16--aujourdhui) | 3 — Intelligence et vues | À venir | — | — | — |
+| 14 | [Objectifs › vue Calendrier de l'année](#lot-14--objectifs--vue-calendrier-de-lannée) | 3 — Intelligence et vues | ✅ Clôturé | 10/10/2026 | 329 | [Lot-14-calendrier-annee.md](lots/Lot-14-calendrier-annee.md) |
+| 15 | [Semaines en cartes](#lot-15--semaines-en-cartes) | 3 — Intelligence et vues | 🟡 Livré, à valider | — | 331 | [Lot-15-semaines-cartes.md](lots/Lot-15-semaines-cartes.md) |
+| 16 | [Aujourd'hui](#lot-16--aujourdhui) | 3 — Intelligence et vues | ⏳ Prochain | — | — | — |
 | 17 | [Calendrier](#lot-17--calendrier) | 3 — Intelligence et vues | À venir | — | — | — |
 | 18 | [Année](#lot-18--année) | 3 — Intelligence et vues | À venir | — | — | — |
 | 19 | [Onboarding & import V0](#lot-19--onboarding--import-v0) | 4 — Entrée et finitions | À venir | — | — | — |
@@ -39,9 +39,9 @@
 Autres sections :
 
 - [1. Méthode et règles de travail](#1-méthode-et-règles-de-travail)
-- [2. Lots clôturés](#2-lots-clôturés-0-à-13)
+- [2. Lots clôturés](#2-lots-clôturés-0-à-14)
 - [3. Lots livrés, en attente de validation](#3-lots-livrés-en-attente-de-validation)
-- [4. Lots à venir](#4-lots-à-venir-15-à-22)
+- [4. Lots à venir](#4-lots-à-venir-16-à-22)
 - [5. Points reportés, rangés par lot](#5-points-reportés-rangés-par-lot)
 - [6. Historique des commits](#6-historique-des-commits)
 - [7. Questions ouvertes](#7-questions-ouvertes)
@@ -62,7 +62,7 @@ Règles appliquées à chaque lot :
 - Serveur et interface écoutent seulement sur `127.0.0.1` (ports 3010 et 6010).
 - Code versionné dans le dépôt privé `github.com/oussamaalmouallim/mysalary` : commits en anglais, au nom de l'auteur. Le dossier `Salaire/` (données personnelles réelles), la base SQLite, `.env` et `.claude/` ne sont jamais versionnés.
 
-## 2. Lots clôturés (0 à 13)
+## 2. Lots clôturés (0 à 14)
 
 ### Lot 0 — Cadrage
 
@@ -212,11 +212,9 @@ Règles appliquées à chaque lot :
   - Mon plan › Salaire, tableau des Paies : Revenus · Charges · Épargne · Cumul fin de mois, mois par mois.
 - **Décision** : le cumul suppose que ce qui n'est pas versé à un objectif reste sur le compte ; les Objectifs supposent qu'il est épargné. Deux hypothèses, affichées comme telles.
 
-## 3. Lots livrés, en attente de validation
-
 ### Lot 14 — Objectifs › vue Calendrier de l'année
 
-- **Statut** : 🟡 livré le 10/10/2026, en attente de validation · 329 tests · `docs/lots/Lot-14-calendrier-annee.md`.
+- **Statut** : ✅ clôturé le 10/10/2026 · 329 tests · `docs/lots/Lot-14-calendrier-annee.md`.
 - **Livré** :
   - Objectifs : onglets « Objectifs » / « Calendrier de l'année », vue et année gardées dans l'adresse (`?vue=calendrier&annee=2027`) ;
   - bandeau de l'année : cumul fin décembre, mois le plus bas, reste cumulé de l'année, report de l'année précédente, revenus, charges, épargne ; alerte si un mois passe sous zéro ;
@@ -225,12 +223,18 @@ Règles appliquées à chaque lot :
   - moteur `resumeCumul`, `resume` dans `GET /cumul` ; composant `Fenetre` (fenêtre centrée) ; `CalendrierAnnee` réutilisable par la page Année (lot 18).
 - **Écarts** : sous 640 px, deux cartes par ligne sans le détail revenus / charges / épargne (il est dans la fenêtre).
 
-## 4. Lots à venir (15 à 22)
+## 3. Lots livrés, en attente de validation
 
 ### Lot 15 — Semaines en cartes
 
-- **Demande** (09/10/2026) : refaire Mois › Semaines sur le même principe que le calendrier : une carte par semaine avec ses chiffres, et un clic ouvre le détail de la semaine.
-- **Périmètre prévu** : grille de cartes (budget, dépensé, reste, rythme, charges datées, épargne) ; fenêtre de la semaine (dépenses par jour, charges, ajouter une dépense) ; même logique de calcul qu'au lot 9.
+- **Statut** : 🟡 livré le 10/10/2026, en attente de validation · 331 tests · `docs/lots/Lot-15-semaines-cartes.md`.
+- **Livré** :
+  - Mois › Semaines : le tableau devient une grille de cartes, une par semaine : reste (ou disponible prévu), barre du dépensé avec repère du rythme, dépensé, disponible, écart, tendance, nombre de charges datées, épargne ; passée, en cours (cerclée), à venir (pointillés) ;
+  - fenêtre de la semaine : budget, report, disponible, dépensé, reste ; jour, montant par jour, écart et tendance expliqués ; dépenses jour par jour (modifier, « + Ajouter » à la bonne date), charges datées, payé, épargne ; semaine précédente / suivante ;
+  - carte « Cette semaine » : bouton « Voir le détail de la semaine » ; bloc « Lire une carte » à la place des barres « Dépensé par semaine ».
+- **Écarts** : aucune semaine n'est ouverte d'office ; calculs inchangés (lot 9).
+
+## 4. Lots à venir (16 à 22)
 
 ### Lot 16 — Aujourd'hui
 

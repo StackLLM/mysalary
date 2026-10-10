@@ -1,6 +1,6 @@
 # Lot 14 — Objectifs › vue Calendrier de l'année
 
-> Statut : **livré** (10/10/2026), en attente de validation. Demande du 09/10/2026 : « un calendrier premium avec une vue par année, la carte de chaque mois montre le salaire ou le montant que j'aurai avec le cumul moins les charges ; chaque mois cliquable ouvre une fenêtre jolie et bien structurée avec les infos du mois ».
+> Statut : **clôturé** le 10/10/2026. Demande du 09/10/2026 : « un calendrier premium avec une vue par année, la carte de chaque mois montre le salaire ou le montant que j'aurai avec le cumul moins les charges ; chaque mois cliquable ouvre une fenêtre jolie et bien structurée avec les infos du mois ».
 
 ## Objectif
 

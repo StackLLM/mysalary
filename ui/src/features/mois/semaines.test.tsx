@@ -156,25 +156,53 @@ describe('règles d’affichage des semaines', () => {
 })
 
 describe('Mois › Semaines', () => {
-  it('réponse en tête, tableau, semaine en cours ouverte avec ses seules dépenses', async () => {
+  it('réponse en tête, une carte par semaine (reste, statut, tendance, charges)', async () => {
     ouvrirSemaines()
     expect(await screen.findByText((_, e) => e?.tagName === 'SPAN' && espaces(e.textContent) === '150 DH au-dessus du rythme prévu.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Semaine 1, 27 déc\./ })).toHaveTextContent('1 jour')
-    expect(screen.getByRole('button', { name: /Semaine 4/ })).toHaveTextContent('+50 %')
+    const grille = screen.getByRole('list', { name: 'Semaines du mois' })
+    const cartes = within(grille).getAllByRole('button')
+    expect(cartes.map((c) => espaces(c.getAttribute('aria-label')))).toEqual([
+      'Semaine 1, 27 déc. : reste 100 DH, passée. Voir le détail.',
+      'Semaine 4, 11 janv. – 17 janv. : reste −200 DH, passée. Voir le détail.',
+      'Semaine 5, 18 janv. – 24 janv. : reste 300 DH, en cours. Voir le détail.',
+      'Semaine 6, 25 janv. – 26 janv. : 200 DH disponibles, à venir. Voir le détail.',
+    ])
+    expect(cartes[0]).toHaveTextContent('1 jour')
+    expect(cartes[1]).toHaveTextContent('+50 %')
+    expect(cartes[2]).toHaveTextContent('1 charge')
+    expect(cartes[3]).toHaveTextContent('Disponible (prévu)')
     expect(screen.getByText('Reste flexible (semaine)')).toBeInTheDocument()
+    // Aucune semaine n'est ouverte d'office.
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
 
-    const depenses = screen.getByRole('region', { name: 'Dépenses de la semaine 5' })
+  it('un clic ouvre la fenêtre de la semaine : calcul, ses seules dépenses, charges datées ; semaine précédente', async () => {
+    ouvrirSemaines()
+    fireEvent.click(await screen.findByRole('button', { name: /^Semaine 5,/ }))
+    const fenetre = await screen.findByRole('dialog', { name: 'Semaine 5' })
+    const calcul = within(fenetre).getByRole('region', { name: 'Calcul de la semaine' })
+    expect(espaces(calcul.textContent)).toContain('Jour 3 sur 7 · tu peux dépenser')
+    expect(espaces(calcul.textContent)).toContain('par jour pendant 5 jours.')
+    const depenses = within(fenetre).getByRole('region', { name: 'Dépenses de la semaine 5' })
     expect(within(depenses).getByText('Marché')).toBeInTheDocument()
     expect(within(depenses).queryByText('Prêt voiture')).not.toBeInTheDocument()
-    expect(within(screen.getByRole('region', { name: 'Charges datées de la semaine 5' })).getByText('Internet')).toBeInTheDocument()
+    expect(within(within(fenetre).getByRole('region', { name: 'Charges datées de la semaine 5' })).getByText('Internet')).toBeInTheDocument()
+
+    fireEvent.click(within(fenetre).getByRole('button', { name: 'Semaine précédente' }))
+    expect(await screen.findByRole('dialog', { name: 'Semaine 4' })).toBeInTheDocument()
+  })
+
+  it('le bouton de la carte « Cette semaine » ouvre la semaine en cours', async () => {
+    ouvrirSemaines()
+    fireEvent.click(await screen.findByRole('button', { name: 'Voir le détail de la semaine' }))
+    expect(await screen.findByRole('dialog', { name: 'Semaine 5' })).toBeInTheDocument()
   })
 
   it('ouvrir une semaine passée et y ajouter une dépense à son dernier jour', async () => {
     ouvrirSemaines()
-    fireEvent.click(await screen.findByRole('button', { name: /Semaine 4/ }))
-    expect(screen.getByRole('button', { name: /Semaine 4/ })).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.queryByRole('region', { name: 'Dépenses de la semaine 5' })).not.toBeInTheDocument()
-    fireEvent.click(within(screen.getByRole('region', { name: 'Dépenses de la semaine 4' })).getByRole('button', { name: '+ Ajouter' }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Semaine 4,/ }))
+    const fenetre = await screen.findByRole('dialog', { name: 'Semaine 4' })
+    fireEvent.click(within(within(fenetre).getByRole('region', { name: 'Dépenses de la semaine 4' })).getByRole('button', { name: '+ Ajouter' }))
     expect(await screen.findByLabelText('Date')).toHaveValue('2027-01-17')
   })
 
@@ -190,6 +218,8 @@ describe('Mois › Semaines', () => {
     semainesCourantes = semaines({ fige: true })
     ouvrirSemaines()
     expect(await screen.findByText(/ces semaines sont figées/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /^Semaine 5,/ }))
+    expect(await screen.findByRole('dialog', { name: 'Semaine 5' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '+ Ajouter' })).not.toBeInTheDocument()
   })
 })
