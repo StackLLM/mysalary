@@ -144,7 +144,7 @@ export function texteTendance(t: Tendance | null): { texte: string; ton: Ton; de
 
 /**
  * Où devrait en être le dépensé de la semaine en cours, de 0 à 1 du disponible (repère de la barre) :
- * le budget à date du moteur (écart + dépensé), qui suit la division de chaque enveloppe (par jour ou par semaine).
+ * le budget à date du moteur (écart + dépensé), qui suit le rythme choisi pour chaque enveloppe (par semaine ou par jour).
  */
 export function rythmeSemaine(s: { ecart: number | null; depense: number; disponible: number; report: number }): number {
   if (s.ecart === null || s.disponible <= 0) return 0

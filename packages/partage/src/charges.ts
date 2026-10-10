@@ -15,12 +15,13 @@ import {
   type GroupeCategorie,
   type PaiementDette,
   type Ponctuel,
+  type Semaine,
 } from '@mysalary/moteur'
 import { z } from 'zod'
 import { schemaCleMois, schemaDateCivile } from './salaire'
 
 export { FREQUENCES_CHARGE, GROUPES_CATEGORIE, NATURES_CHARGE, UNITES_ENVELOPPE }
-export type { ChargePrevue, Echeance, FrequenceCharge, GroupeCategorie, NatureCharge, UniteEnveloppe } from '@mysalary/moteur'
+export type { AjustementSemaine, ChargePrevue, Echeance, FrequenceCharge, GroupeCategorie, NatureCharge, UniteEnveloppe } from '@mysalary/moteur'
 
 const MAXIMUM = 1_000_000_000
 
@@ -99,8 +100,15 @@ export const schemaCharge = z
     debut: schemaCleMois,
     fin: schemaCleMois.nullable().default(null),
     essentielle: z.boolean().default(false),
-    /** Enveloppe : le montant est saisi par mois, par semaine ou par jour (ignoré pour une charge fixe). */
-    unite: z.enum(UNITES_ENVELOPPE, { error: 'Unité inconnue.' }).default('mois'),
+    /** Enveloppe : rythme de consommation du budget du mois (ignoré pour une charge fixe). */
+    unite: z.enum(UNITES_ENVELOPPE, { error: 'Rythme inconnu.' }).default('mois'),
+    /** Enveloppe par semaine ou par jour : montant ouvert chaque semaine ou chaque jour. */
+    rythme: montant.nullable().default(null),
+    /** Enveloppe par semaine : montant choisi pour des semaines précises (0 : rien cette semaine). */
+    semaines: z
+      .array(z.strictObject({ debut: schemaDateCivile, montant: z.number().int('Montant en centimes entiers attendu.').min(0, 'Montant négatif.').max(MAXIMUM, 'Montant trop élevé.') }))
+      .max(120)
+      .default([]),
   })
   .superRefine((v, ctx) => {
     if (v.nature === 'fixe' && v.jour === null) ctx.addIssue({ code: 'custom', path: ['jour'], message: 'Indique le jour du paiement.' })
@@ -108,11 +116,23 @@ export const schemaCharge = z
       ctx.addIssue({ code: 'custom', path: ['mois'], message: 'Choisis au moins un mois.' })
     }
     if (v.fin && v.fin < v.debut) ctx.addIssue({ code: 'custom', path: ['fin'], message: 'La fin doit suivre le début.' })
+    if (v.nature === 'enveloppe' && v.unite !== 'mois') {
+      const quand = v.unite === 'semaine' ? 'par semaine' : 'par jour'
+      if (v.rythme === null) ctx.addIssue({ code: 'custom', path: ['rythme'], message: `Indique le montant ${quand}.` })
+      else if (v.rythme > v.montant) ctx.addIssue({ code: 'custom', path: ['rythme'], message: `Le montant ${quand} ne peut pas dépasser le budget du mois.` })
+    }
   })
   .transform((v) =>
     v.nature === 'enveloppe'
-      ? { ...v, frequence: 'mensuelle' as const, mois: [], jour: null }
-      : { ...v, mois: v.frequence === 'moisChoisis' ? [...new Set(v.mois)].sort((a, b) => a - b) : [], unite: 'mois' as const },
+      ? {
+          ...v,
+          frequence: 'mensuelle' as const,
+          mois: [],
+          jour: null,
+          rythme: v.unite === 'mois' ? null : v.rythme,
+          semaines: v.unite === 'semaine' ? [...new Map(v.semaines.map((a) => [a.debut, a])).values()].sort((a, b) => a.debut.localeCompare(b.debut)) : [],
+        }
+      : { ...v, mois: v.frequence === 'moisChoisis' ? [...new Set(v.mois)].sort((a, b) => a - b) : [], unite: 'mois' as const, rythme: null, semaines: [] },
   )
 export type SaisieCharge = z.input<typeof schemaCharge>
 
@@ -180,7 +200,8 @@ export interface DetteDto extends Omit<Dette, 'montantTotal' | 'mensualite'> {
 
 export interface ResumeChargesDto {
   aujourdhui: DateCivile
-  mois: { cle: CleMois; debut: DateCivile; fin: DateCivile; nbJours: number }
+  /** Mois en cours ; ses semaines servent à choisir le montant de chaque semaine d'une enveloppe. */
+  mois: { cle: CleMois; debut: DateCivile; fin: DateCivile; nbJours: number; semaines: Semaine[] }
   duMois: ChargesDuMois
   /** Mois en cours par groupe de catégorie ; les dettes comptent en « engagement ». */
   parGroupe: Record<GroupeCategorie, Centimes>

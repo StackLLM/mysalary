@@ -63,16 +63,22 @@ Compte « Essai » (supprimé ensuite), octobre 2026, enveloppes courses 1 500 D
 - [x] Prévu et réel toujours nommés, jamais par la couleur seule.
 - [x] Vérifié à 1342 px et 375 px.
 
-## Ajout du 11/10/2026 : budget d'enveloppe fixé par mois, par semaine ou par jour
+## Ajout du 12/10/2026 : budget du mois, consommé au rythme choisi par l'utilisateur
 
-Demande : « le montant, c'est l'utilisateur qui le règle ; ne laisse pas le système diviser le montant de l'enveloppe ; c'est l'utilisateur qui choisit pour la semaine et pour le jour ». (Une première version qui divisait le budget du mois par jour ou par semaine a été remplacée.)
+Demande : « l'utilisateur choisit le montant qui va être sur chaque semaine. Le budget de base se fait par mois. […] Par exemple, je mets moto 300, et moi je contrôle de diviser ce budget, de le consommer par jour ou par semaine. Si c'est par semaine, je dois choisir chaque semaine mettre combien jusqu'à ce que le budget soit consommé. »
+Deux versions précédentes sont remplacées : la division automatique du budget (10/10), puis le montant saisi par semaine ou par jour et additionné (11/10).
 
-- **Mon plan › Charges & enveloppes**, formulaire d'une enveloppe : « Je fixe mon budget : Par mois / Par semaine / Par jour ». Le champ suit (« Budget par semaine ») ; dessous, l'explication et le total qui en découle sur le mois en cours, par addition (« Soit 1 550 DH sur ce mois (31 jours…) »).
-- **Tableau des enveloppes** : « Budget » (le montant saisi, « 350 DH / sem. ») et « Ce mois » (le total du mois en cours).
-- **Règles (moteur, `budgetEnveloppe`)** — MySalary additionne, il ne divise jamais le montant saisi :
-  - par jour : le montant chaque jour ; budget du mois = montant × jours du mois ;
-  - par semaine : le montant chaque semaine complète, disponible dès son premier jour ; une semaine coupée par le début ou la fin du mois budgétaire reçoit ses seuls jours (montant × jours ÷ 7), pour ne pas compter deux fois une semaine à cheval sur deux mois ;
-  - par mois (par défaut, comme avant) : le montant du mois, qui arrive au fil des jours dans le suivi de la semaine.
-- **Partout** : semaines (budget, disponible, écart, repère de la barre), rythme du mois, bilan, cumul, résumé des charges et fonds de sécurité utilisent ce budget du mois.
-- **Données** : `Charge.unite` (« mois » par défaut) remplace `repartition` (migration `enveloppe_unite`, écrite à la main : copie de toutes les charges, montants inchangés, unité « mois »). Une charge fixe reste « mois ».
-- **Tests** : moteur (par semaine, par jour, mélange, rythme, budget du mois, équivalent mensuel), serveur (enregistrement, liste, semaines, rythme, unité refusée), interface (choix, champ, total du mois, envoi). 343 tests au total.
+- **Formulaire d'une enveloppe** (Mon plan › Charges & enveloppes) : « Budget du mois » (ex. 300 DH), puis « Je consomme ce budget : Librement sur le mois / Par semaine / Par jour ».
+  - Par semaine : « Montant par semaine », puis le bloc « Ce mois-ci, semaine par semaine » : chaque semaine du mois en cours a son propre champ (vide = le montant par semaine), avec ce qu'elle ouvre réellement.
+  - Par jour : « Montant par jour », et ce que chaque semaine ouvre.
+  - En bas du bloc : « Budget du mois atteint le 12 oct. » ou « 300 DH restent à répartir sur ce mois : augmente le montant d'une semaine. ».
+- **Tableau des enveloppes** : « Budget du mois » et « Rythme » (« 100 DH / sem. », « 20 DH / jour » ou « Libre »).
+- **Règles (moteur, `planEnveloppe`)** — MySalary ne divise jamais le budget :
+  - par semaine : chaque semaine ouvre, dès son premier jour, le montant choisi pour elle (sinon le montant par semaine) ;
+  - par jour : chaque jour ouvre le montant par jour ;
+  - les ouvertures s'arrêtent quand le budget du mois est atteint ; ce qui n'est ouvert par aucune semaine reste « à répartir » (jamais inventé) ;
+  - librement : comme avant, le budget arrive au fil des jours dans le suivi.
+- **Onglet Semaines** : les semaines suivent ces ouvertures ; si une partie du budget n'est ouverte par aucune semaine, un message le dit avec un lien « Ajuster mes enveloppes ».
+- **Partout ailleurs** (charges du mois, reste à dépenser, cumul, fonds de sécurité) : le budget du mois, tel que saisi.
+- **Données** : `Charge.rythme` (montant par semaine ou par jour) et `Charge.semaines` (montants choisis semaine par semaine) ; `unite` devient le rythme. Migration `enveloppe_rythme` : colonnes ajoutées ; une enveloppe éventuellement saisie « par semaine / par jour » dans la version du 11/10 garde son montant comme rythme. Tes 3 enveloppes (Moto, Amina, 1000) étaient « par mois » : inchangées.
+- **Tests** : moteur (par semaine, semaine ajustée, à répartir, par jour, budget du mois), serveur (enregistrement, liste, semaines, rythme du bilan, refus), interface (choix, montants de semaine, phrase de fin, envoi). 355 tests au total.

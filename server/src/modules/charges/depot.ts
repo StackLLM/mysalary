@@ -7,6 +7,7 @@ import {
   equivalentMensuelCharge,
   etatDette,
   moisDe,
+  semainesDe,
   plafondPaiement,
   type Centimes,
   type Charge,
@@ -35,7 +36,7 @@ import type { z } from 'zod'
 import { ErreurApi, introuvable } from '../../lib/erreurs'
 import { exigerDatesOuvertes } from '../mois/clotures'
 import { chargerCalendrier } from '../salaire/depot'
-import { versCharge, versDette, versPaiement, versPonctuel } from './conversion'
+import { ecrireAjustements, versCharge, versDette, versPaiement, versPonctuel } from './conversion'
 
 // Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
 
@@ -110,7 +111,7 @@ export async function verifierCategorie(prisma: PrismaClient, utilisateurId: str
 // --- Charges fixes et enveloppes ---
 
 type SaisieCharge = z.output<typeof schemaCharge>
-const versBaseCharge = (s: SaisieCharge) => ({ ...s, mois: s.mois.join(',') })
+const versBaseCharge = (s: SaisieCharge) => ({ ...s, mois: s.mois.join(','), semaines: ecrireAjustements(s.semaines) })
 
 /** Prochaine date de paiement d'une charge fixe, dans les deux ans. */
 function prochaineDate(charge: ReturnType<typeof versCharge>, aujourdhui: DateCivile): DateCivile | null {
@@ -139,8 +140,7 @@ export async function listerCharges(prisma: PrismaClient, utilisateurId: string,
       ...c,
       montant: l.montant,
       creeLe: l.creeLe.toISOString(),
-      // Enveloppe : son budget sur le mois en cours (montant saisi par mois, par semaine ou par jour, additionné).
-      equivalentMensuel: equivalentMensuelCharge(c, courant.nbJours),
+      equivalentMensuel: equivalentMensuelCharge(c),
       prochaineDate: prochaineDate(c, aujourdhui),
       active: !c.fin || c.fin >= reference,
     }
@@ -296,7 +296,7 @@ export const essentielMensuel = (charges: Charge[], aujourdhui: DateCivile, mois
 
 export async function resume(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile): Promise<ResumeChargesDto> {
   await assurerCategories(prisma, utilisateurId)
-  const [{ calendrier }, categories, charges, dettes] = await Promise.all([
+  const [{ calendrier, debutSemaine }, categories, charges, dettes] = await Promise.all([
     chargerCalendrier(prisma, utilisateurId, aujourdhui),
     prisma.categorie.findMany({ where: { utilisateurId } }),
     prisma.charge.findMany({ where: { utilisateurId } }),
@@ -314,11 +314,11 @@ export async function resume(prisma: PrismaClient, utilisateurId: string, aujour
   }
 
   const actives = chargesActives(charges.map(versCharge), aujourdhui, courant.cle)
-  const somme = (liste: typeof actives) => additionner(...liste.map((c) => equivalentMensuelCharge(c, courant.nbJours)))
+  const somme = (liste: typeof actives) => additionner(...liste.map((c) => equivalentMensuelCharge(c)))
 
   return {
     aujourdhui,
-    mois: { cle: courant.cle, debut: courant.debut, fin: courant.fin, nbJours: courant.nbJours },
+    mois: { cle: courant.cle, debut: courant.debut, fin: courant.fin, nbJours: courant.nbJours, semaines: semainesDe(courant, debutSemaine) },
     duMois,
     parGroupe,
     equivalentMensuel: {

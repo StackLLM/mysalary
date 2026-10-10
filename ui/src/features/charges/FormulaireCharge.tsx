@@ -1,5 +1,5 @@
-import { budgetEnveloppe, centimes, type FrequenceCharge, type NatureCharge, type UniteEnveloppe } from '@mysalary/moteur'
-import { CERTITUDES, formaterMois, formaterMontant, type ChargeDto, type PonctuelDto, type SaisieCharge, type SaisiePonctuel } from '@mysalary/partage'
+import { centimes, planEnveloppe, type DateCivile, type FrequenceCharge, type NatureCharge, type Semaine, type UniteEnveloppe } from '@mysalary/moteur'
+import { CERTITUDES, formaterDate, formaterMois, formaterMontant, type ChargeDto, type PonctuelDto, type SaisieCharge, type SaisiePonctuel } from '@mysalary/partage'
 import type { Certitude } from '@mysalary/moteur'
 import { useState, type FormEvent } from 'react'
 import { Bouton } from '../../components/Bouton'
@@ -10,7 +10,8 @@ import { ErreurApi } from '../../lib/api'
 import { CERTITUDES_INFO } from '../revenus/saisie'
 import { lireMontant, moisProposes, versSaisie } from '../salaire/saisie'
 import { ChampCategorie } from './ChampCategorie'
-import { UNITES } from './saisie'
+import { phrasePlanEnveloppe, RYTHMES } from './saisie'
+import { cn } from '../../lib/cn'
 
 const FREQUENCES: { valeur: FrequenceCharge; libelle: string }[] = [
   { valeur: 'mensuelle', libelle: 'Chaque mois' },
@@ -37,14 +38,14 @@ interface ProprietesCharge {
   aujourdhui: string
   /** Mois budgétaire en cours : début proposé pour une enveloppe. */
   moisCourant: string
-  /** Jours du mois budgétaire en cours : total du mois d'une enveloppe saisie par semaine ou par jour. */
-  nbJours?: number
+  /** Mois budgétaire en cours et ses semaines : montant de chaque semaine d'une enveloppe. */
+  mois?: { debut: DateCivile; fin: DateCivile; nbJours: number; semaines: Semaine[] }
   chargement?: boolean
   onEnregistrer: (saisie: SaisieCharge) => Promise<unknown>
 }
 
 /** Charge fixe (datée, récurrente) ou enveloppe (budget par mois budgétaire). */
-export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, nbJours = 30, chargement, onEnregistrer }: ProprietesCharge) {
+export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, mois: moisEnCours, chargement, onEnregistrer }: ProprietesCharge) {
   const fixe = nature === 'fixe'
   const [libelle, setLibelle] = useState(initial?.libelle ?? '')
   const [categorieId, setCategorieId] = useState(initial?.categorieId ?? '')
@@ -56,6 +57,12 @@ export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, nbJ
   const [fin, setFin] = useState<string>(initial?.fin ?? '')
   const [essentielle, setEssentielle] = useState(initial?.essentielle ?? fixe)
   const [unite, setUnite] = useState<UniteEnveloppe>(initial?.unite ?? 'mois')
+  const [rythme, setRythme] = useState(initial?.rythme ? versSaisie(initial.rythme) : '')
+  // Montants choisis pour les semaines du mois en cours (vide : le montant par semaine).
+  const semainesDuMois = moisEnCours?.semaines ?? []
+  const [ajustements, setAjustements] = useState<Record<string, string>>(() =>
+    Object.fromEntries((initial?.semaines ?? []).filter((a) => semainesDuMois.some((s) => s.debut === a.debut)).map((a) => [a.debut, versSaisie(a.montant)])),
+  )
   const [erreurs, setErreurs] = useState<Record<string, string>>({})
 
   async function soumettre(e: FormEvent) {
@@ -69,6 +76,21 @@ export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, nbJ
     if (fixe && !(Number.isInteger(jourNombre) && jourNombre >= 1 && jourNombre <= 31)) p.jour = 'Le jour va de 1 à 31.'
     if (fixe && frequence === 'moisChoisis' && mois.length === 0) p.mois = 'Choisis au moins un mois.'
     if (fin && fin < debut) p.fin = 'La fin doit suivre le début.'
+    const parRythme = !fixe && unite !== 'mois'
+    const luRythme = lireMontant(rythme)
+    if (parRythme && 'erreur' in luRythme) p.rythme = luRythme.erreur
+    else if (parRythme && 'valeur' in lu && 'valeur' in luRythme && luRythme.valeur > lu.valeur) p.rythme = 'Ne peut pas dépasser le budget du mois.'
+    const semainesChoisies: { debut: string; montant: number }[] = []
+    if (!fixe && unite === 'semaine') {
+      for (const [debutSemaine, texte] of Object.entries(ajustements)) {
+        if (texte.trim() === '') continue
+        const luSemaine = lireMontant(texte, 0)
+        if ('erreur' in luSemaine) p[`semaine-${debutSemaine}`] = luSemaine.erreur
+        else semainesChoisies.push({ debut: debutSemaine, montant: luSemaine.valeur })
+      }
+      // Les semaines choisies pour un mois à venir restent ; celles des mois passés tombent.
+      semainesChoisies.push(...(initial?.semaines ?? []).filter((a) => moisEnCours && a.debut > moisEnCours.fin))
+    }
     setErreurs(p)
     if (Object.keys(p).length > 0 || 'erreur' in lu) return
     try {
@@ -84,6 +106,8 @@ export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, nbJ
         fin: fin || null,
         essentielle,
         unite: fixe ? 'mois' : unite,
+        rythme: parRythme && 'valeur' in luRythme ? luRythme.valeur : null,
+        semaines: semainesChoisies,
       })
     } catch (erreur) {
       setErreurs(erreursDe(erreur))
@@ -101,29 +125,43 @@ export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, nbJ
       />
       <ChampCategorie valeur={categorieId} onChange={setCategorieId} erreur={erreurs.categorieId} />
 
-      {!fixe && (
-        <Choix
-          libelle="Je fixe mon budget"
-          valeur={unite}
-          onChange={setUnite}
-          options={(['mois', 'semaine', 'jour'] as const).map((u) => ({ valeur: u, libelle: UNITES[u].libelle }))}
-        />
-      )}
-
-      {/* Enveloppe : le montant prend toute la largeur, pour que l'explication et le total du mois restent lisibles. */}
-      <div className={fixe ? 'grid gap-5 sm:grid-cols-2' : 'grid gap-5'}>
-        <ChampMontant
-          libelle={fixe ? 'Montant' : UNITES[unite].champ}
-          placeholder={fixe ? '100' : unite === 'jour' ? '50' : unite === 'semaine' ? '350' : '1 500'}
-          value={montant}
-          onChange={(e) => setMontant(e.target.value)}
-          erreur={erreurs.montant}
-          aide={fixe ? undefined : <AideBudget montant={montant} unite={unite} nbJours={nbJours} />}
-        />
-        {fixe && (
+      {fixe ? (
+        <div className="grid gap-5 sm:grid-cols-2">
+          <ChampMontant libelle="Montant" placeholder="100" value={montant} onChange={(e) => setMontant(e.target.value)} erreur={erreurs.montant} />
           <Champ libelle="Jour du paiement" type="number" inputMode="numeric" min={1} max={31} value={jour} onChange={(e) => setJour(e.target.value)} erreur={erreurs.jour} aide="31 = dernier jour du mois." />
-        )}
-      </div>
+        </div>
+      ) : (
+        <>
+          <ChampMontant libelle="Budget du mois" placeholder="300" value={montant} onChange={(e) => setMontant(e.target.value)} erreur={erreurs.montant} aide="Ce que tu t’accordes sur un mois budgétaire, de paie à paie." />
+          <Choix
+            libelle="Je consomme ce budget"
+            valeur={unite}
+            onChange={setUnite}
+            options={(['mois', 'semaine', 'jour'] as const).map((u) => ({ valeur: u, libelle: RYTHMES[u].libelle }))}
+            aide={RYTHMES[unite].explication}
+          />
+          {unite !== 'mois' && (
+            <ChampMontant
+              libelle={RYTHMES[unite].champ!}
+              placeholder={unite === 'jour' ? '20' : '100'}
+              value={rythme}
+              onChange={(e) => setRythme(e.target.value)}
+              erreur={erreurs.rythme}
+            />
+          )}
+          {unite !== 'mois' && moisEnCours && (
+            <PlanDuMois
+              mois={moisEnCours}
+              budget={montant}
+              unite={unite}
+              rythme={rythme}
+              ajustements={ajustements}
+              erreurs={erreurs}
+              onAjuster={(debutSemaine, texte) => setAjustements((a) => ({ ...a, [debutSemaine]: texte }))}
+            />
+          )}
+        </>
+      )}
 
       {fixe && (
         <Selection libelle="Fréquence" value={frequence} onChange={(e) => setFrequence(e.target.value as FrequenceCharge)}>
@@ -220,18 +258,74 @@ export function FormulairePonctuel({ initial, aujourdhui, chargement, onEnregist
   )
 }
 
-/** Sous le montant d'une enveloppe : ce que veut dire l'unité, et le total qui en découle sur le mois en cours (somme, jamais une division). */
-function AideBudget({ montant, unite, nbJours }: { montant: string; unite: UniteEnveloppe; nbJours: number }) {
-  const lu = lireMontant(montant)
-  const total = unite !== 'mois' && 'valeur' in lu && lu.valeur > 0 ? budgetEnveloppe({ montant: centimes(lu.valeur), unite }, nbJours) : null
+const valeurOuZero = (texte: string, minimum = 1) => {
+  const lu = lireMontant(texte, minimum)
+  return 'valeur' in lu ? lu.valeur : 0
+}
+
+/**
+ * Mois en cours d'une enveloppe par semaine ou par jour : ce que chaque semaine ouvre, et quand le budget est atteint.
+ * Par semaine, chaque semaine accepte son propre montant (vide : le montant par semaine).
+ */
+function PlanDuMois({
+  mois,
+  budget,
+  unite,
+  rythme,
+  ajustements,
+  erreurs,
+  onAjuster,
+}: {
+  mois: { debut: DateCivile; nbJours: number; semaines: Semaine[] }
+  budget: string
+  unite: Exclude<UniteEnveloppe, 'mois'>
+  rythme: string
+  ajustements: Record<string, string>
+  erreurs: Record<string, string>
+  onAjuster: (debut: string, texte: string) => void
+}) {
+  const plan = planEnveloppe(
+    {
+      budget: centimes(valeurOuZero(budget)),
+      unite,
+      rythme: centimes(valeurOuZero(rythme)),
+      ajustements: Object.entries(ajustements)
+        .filter(([, texte]) => texte.trim() !== '' && 'valeur' in lireMontant(texte, 0))
+        .map(([debut, texte]) => ({ debut: debut as DateCivile, montant: centimes(valeurOuZero(texte, 0)) })),
+    },
+    mois,
+    mois.semaines,
+  )
+  const phrase = phrasePlanEnveloppe(plan, unite)
   return (
-    <>
-      {UNITES[unite].explication}
-      {total !== null && (
-        <span className="block font-semibold text-encre-2">
-          Soit {formaterMontant(total)} sur ce mois ({nbJours} jours{unite === 'semaine' ? ', semaines coupées par le mois au prorata de leurs jours' : ''}).
-        </span>
-      )}
-    </>
+    <section aria-label="Semaines de ce mois" className="flex flex-col gap-3 rounded-carte border border-filet bg-teinte p-4">
+      <p className="text-texte-sm font-semibold text-encre">Ce mois-ci, semaine par semaine</p>
+      <ul className="flex flex-col gap-2">
+        {plan.semaines.map((s) => (
+          <li key={s.debut} className={cn('grid items-center gap-x-3', unite === 'semaine' ? 'grid-cols-[minmax(0,1fr)_112px]' : 'grid-cols-1')}>
+            <span className="min-w-0 text-texte-sm">
+              <span className="block font-semibold text-encre">Semaine {s.numero}</span>
+              <span className="block text-mention text-gris">
+                {s.nbJours === 1 ? formaterDate(s.debut, 'court') : `${formaterDate(s.debut, 'court')} → ${formaterDate(s.fin, 'court')}`}
+              </span>
+              <span className={cn('chiffres block text-mention', s.ouvert < s.demande ? 'text-gris' : 'font-semibold text-encre-2')}>
+                {formaterMontant(s.ouvert)} ouverts{unite === 'jour' ? ` sur ${formaterMontant(s.demande)} prévus` : ''}
+              </span>
+            </span>
+            {unite === 'semaine' && (
+              <ChampMontant
+                libelle={`Montant de la semaine ${s.numero}`}
+                libelleMasque
+                placeholder={rythme.trim() || '0'}
+                value={ajustements[s.debut] ?? ''}
+                onChange={(e) => onAjuster(s.debut, e.target.value)}
+                erreur={erreurs[`semaine-${s.debut}`]}
+              />
+            )}
+          </li>
+        ))}
+      </ul>
+      <p className={cn('text-texte-sm font-medium', phrase.ton === 'alerte' ? 'text-alerte' : 'text-positif')}>{phrase.texte}</p>
+    </section>
   )
 }

@@ -190,8 +190,12 @@ model Charge {
   debut         String
   fin           String?
   essentielle   Boolean     @default(false)
-  /// Enveloppe : unité du montant saisi, « mois », « semaine » ou « jour » (MySalary additionne, sans diviser).
+  /// Enveloppe : rythme de consommation du budget du mois, « mois », « semaine » ou « jour ».
   unite         String      @default("mois")
+  /// Enveloppe par semaine ou par jour : montant ouvert chaque semaine ou chaque jour (centimes).
+  rythme        Int?
+  /// Enveloppe par semaine : montants choisis pour des semaines précises, « 2026-10-05:10000;… ».
+  semaines      String      @default("")
   depenses      Depense[]
   creeLe        DateTime    @default(now())
   modifieLe     DateTime    @updatedAt

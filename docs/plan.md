@@ -232,7 +232,7 @@ Règles appliquées à chaque lot :
   - fenêtre de la semaine : budget, report, disponible, dépensé, reste ; jour, montant par jour, écart et tendance expliqués ; dépenses jour par jour (modifier, « + Ajouter » à la bonne date), charges datées, payé, épargne ; semaine précédente / suivante ;
   - carte « Cette semaine » : bouton « Voir le détail de la semaine » ; bloc « Lire une carte » à la place des barres « Dépensé par semaine ».
 - **Écarts** : aucune semaine n'est ouverte d'office ; calculs inchangés (lot 9).
-- **Ajout du 11/10/2026** (ta demande) : le budget d'une enveloppe est **fixé par l'utilisateur par mois, par semaine ou par jour** ; MySalary l'additionne sur le mois sans jamais le diviser (une semaine coupée par le mois reçoit ses seuls jours) ; suivi par les semaines, le rythme du mois, le bilan et le cumul.
+- **Ajout du 12/10/2026** (ta demande) : le budget d'une enveloppe reste **le budget du mois** ; l'utilisateur choisit de le consommer **librement, par semaine ou par jour**, avec le montant de chaque semaine (ou de chaque jour), jusqu'à atteindre le budget. MySalary ne divise rien ; ce qui n'est ouvert par aucune semaine reste « à répartir ».
 
 ## 3. Lots livrés, en attente de validation
 
@@ -351,8 +351,8 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `da91250` | Plan : correctif des pages blanches et calendrier revu |
 | `6348af8` | Correctif : l'application reste affichée après un rechargement à chaud ; filet d'erreur global |
 | `245f514` | Enveloppes divisées par jour ou par semaine |
-| — (à commiter) | Budget d'enveloppe fixé par mois, par semaine ou par jour (remplace la division) |
-| — (à commiter) | Lot 16 : page Aujourd'hui |
+| `ed0e51d` | Lot 16 : page Aujourd'hui ; budget d'enveloppe saisi par mois, par semaine ou par jour |
+| — (à commiter) | Enveloppe : budget du mois consommé par semaine ou par jour, montant choisi semaine par semaine |
 
 ## 7. Questions ouvertes
 

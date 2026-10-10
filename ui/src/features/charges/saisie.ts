@@ -1,5 +1,5 @@
 import type { ChargeDto, ChargePrevue, Echeance, GroupeCategorie, UniteEnveloppe } from '@mysalary/partage'
-import { centimes, echeancier, estDateCivile } from '@mysalary/moteur'
+import { centimes, echeancier, estDateCivile, type PlanEnveloppe } from '@mysalary/moteur'
 import { formaterDate, formaterMois, formaterMontant } from '@mysalary/partage'
 import type { Ton } from '../salaire/saisie'
 
@@ -52,13 +52,24 @@ export function libelleFinDette(etat: { soldee: boolean; finPrevue: string | nul
 export const part = (valeur: number, total: number) => (total > 0 ? Math.min(1, Math.max(0, valeur / total)) : 0)
 
 /**
- * Unité du budget d'une enveloppe, choisie par l'utilisateur (Mon plan › Charges).
- * MySalary ne divise pas ce montant : il l'additionne sur les jours ou les semaines du mois.
+ * Rythme de consommation d'une enveloppe (Mon plan › Charges). Le budget est celui du mois ;
+ * par semaine ou par jour, l'utilisateur choisit combien ouvrir, jusqu'à atteindre le budget. MySalary ne divise rien.
  */
-export const UNITES: Record<UniteEnveloppe, { libelle: string; champ: string; court: string; explication: string }> = {
-  mois: { libelle: 'Par mois', champ: 'Budget par mois', court: 'mois', explication: 'Pour un mois budgétaire, de paie à paie. Le suivi de la semaine le voit arriver au fil des jours.' },
-  semaine: { libelle: 'Par semaine', champ: 'Budget par semaine', court: 'sem.', explication: 'Disponible en entier dès le premier jour de chaque semaine.' },
-  jour: { libelle: 'Par jour', champ: 'Budget par jour', court: 'jour', explication: 'Disponible chaque jour.' },
+export const RYTHMES: Record<UniteEnveloppe, { libelle: string; champ: string | null; court: string; explication: string }> = {
+  mois: { libelle: 'Librement sur le mois', champ: null, court: 'Libre', explication: 'Tout le budget est disponible sur le mois ; le suivi de la semaine le voit arriver au fil des jours.' },
+  semaine: { libelle: 'Par semaine', champ: 'Montant par semaine', court: 'sem.', explication: 'Chaque semaine ouvre ce montant dès son premier jour, jusqu’à atteindre le budget du mois. Tu peux choisir un autre montant pour une semaine précise.' },
+  jour: { libelle: 'Par jour', champ: 'Montant par jour', court: 'jour', explication: 'Chaque jour ouvre ce montant, jusqu’à atteindre le budget du mois.' },
+}
+
+/** Fin de la consommation d'une enveloppe : « Budget atteint le 4 janv. » ou « 180 DH restent à répartir ». */
+export function phrasePlanEnveloppe(plan: Pick<PlanEnveloppe, 'aRepartir' | 'atteintLe'>, unite: UniteEnveloppe): { texte: string; ton: Ton } {
+  if (plan.atteintLe) {
+    // « 4 janv. » finit déjà par un point.
+    const date = formaterDate(plan.atteintLe, 'court')
+    return { texte: `Budget du mois atteint le ${date}${date.endsWith('.') ? '' : '.'}`, ton: 'positif' }
+  }
+  const quoi = unite === 'jour' ? 'augmente le montant par jour' : 'augmente le montant d’une semaine'
+  return { texte: `${formaterMontant(plan.aRepartir)} restent à répartir sur ce mois : ${quoi}.`, ton: 'alerte' }
 }
 
 export const dateOuMois = (l: ChargePrevue) => (l.date ? formaterDate(l.date, 'court') : 'Tout le mois')

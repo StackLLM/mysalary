@@ -1,4 +1,4 @@
-import { centimes, etatDette, type DateCivile } from '@mysalary/moteur'
+import { centimes, etatDette, lireDate as d, semainesDe, type DateCivile } from '@mysalary/moteur'
 import type { CategorieDto, ChargeDto, DetteDto, PonctuelDto, ResumeChargesDto, Utilisateur } from '@mysalary/partage'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -27,7 +27,7 @@ const zero = { fixe: 0, enveloppe: 0, ponctuel: 0, dette: 0, total: 0 }
 const resume = (totaux = zero) =>
   ({
     aujourdhui: AUJOURDHUI,
-    mois: { cle: '2027-01', debut: '2026-12-27', fin: '2027-01-26', nbJours: 31 },
+    mois: { cle: '2027-01', debut: '2026-12-27', fin: '2027-01-26', nbJours: 31, semaines: semainesDe({ debut: d('2026-12-27'), fin: d('2027-01-26') }, 1) },
     duMois: { lignes: [], totaux },
     parGroupe: { essentiel: totaux.fixe, flexible: totaux.enveloppe, engagement: totaux.dette },
     equivalentMensuel: { fixe: totaux.fixe, enveloppe: totaux.enveloppe, essentiel: totaux.fixe },
@@ -138,6 +138,8 @@ describe('Mon plan › Charges & enveloppes', () => {
         fin: null,
         essentielle: true,
         unite: 'mois',
+        rythme: null,
+        semaines: [],
       }),
     )
   })
@@ -152,18 +154,26 @@ describe('Mon plan › Charges & enveloppes', () => {
     fireEvent.change(await screen.findByLabelText('Libellé'), { target: { value: 'Sorties' } })
     await waitFor(() => expect(screen.getByRole('option', { name: 'Loisirs' })).toBeInTheDocument())
     fireEvent.change(screen.getByLabelText('Catégorie'), { target: { value: 'c-loi' } })
-    // Budget par mois par défaut ; l'utilisateur choisit de le fixer par semaine : le champ suit, le total du mois s'en déduit (somme).
-    expect(screen.getByRole('radio', { name: 'Par mois' })).toHaveAttribute('aria-checked', 'true')
+    // Moto : 300 DH pour le mois. Consommé librement par défaut ; l'utilisateur choisit « par semaine » et le montant de chaque semaine.
+    fireEvent.change(screen.getByLabelText('Budget du mois'), { target: { value: '300' } })
+    expect(screen.getByRole('radio', { name: 'Librement sur le mois' })).toHaveAttribute('aria-checked', 'true')
     fireEvent.click(screen.getByRole('radio', { name: 'Par semaine' }))
-    fireEvent.change(screen.getByLabelText('Budget par semaine'), { target: { value: '200' } })
-    expect(screen.getByText(/Disponible en entier dès le premier jour/).textContent!.replace(/\s+/g, ' ')).toContain('Soit 885,71 DH sur ce mois (31 jours')
+    fireEvent.change(screen.getByLabelText('Montant par semaine'), { target: { value: '100' } })
+    const plan = screen.getByRole('region', { name: 'Semaines de ce mois' })
+    expect(within(plan).getByText('Budget du mois atteint le 4 janv.')).toBeInTheDocument()
+    // Rien la semaine du 4 janvier : la 4e semaine prend le relais ; MySalary ne divise rien.
+    fireEvent.change(within(plan).getByLabelText('Montant de la semaine 3'), { target: { value: '0' } })
+    expect(within(plan).getByText('Budget du mois atteint le 11 janv.')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('Montant par semaine'), { target: { value: '50' } })
+    expect(within(plan).getByText(/restent à répartir sur ce mois/).textContent!.replace(/\s+/g, ' ')).toBe('50 DH restent à répartir sur ce mois : augmente le montant d’une semaine.')
+    fireEvent.change(screen.getByLabelText('Montant par semaine'), { target: { value: '100' } })
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter cette enveloppe' }))
     await waitFor(() =>
       expect(api.creer).toHaveBeenCalledWith('/charges', {
         libelle: 'Sorties',
         categorieId: 'c-loi',
         nature: 'enveloppe',
-        montant: 20_000,
+        montant: 30_000,
         frequence: 'mensuelle',
         mois: [],
         jour: null,
@@ -171,6 +181,8 @@ describe('Mon plan › Charges & enveloppes', () => {
         fin: null,
         essentielle: false,
         unite: 'semaine',
+        rythme: 10_000,
+        semaines: [{ debut: '2027-01-04', montant: 0 }],
       }),
     )
 

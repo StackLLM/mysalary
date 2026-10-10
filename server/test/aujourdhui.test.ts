@@ -33,7 +33,7 @@ describe('page Aujourd’hui (lot 16)', () => {
     const cat = (l: string) => categories.find((c) => c.libelle === l)!.id
     await ok(id, '/charges', { libelle: 'Loyer', categorieId: cat('Logement'), nature: 'fixe', montant: 350_000, jour: 5, debut: '2026-11' })
     await ok(id, '/charges', { libelle: 'Internet', categorieId: cat('Télécom & internet'), nature: 'fixe', montant: 25_000, jour: 15, debut: '2026-11' })
-    const courses = (await ok(id, '/charges', { libelle: 'Courses', categorieId: cat('Alimentation'), nature: 'enveloppe', montant: 70_000, unite: 'semaine', debut: '2027-01' })).id
+    const courses = (await ok(id, '/charges', { libelle: 'Courses', categorieId: cat('Alimentation'), nature: 'enveloppe', montant: 310_000, unite: 'semaine', rythme: 70_000, debut: '2027-01' })).id
     ctx.jour = '2027-01-11'
     await ok(id, '/salaire/paies/2027-01/reception', { dateReelle: '2026-12-27', salaireRecu: 1_000_000 })
     await ok(id, '/depenses', { date: '2027-01-06', montant: 30_000, categorieId: cat('Alimentation'), chargeId: courses })

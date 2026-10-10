@@ -105,7 +105,7 @@ describe('réel d’un mois budgétaire', () => {
   it('enveloppe consommée, dépassement visible', () => {
     const cal = calendrier([depense(40_000, '2027-01-10', { chargeId: 'courses' }), depense(230_000, '2027-01-18', { chargeId: 'courses' })])
     expect(cal.suiviDuMois(m('2027-01')).enveloppes).toEqual([
-      { id: 'courses', libelle: 'Courses', categorieId: 'alimentation', budget: 250_000, depense: 270_000, reste: -20_000, unite: 'mois', montantSaisi: 250_000 },
+      { id: 'courses', libelle: 'Courses', categorieId: 'alimentation', budget: 250_000, depense: 270_000, reste: -20_000, unite: 'mois', rythme: null, ajustements: [] },
     ])
     expect(cal.suiviDuMois(m('2027-02')).enveloppes[0]).toMatchObject({ depense: 0, reste: 250_000 })
   })

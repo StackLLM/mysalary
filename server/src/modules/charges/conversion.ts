@@ -1,5 +1,6 @@
 import {
   centimes,
+  type AjustementSemaine,
   lireCleMois,
   lireDate,
   type Certitude,
@@ -28,8 +29,21 @@ export function versCharge(l: LigneCharge): Charge {
     fin: l.fin ? lireCleMois(l.fin) : null,
     essentielle: l.essentielle,
     unite: l.unite === 'semaine' || l.unite === 'jour' ? l.unite : 'mois',
+    rythme: l.rythme === null ? null : centimes(l.rythme),
+    semaines: lireAjustements(l.semaines),
   }
 }
+
+/** « 2026-10-05:10000;2026-10-12:0 » ↔ montants choisis semaine par semaine. */
+export const lireAjustements = (texte: string): AjustementSemaine[] =>
+  texte
+    ? texte.split(';').map((morceau) => {
+        const [debut, montant] = morceau.split(':')
+        return { debut: lireDate(debut!), montant: centimes(Number(montant)) }
+      })
+    : []
+
+export const ecrireAjustements = (liste: { debut: string; montant: number }[]) => liste.map((a) => `${a.debut}:${a.montant}`).join(';')
 
 export function versPonctuel(l: LignePonctuel): Ponctuel {
   return {

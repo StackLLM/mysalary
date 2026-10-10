@@ -176,6 +176,15 @@ function Semaines({
                 </li>
               ))}
             </ul>
+            {donnees.aRepartir > 0 && (
+              <p role="status" className="mt-4 rounded-bouton bg-attention-fond px-4 py-3 text-texte-sm text-attention">
+                <span className="font-semibold">{formaterMontant(donnees.aRepartir)}</span> de tes enveloppes ne sont ouverts par aucune semaine : les montants par semaine
+                ou par jour choisis n’atteignent pas le budget du mois.{' '}
+                <Link to="/plan?onglet=charges" className="font-semibold underline underline-offset-2">
+                  Ajuster mes enveloppes
+                </Link>
+              </p>
+            )}
           </section>
 
           <Separateur className="my-7" />
@@ -610,7 +619,7 @@ function CarteCalcul({ donnees }: { donnees: SemainesDto }) {
   return (
     <Carte titre="Sur quoi repose ce calcul ?">
       <ul className="flex list-disc flex-col gap-2 pl-4 text-texte-sm text-gris">
-        <li>Le budget flexible, ce sont tes enveloppes, avec le montant que tu as fixé dans Mon plan › Charges : par semaine (disponible dès le premier jour de la semaine), par jour, ou par mois (qui arrive au fil des jours). Une semaine coupée par le début ou la fin du mois reçoit ses seuls jours.</li>
+        <li>Le budget flexible, ce sont tes enveloppes (Mon plan › Charges). Chacune ouvre ce que tu as choisi : le montant de chaque semaine dès son premier jour, ou le montant de chaque jour, jusqu’à son budget du mois. Une enveloppe consommée librement arrive au fil des jours.</li>
         <li>Le dépensé compte les dépenses liées à une enveloppe et les dépenses hors plan. Les charges fixes et les dettes sont à part.</li>
         <li>La tendance compare ton dépensé par jour à la moyenne des 4 semaines précédentes.</li>
         <li>

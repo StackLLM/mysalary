@@ -1,7 +1,7 @@
 import { additionner, centimes, soustraire, type Centimes } from './argent'
 import { ajouterJours, ecartJours, type CleMois, type DateCivile } from './dates'
 import { somme, type StatutCouverture } from './depenses'
-import { budgetEnveloppesParJour } from './enveloppes'
+import { budgetEnveloppesParJour, enveloppesARepartir } from './enveloppes'
 import { semainesDe, type Calendrier, type MoisBudgetaire, type Semaine, type StatutPeriode } from './periodes'
 
 /**
@@ -75,6 +75,8 @@ export interface SuiviDesSemaines {
   courante: number | null
   /** Budget flexible du mois (prévu). */
   budget: Centimes
+  /** Budget d'enveloppes qu'aucune semaine n'ouvre encore (montants par semaine ou par jour choisis trop bas). */
+  aRepartir: Centimes
   /** Dépensé flexible du mois à date (réel). */
   depense: Centimes
   /** Mois en cours : budget des jours écoulés (prévu à date). */
@@ -94,7 +96,7 @@ export function suiviDesSemaines(calendrier: Calendrier, cle: CleMois, { debutSe
   const mois = calendrier.mois(cle)
   const jours = Array.from({ length: mois.nbJours }, (_, i) => ajouterJours(mois.debut, i))
   const budget = additionner(...calendrier.suiviDuMois(cle).enveloppes.map((e) => e.budget))
-  // Chaque enveloppe suit sa division (par jour ou par semaine) : le total du mois ne change pas, seul le rythme.
+  // Chaque enveloppe ouvre ce que l'utilisateur a choisi : au fil du mois, par semaine ou par jour.
   const parJourDuMois = budgetEnveloppesParJour(calendrier, cle, debutSemaine)
   const budgetDu = (du: DateCivile, au: DateCivile) => additionner(...jours.flatMap((j, i) => (j >= du && j <= au ? [parJourDuMois[i]!] : [])))
 
@@ -185,6 +187,7 @@ export function suiviDesSemaines(calendrier: Calendrier, cle: CleMois, { debutSe
     semaines,
     courante: semaines.find((s) => s.statut === 'enCours')?.numero ?? null,
     budget,
+    aRepartir: enveloppesARepartir(calendrier, cle, debutSemaine),
     depense: depenseMois,
     budgetADate,
     reponse,

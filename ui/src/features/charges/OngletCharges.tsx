@@ -28,7 +28,7 @@ import {
   useSupprimerCharge,
   useSupprimerPonctuel,
 } from './requetes'
-import { dateOuMois, GROUPES, libelleQuandCharge, ORIGINES, part, UNITES } from './saisie'
+import { dateOuMois, GROUPES, libelleQuandCharge, ORIGINES, part, RYTHMES } from './saisie'
 
 const COLONNES = 'grid grid-cols-[minmax(0,1.3fr)_minmax(0,1.55fr)_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,1fr)_28px] items-center gap-2.5'
 
@@ -205,11 +205,11 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
             titre="Enveloppes"
             sousTitre={
               <>
-                Un budget que tu fixes <span className="font-semibold text-encre-2">par mois, par semaine ou par jour</span> : nourriture, transport, loisirs.
+                Un budget du mois que tu consommes <span className="font-semibold text-encre-2">librement, par semaine ou par jour</span> : nourriture, transport, loisirs.
               </>
             }
             onAjouter={() => setEdition({ type: 'enveloppe' })}
-            entetes={['Enveloppe', 'Période', 'Catégorie', 'Budget', 'Ce mois']}
+            entetes={['Enveloppe', 'Période', 'Catégorie', 'Budget du mois', 'Rythme']}
             vide="Aucune enveloppe. Elles servent au suivi de la semaine."
           >
             {enveloppes.map((c) => (
@@ -219,13 +219,17 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
                   <span className="font-medium">{c.active ? `Dès ${formaterMois(c.debut)}${c.fin ? ` → ${formaterMois(c.fin)}` : ''}` : 'Terminée'}</span>
                 </Cellule>
                 {categorie(c.categorieId)}
-                <Cellule className="px-3" titre={UNITES[c.unite ?? 'mois'].explication}>
-                  <span className="whitespace-nowrap">
-                    <Montant valeur={c.montant} /> <span className="text-mention text-gris">/ {UNITES[c.unite ?? 'mois'].court}</span>
-                  </span>
+                <Cellule className="px-3" prefixe="DH">
+                  <Montant valeur={c.montant} sansDevise />
                 </Cellule>
-                <Cellule className="px-3" prefixe="DH" attenue titre={`Budget de ${nomMois} (${resume.mois.nbJours} jours) : le montant saisi, additionné sur le mois.`}>
-                  <Montant valeur={c.equivalentMensuel} sansDevise />
+                <Cellule className="px-3" attenue={!c.rythme} titre={RYTHMES[c.unite ?? 'mois'].explication}>
+                  {c.rythme ? (
+                    <span className="whitespace-nowrap">
+                      <Montant valeur={c.rythme} /> <span className="text-mention text-gris">/ {RYTHMES[c.unite ?? 'mois'].court}</span>
+                    </span>
+                  ) : (
+                    RYTHMES.mois.court
+                  )}
                 </Cellule>
                 {menu(c.libelle, () => setEdition({ type: 'enveloppe', charge: c }), () => setSuppression({ type: 'charge', id: c.id, libelle: c.libelle }))}
               </li>
@@ -352,7 +356,7 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
             initial={edition.charge}
             aujourdhui={resume.aujourdhui}
             moisCourant={resume.mois.cle}
-            nbJours={resume.mois.nbJours}
+            mois={resume.mois}
             chargement={enregistrerCharge.isPending}
             onEnregistrer={async (saisie) => {
               await enregistrerCharge.mutateAsync({ ...saisie, id: edition.charge?.id })
