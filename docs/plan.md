@@ -348,6 +348,9 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `141026b` | Plan : commit du lot 15 |
 | `2d0a125` | Correctif : pages blanches en changeant de page |
 | `0c599d5` | Lot 14 revu : calendrier jour par jour, ligne « Reste », graphique du cumul |
+| `da91250` | Plan : correctif des pages blanches et calendrier revu |
+| `6348af8` | Correctif : l'application reste affichée après un rechargement à chaud ; filet d'erreur global |
+| `245f514` | Enveloppes divisées par jour ou par semaine |
 
 ## 7. Questions ouvertes
 
