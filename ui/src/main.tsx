@@ -7,6 +7,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
+import { ErreurPage } from './components/ErreurPage'
 import { queryClient } from './lib/queryClient'
 import './styles/index.css'
 
@@ -15,8 +16,10 @@ if (!racine) throw new Error('Élément #racine introuvable.')
 
 createRoot(racine).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
+    <ErreurPage cle="application" pleinePage>
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
+    </ErreurPage>
   </StrictMode>,
 )

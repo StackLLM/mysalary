@@ -74,4 +74,17 @@ describe('pages blanches (correctif)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Objectifs' }))
     expect(screen.getByText('Page affichée')).toBeInTheDocument()
   })
+
+  it('filet de toute l’application : message centré et « Recharger » au lieu d’une page blanche', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.mocked(api.lire).mockResolvedValue([])
+    rendre(
+      <ErreurPage cle="application" pleinePage>
+        <Plante plante />
+      </ErreurPage>,
+      { route: '/mois' },
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('MySalary n’a pas pu s’afficher.')
+    expect(screen.getByRole('button', { name: 'Recharger' })).toBeInTheDocument()
+  })
 })

@@ -1,5 +1,5 @@
 import { formaterMontant, type DepenseDto, type SaisieDepense } from '@mysalary/partage'
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Bouton } from '../../components/Bouton'
@@ -16,22 +16,10 @@ import { useCategories } from '../charges/requetes'
 import { useUtilisateurCourant } from '../profils/requetes'
 import { lireMontant, versSaisie } from '../salaire/saisie'
 import { useEnregistrerDepense, useRattachements, useSupprimerDepense } from './requetes'
+import { ContexteSaisieRapide, useSaisieRapide } from './contexteSaisieRapide'
 import { categoriesFrequentes, cleDe, HORS_PLAN, lienPropose, optionsLien, versLien, type CleLien, type OptionLien } from './saisie'
 
-interface ContexteSaisie {
-  /** Ouvre la saisie : vide (à une date proposée, sinon aujourd'hui), ou pour modifier une dépense. */
-  ouvrir: (depense?: DepenseDto, options?: { date?: string }) => void
-  /** Ouvre la saisie d'un versement d'épargne (lot 10), éventuellement vers un objectif. */
-  ouvrirVersement: (options?: { objectifId?: string }) => void
-}
-
-const Contexte = createContext<ContexteSaisie | null>(null)
-
-export function useSaisieRapide(): ContexteSaisie {
-  const c = useContext(Contexte)
-  if (!c) throw new Error('useSaisieRapide hors de FournisseurSaisieRapide')
-  return c
-}
+export { useSaisieRapide }
 
 /** Vrai quand la frappe vise un champ ou une fenêtre : la touche N ne doit pas ouvrir la saisie. */
 export function frappeOccupee(e: KeyboardEvent): boolean {
@@ -81,7 +69,7 @@ export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
   )
 
   return (
-    <Contexte.Provider value={valeur}>
+    <ContexteSaisieRapide.Provider value={valeur}>
       {children}
       {actif && (
         <Panneau
@@ -110,7 +98,7 @@ export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
           )}
         </Panneau>
       )}
-    </Contexte.Provider>
+    </ContexteSaisieRapide.Provider>
   )
 }
 
