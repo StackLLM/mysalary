@@ -1,8 +1,8 @@
-import type { DateCivile, MoisCumul, ResumeCumul } from '@mysalary/moteur'
+import type { DateCivile, EvenementJour, MoisCumul, ResumeCumul } from '@mysalary/moteur'
 import { z } from 'zod'
 import { schemaCleMois } from './salaire'
 
-export type { Depart, MoisCumul, NatureCumul, ResumeCumul } from '@mysalary/moteur'
+export type { Depart, EvenementJour, MoisCumul, NatureCumul, ResumeCumul } from '@mysalary/moteur'
 
 /** Plage de mois du cumul : 36 mois au plus. */
 export const schemaPlageCumul = z
@@ -24,4 +24,17 @@ export interface CumulDto {
   mois: MoisCumul[]
   /** Totaux de la plage, cumul de fin et mois le plus bas (lot 14). */
   resume: ResumeCumul
+}
+
+
+/** Année affichée dans le calendrier (lot 14). */
+export const schemaAnnee = z.coerce.number({ error: 'Année invalide.' }).int('Année invalide.').min(2000, 'Année invalide.').max(2100, 'Année invalide.')
+
+/** Calendrier de l'année (lot 14) : le cumul des 12 mois, et ce qui tombe chaque jour de chaque mois. */
+export interface AnneeDto extends CumulDto {
+  annee: number
+  /** 1 = lundi, 7 = dimanche (Réglages). */
+  debutSemaine: 1 | 7
+  /** Revenus et charges datés, par mois budgétaire. */
+  evenements: Record<string, EvenementJour[]>
 }

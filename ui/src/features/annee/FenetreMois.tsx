@@ -147,6 +147,12 @@ function Calcul({ mois: m }: { mois: MoisCumul }) {
           </div>
         ))}
       </div>
+      <p className="mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-champ border border-filet px-4 py-2.5 text-texte-sm">
+        <span className="text-gris">
+          <span className="font-semibold text-encre-2">Reste après charges</span> (revenus − charges)
+        </span>
+        <Montant valeur={m.apresCharges} className={cn('font-bold', m.apresCharges < 0 ? 'text-alerte' : 'text-encre', prevu && 'italic')} />
+      </p>
       <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-champ bg-sauge-50 px-4 py-3 ring-1 ring-sauge-200">
         <span className="text-texte-sm font-semibold text-sauge-700">= Cumul fin de mois{m.nature === 'enCours' ? ' (estimation)' : m.nature === 'prevu' ? ' (prévu)' : ''}</span>
         <Montant valeur={m.cumul!} className={cn('text-titre font-bold', m.cumul! < 0 ? 'text-alerte' : 'text-encre')} />

@@ -1,5 +1,5 @@
-import { bilanDuMois, cumulDesMois, debutCumul, resumeCumul, rythmeDuMois, suiviDesSemaines, type CleMois, type DateCivile, type SuiviDesSemaines } from '@mysalary/moteur'
-import { CODES_ERREUR, formaterMois, type BilanDto, type CumulDto, type EvenementCloture, type SemainesDto } from '@mysalary/partage'
+import { bilanDuMois, cumulDesMois, debutCumul, evenementsDuMois, lireCleMois, resumeCumul, rythmeDuMois, suiviDesSemaines, type CleMois, type DateCivile, type SuiviDesSemaines } from '@mysalary/moteur'
+import { CODES_ERREUR, formaterMois, type AnneeDto, type BilanDto, type CumulDto, type EvenementCloture, type SemainesDto } from '@mysalary/partage'
 import type { PrismaClient } from '@prisma/client'
 import { ErreurApi } from '../../lib/erreurs'
 import { chargerCalendrier } from '../salaire/depot'
@@ -50,6 +50,23 @@ export async function cumul(prisma: PrismaClient, utilisateurId: string, aujourd
   const { calendrier, regles, depart } = await chargerCalendrier(prisma, utilisateurId, aujourdhui)
   const mois = cumulDesMois(calendrier, du, au, { aujourdhui, regle: regles.realiste, depart })
   return { aujourdhui, debut: debutCumul(calendrier, aujourdhui, depart), depart, mois, resume: resumeCumul(mois) }
+}
+
+/** Calendrier de l'année (lot 14) : cumul de janvier à décembre, revenus et charges datés de chaque mois. */
+export async function annee(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile, an: number): Promise<AnneeDto> {
+  const { calendrier, regles, depart, debutSemaine } = await chargerCalendrier(prisma, utilisateurId, aujourdhui)
+  const du = lireCleMois(`${an}-01`)
+  const mois = cumulDesMois(calendrier, du, lireCleMois(`${an}-12`), { aujourdhui, regle: regles.realiste, depart })
+  return {
+    aujourdhui,
+    annee: an,
+    debutSemaine: debutSemaine === 7 ? 7 : 1,
+    debut: debutCumul(calendrier, aujourdhui, depart),
+    depart,
+    mois,
+    resume: resumeCumul(mois),
+    evenements: Object.fromEntries(mois.map((m) => [m.cle, evenementsDuMois(calendrier, m.cle)])),
+  }
 }
 
 /** Semaines du mois (lot 9) : figées si le mois est clôturé (clôture faite depuis le lot 9), sinon calculées. */

@@ -80,3 +80,21 @@ Compte « Essai » (supprimé ensuite) : salaire 10 000 DH le 27, loyer 3 500 DH
 - [x] `npm run verifier` passe.
 - [x] Réel, estimation et prévu toujours nommés, jamais par la couleur seule.
 - [x] Vérifié à 1342 px et 375 px.
+
+## Revu le 11/10/2026 : calendrier « premium » et ligne « Reste »
+
+Demande : « une vue par année de manière premium, un joli calendrier avec tous les mois ; on garde le modal ; sur la carte du mois, après Charges, une ligne Reste avec le montant ».
+
+- **Les 12 mois sont des calendriers** : grille des jours du mois budgétaire (L M M J V S D, ou à partir du dimanche selon les Réglages).
+  - Le jour de paie est un rond sauge.
+  - Une pastille sous un jour signale une charge datée : orange si prévue, verte si payée, rouge si en retard.
+  - Aujourd'hui est cerclé ; les jours du mois civil précédent sont plus clairs.
+  - Le survol d'un jour en donne le détail (« Loyer −3 500 DH »).
+- **Ligne « Reste »** sur chaque carte, entre Charges et Épargne : revenus − charges du mois (moteur : `apresCharges`). La fenêtre du mois l'affiche aussi (« Reste après charges »).
+- **Graphique « Cumul fin de mois »** : une barre par mois (réel plein, prévu plus clair, négatif en rouge sous le zéro) ; un clic ouvre le mois.
+- **Tous les mois affichés**, y compris ceux d'avant le suivi (sans chiffres) ; la bande qui les regroupait est retirée.
+- **Données** :
+  - moteur : `evenementsDuMois` (revenus et charges datés, réel s'il existe) et `grilleDesJours` ;
+  - route `GET /annee/:annee` (`AnneeDto` : cumul des 12 mois, résumé, début de semaine, événements par mois).
+- **Tests** : 338 au total (partage 21, moteur 137, serveur 76, interface 104), dont la régression des pages blanches (2).
+- Vérifié sur ton compte (lecture seule) à 1342 px et 375 px : octobre en cours, paie le 28 sept., reste 14 425 DH, cumul 10 425 DH.

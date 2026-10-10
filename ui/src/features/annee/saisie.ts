@@ -63,3 +63,58 @@ export function montantLigne(l: Pick<LigneBilan, 'prevu' | 'reel' | 'famille'>, 
   const precision = l.prevu !== null && l.prevu !== l.reel ? `sur ${formaterMontant(l.prevu)} prévus` : null
   return { valeur: l.reel, prevu: false, precision }
 }
+
+/** En-têtes des colonnes de la grille : « L M M J V S D », ou à partir du dimanche. */
+export const joursEntete = (debutSemaine: 1 | 7) => (debutSemaine === 7 ? ['D', 'L', 'M', 'M', 'J', 'V', 'S'] : ['L', 'M', 'M', 'J', 'V', 'S', 'D'])
+
+export interface CaseJour {
+  date: string
+  jour: number
+  /** Jour du mois civil précédent (ex. 27 sept. dans le mois budgétaire d'octobre) : affiché plus clair. */
+  horsMois: boolean
+  aujourdhui: boolean
+  paie: boolean
+  /** Charges datées ce jour-là : la pastille prend la couleur du statut le plus urgent. */
+  charges: 'aucune' | 'prevue' | 'payee' | 'enRetard'
+  /** Infobulle : ce qui tombe ce jour-là. */
+  titre: string
+}
+
+type Evenement = { date: string; type: 'revenu' | 'charge'; libelle: string; montant: number; statut: string }
+
+/** Une case de la grille d'un mois : numéro du jour, paie, charges, et leur détail en mots. */
+export function caseJour(date: string, cle: string, evenements: Evenement[], aujourdhui: string): CaseJour {
+  const ceJour = evenements.filter((e) => e.date === date)
+  const charges = ceJour.filter((e) => e.type === 'charge')
+  const etat: CaseJour['charges'] =
+    charges.length === 0 ? 'aucune' : charges.some((c) => c.statut === 'enRetard') ? 'enRetard' : charges.every((c) => c.statut === 'confirme') ? 'payee' : 'prevue'
+  const lignes = ceJour.map((e) => `${e.libelle} ${e.type === 'revenu' ? '+' : '−'}${formaterMontant(e.montant)}`)
+  return {
+    date,
+    jour: Number(date.slice(8)),
+    horsMois: date.slice(0, 7) !== cle,
+    aujourdhui: date === aujourdhui,
+    paie: ceJour.some((e) => e.type === 'revenu'),
+    charges: etat,
+    titre: [formaterDate(date, 'moyen'), ...lignes].join('\n'),
+  }
+}
+
+/**
+ * Barres du graphique « Cumul fin de mois » : hauteur et position en % d'une même échelle,
+ * avec la ligne du zéro quand un mois passe sous zéro.
+ */
+export function echelleCumul(mois: Pick<MoisCumul, 'cle' | 'cumul'>[]): { zero: number; barres: { cle: string; bas: number; hauteur: number }[] } {
+  const valeurs = mois.map((m) => m.cumul ?? 0)
+  const haut = Math.max(0, ...valeurs)
+  const bas = Math.min(0, ...valeurs)
+  const etendue = haut - bas || 1
+  const zero = bas === 0 ? 0 : (-bas / etendue) * 100
+  return {
+    zero,
+    barres: mois.map((m) => {
+      const v = m.cumul ?? 0
+      return { cle: m.cle, bas: v >= 0 ? zero : zero - (-v / etendue) * 100, hauteur: (Math.abs(v) / etendue) * 100 }
+    }),
+  }
+}

@@ -1,4 +1,4 @@
-import type { BilanDto, CumulDto, Reglages } from '@mysalary/partage'
+import type { AnneeDto, BilanDto, CumulDto, Reglages } from '@mysalary/partage'
 import { describe, expect, it } from 'vitest'
 import { creerCompte, pour, preparerApp, url } from './outils'
 
@@ -49,6 +49,21 @@ describe('cumul de mois en mois (lot 13)', () => {
     expect(r.depart).toEqual({ mois: '2027-01', solde: 200_000 })
     expect((await lire<CumulDto>(id, '/cumul?du=2027-01&au=2027-01')).mois[0]).toMatchObject({ report: 200_000, cumul: 850_000 })
     expect(((await ok(id, 'PUT', '/reglages', { depart: null })) as Reglages).depart).toBeNull()
+  })
+
+  it('calendrier de l’année : 12 mois, reste après charges, revenus et charges datés de chaque mois', async () => {
+    const id = await compte()
+    const a = await lire<AnneeDto>(id, '/annee/2027')
+    expect(a).toMatchObject({ annee: 2027, debutSemaine: 1, debut: '2027-01' })
+    expect(a.mois.map((m) => m.cle)).toEqual(['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((m) => `2027-${m}`))
+    expect(a.mois[0]).toMatchObject({ revenus: 1_000_000, charges: 350_000, apresCharges: 650_000, cumul: 650_000 })
+    expect(a.evenements['2027-01']!.map((e) => [e.date, e.type, e.libelle])).toEqual([
+      ['2026-12-27', 'revenu', 'Salaire'],
+      ['2027-01-05', 'charge', 'Loyer'],
+    ])
+    expect(a.resume.cumulFin).toBe(a.mois[11]!.cumul)
+    expect((await appeler(id, 'GET', '/annee/deux-mille')).statusCode).toBe(400)
+    expect((await appeler(id, 'GET', '/annee/1990')).statusCode).toBe(400)
   })
 
   it('refuse une plage à l’envers ou trop longue', async () => {

@@ -27,6 +27,8 @@ export interface MoisCumul {
   revenus: Centimes
   /** Sorties (dépenses, paiements de dettes) et charges encore prévues. */
   charges: Centimes
+  /** Revenus − charges : ce qui reste du salaire et des autres revenus une fois les charges payées (lot 14). */
+  apresCharges: Centimes
   /** Épargne versée (nette des retraits), ou prévue (versements mensuels choisis). */
   epargne: Centimes
   /** Revenus − charges − épargne. */
@@ -68,7 +70,7 @@ export function cumulDesMois(calendrier: Calendrier, du: CleMois, au: CleMois, {
     const mois = calendrier.mois(cle)
     const base = { cle, debut: mois.debut, fin: mois.fin, statut: mois.statut }
     if (cle < debut) {
-      if (cle >= du) resultat.push({ ...base, nature: 'avant', premier: false, report: null, revenus: centimes(0), charges: centimes(0), epargne: centimes(0), reste: centimes(0), cumul: null, dontReel: null })
+      if (cle >= du) resultat.push({ ...base, nature: 'avant', premier: false, report: null, revenus: centimes(0), charges: centimes(0), apresCharges: centimes(0), epargne: centimes(0), reste: centimes(0), cumul: null, dontReel: null })
       continue
     }
     const ligne = calculer(calendrier, cle, mois.statut, regle)
@@ -79,12 +81,13 @@ export function cumulDesMois(calendrier: Calendrier, du: CleMois, au: CleMois, {
   return resultat
 }
 
-function calculer(calendrier: Calendrier, cle: CleMois, statut: StatutPeriode, regle: RegleScenario): Pick<MoisCumul, 'nature' | 'revenus' | 'charges' | 'epargne' | 'reste' | 'dontReel'> {
+function calculer(calendrier: Calendrier, cle: CleMois, statut: StatutPeriode, regle: RegleScenario): Pick<MoisCumul, 'nature' | 'revenus' | 'charges' | 'apresCharges' | 'epargne' | 'reste' | 'dontReel'> {
   const epargneMois = calendrier.epargneDuMois(cle)
   const fin = (nature: NatureCumul, revenus: Centimes, charges: Centimes, epargne: Centimes, dontReel: MoisCumul['dontReel'] = null) => ({
     nature,
     revenus,
     charges,
+    apresCharges: soustraire(revenus, charges),
     epargne,
     reste: soustraire(soustraire(revenus, charges), epargne),
     dontReel,

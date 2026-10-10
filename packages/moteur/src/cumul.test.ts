@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { centimes } from './argent'
 import type { Charge } from './charges'
+import { evenementsDuMois, grilleDesJours } from './annee'
 import { cumulDesMois, debutCumul, resumeCumul } from './cumul'
 import { lireCleMois as m, lireDate as d } from './dates'
 import type { Depense } from './depenses'
@@ -93,7 +94,7 @@ describe('cumul de mois en mois (lot 13)', () => {
   it('le reste de chaque mois s’ajoute au suivant : réel, puis réel + prévu restant, puis prévu', () => {
     const [decembre, janvier, fevrier] = cumulDesMois(calendrier(depenses), m('2026-12'), m('2027-02'), { aujourdhui: AUJOURDHUI })
     // Décembre (réel) : 10 000 − (3 500 + 1 800) − 1 000 d'épargne versée = 3 700 DH.
-    expect(decembre).toMatchObject({ nature: 'reel', premier: true, report: 0, revenus: 1_000_000, charges: 530_000, epargne: 100_000, reste: 370_000, cumul: 370_000, dontReel: null })
+    expect(decembre).toMatchObject({ nature: 'reel', premier: true, report: 0, revenus: 1_000_000, charges: 530_000, apresCharges: 470_000, epargne: 100_000, reste: 370_000, cumul: 370_000, dontReel: null })
     // Janvier (en cours) : 10 000 − (4 000 sortis + 1 500 de courses encore prévues) − 1 000 de versement prévu = 3 500 DH.
     expect(janvier).toMatchObject({
       nature: 'enCours',
@@ -153,5 +154,31 @@ describe('cumul de mois en mois (lot 13)', () => {
     const decouvert = cumulDesMois(calendrier(depenses), m('2027-01'), m('2027-02'), { aujourdhui: AUJOURDHUI, depart: { mois: m('2027-01'), solde: centimes(-500_000) } })
     expect(resumeCumul(decouvert)).toMatchObject({ cumulFin: 300_000, plusBas: { cle: '2027-01', cumul: -150_000 }, negatifs: ['2027-01'] })
     expect(resumeCumul(mois.slice(0, 1))).toMatchObject({ revenus: 0, cumulFin: null, plusBas: null })
+  })
+})
+
+describe('calendrier de l’année (lot 14)', () => {
+  it('revenus et charges datés du mois, réel s’il existe ; les enveloppes n’ont pas de date', () => {
+    const evenements = evenementsDuMois(calendrier(depenses), m('2027-01'))
+    expect(evenements.map((e) => [e.date, e.type, e.libelle, e.montant, e.statut])).toEqual([
+      ['2026-12-27', 'revenu', 'Salaire', 1_000_000, 'confirme'],
+      ['2027-01-05', 'charge', 'Loyer', 350_000, 'confirme'],
+    ])
+    expect(evenementsDuMois(calendrier(), m('2027-02')).map((e) => [e.date, e.libelle, e.statut])).toEqual([
+      ['2027-01-27', 'Salaire', 'prevu'],
+      ['2027-02-05', 'Loyer', 'prevu'],
+      ['2027-02-10', 'Cours', 'prevu'],
+    ])
+  })
+
+  it('grille des jours : semaines de 7 cases, vides hors période, début lundi ou dimanche', () => {
+    // 27 déc. 2026 est un dimanche ; 26 janv. 2027 un mardi.
+    const lundi = grilleDesJours(d('2026-12-27'), d('2027-01-26'))
+    expect(lundi).toHaveLength(6)
+    expect(lundi[0]).toEqual([null, null, null, null, null, null, '2026-12-27'])
+    expect(lundi.at(-1)).toEqual(['2027-01-25', '2027-01-26', null, null, null, null, null])
+    const dimanche = grilleDesJours(d('2026-12-27'), d('2027-01-26'), 7)
+    expect(dimanche[0]![0]).toBe('2026-12-27')
+    expect(dimanche.flat().filter(Boolean)).toHaveLength(31)
   })
 })

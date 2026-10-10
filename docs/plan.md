@@ -221,7 +221,8 @@ Règles appliquées à chaque lot :
   - une carte par mois suivi : cumul fin de mois, jauge, revenus, charges, épargne, objectifs atteints (projection) ou à leur date souhaitée ; réel, en cours (cerclé) et prévu (pointillés, italique) ; les mois d'avant le suivi en une seule bande ;
   - fenêtre du mois : le calcul (report + revenus − charges − épargne = cumul), les objectifs du mois, puis chaque revenu, charge et versement avec son statut ; mois précédent / suivant, « Ouvrir le mois » ;
   - moteur `resumeCumul`, `resume` dans `GET /cumul` ; composant `Fenetre` (fenêtre centrée) ; `CalendrierAnnee` réutilisable par la page Année (lot 18).
-- **Écarts** : sous 640 px, deux cartes par ligne sans le détail revenus / charges / épargne (il est dans la fenêtre).
+- **Revu le 11/10/2026** (ta demande) : chaque mois devient un vrai calendrier (paie, charges datées par jour, aujourd'hui), ligne « Reste » (revenus − charges) sur chaque carte et dans la fenêtre, graphique du cumul sur l'année, les 12 mois affichés ; route `GET /annee/:annee`.
+- **Correctif du 11/10/2026** : pages blanches en changeant de page (hook appelé sous condition dans la saisie rapide, transition qui attendait la sortie de la page précédente) ; chaque page a maintenant un filet d'erreur avec « Recharger ».
 
 ## 3. Lots livrés, en attente de validation
 

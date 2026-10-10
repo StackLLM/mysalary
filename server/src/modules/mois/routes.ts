@@ -1,5 +1,5 @@
 import { ecartJours, semainesDe, type CleMois, type DateCivile } from '@mysalary/moteur'
-import { schemaCleMois, schemaCloture, schemaPlageCumul, type MoisBudgetaireDto } from '@mysalary/partage'
+import { schemaAnnee, schemaCleMois, schemaCloture, schemaPlageCumul, type MoisBudgetaireDto } from '@mysalary/partage'
 import type { FastifyInstance } from 'fastify'
 import { valider } from '../../lib/valider'
 import { utilisateurDe } from '../../plugins/utilisateurCourant'
@@ -45,6 +45,11 @@ export async function routesMois(app: FastifyInstance) {
     const { du, au } = valider(schemaPlageCumul, { du: requete.query.du, au: requete.query.au })
     return depot.cumul(app.prisma, utilisateurDe(requete), app.aujourdhui(), du, au)
   })
+
+  // Calendrier de l'année (lot 14).
+  app.get<{ Params: { annee: string } }>('/annee/:annee', async (requete) =>
+    depot.annee(app.prisma, utilisateurDe(requete), app.aujourdhui(), valider(schemaAnnee, requete.params.annee)),
+  )
 
   // Suivi hebdomadaire (lot 9).
   app.get<{ Params: { cle: string } }>('/mois/:cle/semaines', async (requete) =>

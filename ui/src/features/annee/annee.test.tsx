@@ -1,4 +1,4 @@
-import type { BilanDto, CumulDto, MoisCumul, ObjectifsDto, SuiviObjectif } from '@mysalary/partage'
+import type { AnneeDto, BilanDto, MoisCumul, ObjectifsDto, SuiviObjectif } from '@mysalary/partage'
 import { fireEvent, screen, within } from '@testing-library/react'
 import { useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -6,7 +6,7 @@ import { api } from '../../lib/api'
 import { rendre } from '../../test/outils'
 import { PageObjectifs } from '../objectifs/PageObjectifs'
 import { CalendrierAnnee } from './CalendrierAnnee'
-import { jalonsDuMois, jauge, montantLigne, moisCourt } from './saisie'
+import { caseJour, echelleCumul, jalonsDuMois, jauge, joursEntete, montantLigne, moisCourt } from './saisie'
 
 vi.mock('../../lib/api', async (original) => ({
   ...(await original<typeof import('../../lib/api')>()),
@@ -24,23 +24,32 @@ function visible(element: Element) {
 
 // Salaire 10 000 DH le 27 ; suivi depuis septembre 2026 ; aujourd'hui : 10 oct. 2026.
 const mois = (cle: string, modif: Record<string, unknown>): MoisCumul =>
-  ({ cle, debut: `${cle}-01`, fin: `${cle}-28`, statut: 'aVenir', nature: 'prevu', premier: false, report: 0, revenus: 1_000_000, charges: 560_000, epargne: 100_000, reste: 340_000, cumul: 0, dontReel: null, ...modif }) as unknown as MoisCumul
+  ({ cle, debut: `${cle}-01`, fin: `${cle}-28`, statut: 'aVenir', nature: 'prevu', premier: false, report: 0, revenus: 1_000_000, charges: 560_000, apresCharges: 440_000, epargne: 100_000, reste: 340_000, cumul: 0, dontReel: null, ...modif }) as unknown as MoisCumul
 
-const avant = (cle: string) => mois(cle, { statut: 'passe', nature: 'avant', report: null, cumul: null, revenus: 0, charges: 0, epargne: 0, reste: 0 })
+const avant = (cle: string) => mois(cle, { statut: 'passe', nature: 'avant', report: null, cumul: null, revenus: 0, charges: 0, apresCharges: 0, epargne: 0, reste: 0 })
 const annee2026: MoisCumul[] = [
   ...['01', '02', '03', '04', '05', '06', '07', '08'].map((m) => avant(`2026-${m}`)),
-  mois('2026-09', { statut: 'passe', nature: 'reel', premier: true, report: 0, charges: 510_000, epargne: 0, reste: 490_000, cumul: 490_000 }),
-  mois('2026-10', { statut: 'enCours', nature: 'enCours', report: 490_000, charges: 680_000, reste: 220_000, cumul: 710_000, dontReel: { revenus: 1_000_000, charges: 440_000, epargne: 0 } }),
+  mois('2026-09', { statut: 'passe', nature: 'reel', premier: true, report: 0, charges: 510_000, apresCharges: 490_000, epargne: 0, reste: 490_000, cumul: 490_000 }),
+  mois('2026-10', { debut: '2026-09-26', fin: '2026-10-26', statut: 'enCours', nature: 'enCours', report: 490_000, charges: 680_000, apresCharges: 320_000, reste: 220_000, cumul: 710_000, dontReel: { revenus: 1_000_000, charges: 440_000, epargne: 0 } }),
   mois('2026-11', { report: 710_000, cumul: 1_050_000 }),
   mois('2026-12', { report: 1_050_000, cumul: 1_390_000 }),
 ]
-const cumul2026 = {
+const annee2026Dto = {
   aujourdhui: '2026-10-10',
+  annee: 2026,
+  debutSemaine: 1,
+  evenements: {
+    '2026-10': [
+      { date: '2026-09-26', type: 'revenu', libelle: 'Salaire', montant: 1_000_000, statut: 'confirme' },
+      { date: '2026-10-05', type: 'charge', libelle: 'Loyer', montant: 350_000, statut: 'confirme' },
+      { date: '2026-10-10', type: 'charge', libelle: 'Assurance auto', montant: 120_000, statut: 'prevu' },
+    ],
+  },
   debut: '2026-09',
   depart: null,
   mois: annee2026,
   resume: { revenus: 4_000_000, charges: 2_310_000, epargne: 300_000, reste: 1_390_000, cumulFin: 1_390_000, plusBas: { cle: '2026-09', cumul: 490_000 }, negatifs: [], natures: { reel: 1, enCours: 1, prevu: 2 } },
-} as unknown as CumulDto
+} as unknown as AnneeDto
 
 const objectif = (modif: Record<string, unknown>) =>
   ({ id: 'moto', libelle: 'Moto', statut: 'actif', atteint: false, dateCible: '2027-06', estimations: { prudent: '2027-08', realiste: '2026-12', ambitieux: '2026-11' }, ...modif }) as unknown as SuiviObjectif
@@ -55,7 +64,7 @@ beforeEach(() => {
     if (chemin === '/utilisateurs') return [compte]
     if (chemin === '/mois/courant') return { cle: '2026-10' }
     if (chemin === '/objectifs') return objectifs
-    if (chemin === '/cumul?du=2026-01&au=2026-12') return cumul2026
+    if (chemin === '/annee/2026') return annee2026Dto
     if (chemin === '/mois/2026-10/bilan')
       return bilan('2026-10', [
         ligne('s', 'revenu', 'Salaire', 1_000_000, 1_000_000, 'confirme', '2026-09-26'),
@@ -91,32 +100,59 @@ describe('règles d’affichage du calendrier', () => {
     expect(montantLigne(enveloppe(0), true)).toEqual({ valeur: 150_000, prevu: true, precision: null })
     expect(moisCourt('2026-09')).toBe('sept.')
   })
+
+  it('cases des jours : paie, charges (le statut le plus urgent), jour d’un autre mois, aujourd’hui, détail au survol', () => {
+    const evenements = annee2026Dto.evenements['2026-10']!
+    expect(caseJour('2026-09-26', '2026-10', evenements, '2026-10-10')).toMatchObject({ jour: 26, horsMois: true, paie: true, charges: 'aucune' })
+    expect(caseJour('2026-10-05', '2026-10', evenements, '2026-10-10')).toMatchObject({ horsMois: false, paie: false, charges: 'payee' })
+    const aujourdhui = caseJour('2026-10-10', '2026-10', evenements, '2026-10-10')
+    expect(aujourdhui).toMatchObject({ aujourdhui: true, charges: 'prevue' })
+    expect(espaces(aujourdhui.titre)).toBe('10 oct. 2026 Assurance auto −1 200 DH')
+    expect(caseJour('2026-10-10', '2026-10', [{ ...evenements[2]!, statut: 'enRetard' }, evenements[1]!], '2026-10-12').charges).toBe('enRetard')
+    expect(joursEntete(7)[0]).toBe('D')
+  })
+
+  it('échelle du graphique : zéro en bas, ou plus haut quand un mois passe sous zéro', () => {
+    expect(echelleCumul(cumuls(null, 500, 1000) as never)).toMatchObject({ zero: 0, barres: [{ hauteur: 0 }, { bas: 0, hauteur: 50 }, { bas: 0, hauteur: 100 }] })
+    const negatif = echelleCumul(cumuls(-250, 750) as never)
+    expect(negatif.zero).toBe(25)
+    expect(negatif.barres).toMatchObject([{ bas: 0, hauteur: 25 }, { bas: 25, hauteur: 75 }])
+  })
 })
 
 describe('Calendrier de l’année', () => {
-  it('une bande pour les mois d’avant le suivi, une carte par mois suivi, le résumé de l’année', async () => {
+  it('les 12 mois en calendrier : jours, reste après charges, cumul ; graphique et résumé de l’année', async () => {
     rendre(<Calendrier />, { route: '/objectifs', compte: 'u1' })
     const grille = await screen.findByRole('list', { name: 'Mois de 2026' })
-    expect(espaces(within(grille).getByRole('region', { name: 'Avant le début du suivi' }).textContent)).toContain('Janvier → août : avant le début de ton suivi')
-    const cartes = within(grille).getAllByRole('button', { name: /cumul fin de mois/ })
-    expect(cartes.map((c) => c.getAttribute('aria-label')!.replace(/\s+/g, ' '))).toEqual([
-      'Septembre 2026 : cumul fin de mois 4 900 DH, réel. Voir le détail.',
-      'Octobre 2026 : cumul fin de mois 7 100 DH, en cours. Voir le détail.',
-      'Novembre 2026 : cumul fin de mois 10 500 DH, prévu. Voir le détail.',
-      'Décembre 2026 : cumul fin de mois 13 900 DH, prévu. Voir le détail.',
+    const cartes = within(grille).getAllByRole('button')
+    expect(cartes).toHaveLength(12)
+    expect(espaces(cartes[0]!.getAttribute('aria-label'))).toBe('Janvier 2026 : avant le suivi. Voir le détail.')
+    expect(cartes.slice(8).map((c) => espaces(c.getAttribute('aria-label')))).toEqual([
+      'Septembre 2026 : reste après charges 4 900 DH, cumul fin de mois 4 900 DH, réel. Voir le détail.',
+      'Octobre 2026 : reste après charges 3 200 DH, cumul fin de mois 7 100 DH, en cours. Voir le détail.',
+      'Novembre 2026 : reste après charges 4 400 DH, cumul fin de mois 10 500 DH, prévu. Voir le détail.',
+      'Décembre 2026 : reste après charges 4 400 DH, cumul fin de mois 13 900 DH, prévu. Voir le détail.',
     ])
-    expect(visible(cartes[1]!)).toContain('Revenus+10 000DHCharges−6 800DHÉpargne−1 000DH')
-    expect(espaces(cartes[3]!.textContent)).toContain('Moto')
-    expect(espaces(cartes[2]!.textContent)).toContain('Voyage')
+    expect(visible(cartes[9]!)).toContain('Revenus+10 000DHCharges−6 800DHReste3 200DHÉpargne−1 000DHCumul fin de mois7 100DH')
+    // Grille d'octobre : la paie du 26 sept., le loyer payé le 5 oct.
+    expect(espaces(cartes[9]!.querySelector('[title^="26 sept. 2026"]')?.getAttribute('title'))).toContain('Salaire +10 000 DH')
+    expect(espaces(cartes[9]!.querySelector('[title^="5 oct. 2026"]')?.getAttribute('title'))).toContain('Loyer −3 500 DH')
+    expect(espaces(cartes[11]!.textContent)).toContain('Moto')
+    expect(espaces(cartes[10]!.textContent)).toContain('Voyage')
     expect(espaces(screen.getByText('Cumul fin décembre (prévu)').parentElement!.textContent)).toContain('Mois le plus bas : septembre · 4 900 DH')
+
+    const graphique = screen.getByRole('region', { name: 'Cumul fin de mois sur l’année' })
+    expect(within(graphique).getAllByRole('button')).toHaveLength(12)
+    fireEvent.click(within(graphique).getByRole('button', { name: /^Octobre 2026 : 7.100.DH \(estimation\)$/ }))
+    expect(await screen.findByRole('dialog', { name: 'octobre 2026' })).toBeInTheDocument()
   })
 
   it('un clic ouvre la fenêtre du mois : le calcul, puis chaque ligne ; on passe au mois suivant', async () => {
     rendre(<Calendrier />, { route: '/objectifs', compte: 'u1' })
-    fireEvent.click(await screen.findByRole('button', { name: /^Octobre 2026 : cumul/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /^Octobre 2026 : reste/ }))
     const fenetre = await screen.findByRole('dialog', { name: 'octobre 2026' })
     const calcul = within(fenetre).getByRole('region', { name: 'Calcul du cumul' })
-    expect(visible(calcul)).toBe('Report de septembre4 900DHRevenus+10 000DHdont 10 000DH réelsCharges−6 800DHdont 4 400DH réelsÉpargne−1 000DHdont 0DH réels= Cumul fin de mois (estimation)7 100DH')
+    expect(visible(calcul)).toBe('Report de septembre4 900DHRevenus+10 000DHdont 10 000DH réelsCharges−6 800DHdont 4 400DH réelsÉpargne−1 000DHdont 0DH réelsReste après charges (revenus − charges)3 200DH= Cumul fin de mois (estimation)7 100DH')
     const charges = await within(fenetre).findByRole('region', { name: 'Charges' })
     expect(visible(charges)).toContain('Loyer5 oct. · Payé3 500DH')
     expect(visible(charges)).toContain('CoursesEn cours900DHsur 1 500 DH prévus')
@@ -133,7 +169,7 @@ describe('Calendrier de l’année', () => {
     rendre(<Calendrier />, { route: '/objectifs', compte: 'u1' })
     fireEvent.click(await screen.findByRole('button', { name: 'Année 2027' }))
     expect(await screen.findByText('Impossible de calculer l’année 2027.')).toBeInTheDocument()
-    expect(vi.mocked(api.lire)).toHaveBeenCalledWith('/cumul?du=2027-01&au=2027-12')
+    expect(vi.mocked(api.lire)).toHaveBeenCalledWith('/annee/2027')
     expect(screen.getByRole('button', { name: 'Cette année' })).toBeInTheDocument()
   })
 

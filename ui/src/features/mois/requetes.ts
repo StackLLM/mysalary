@@ -1,4 +1,4 @@
-import type { BilanDto, CumulDto, SaisieCloture, SemainesDto } from '@mysalary/partage'
+import type { AnneeDto, BilanDto, CumulDto, SaisieCloture, SemainesDto } from '@mysalary/partage'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
@@ -59,4 +59,15 @@ export function useCloturer() {
 export function useRouvrir() {
   const invalider = useInvalider()
   return useMutation({ mutationFn: (cle: string) => api.creer<void>(`/mois/${cle}/rouvrir`, {}), onSuccess: invalider })
+}
+
+/** Calendrier de l'année (lot 14) : cumul des 12 mois et revenus / charges datés de chaque jour. */
+export function useAnnee(annee: number) {
+  const { mois, actif } = useCles()
+  return useQuery({
+    queryKey: [...mois, 'annee', annee],
+    queryFn: () => api.lire<AnneeDto>(`/annee/${annee}`),
+    enabled: actif,
+    placeholderData: keepPreviousData,
+  })
 }
