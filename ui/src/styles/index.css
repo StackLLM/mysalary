@@ -26,6 +26,17 @@
   .hachure {
     background-image: repeating-linear-gradient(45deg, rgba(158, 169, 161, 0.55) 0 2px, transparent 2px 6px);
   }
+  /* Arrivée d'une page : en CSS, sans attendre la sortie de la précédente. Sans animation, la page est déjà visible. */
+  .apparition-vue {
+    animation: apparition-vue 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@keyframes apparition-vue {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

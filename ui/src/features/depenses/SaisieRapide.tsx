@@ -9,7 +9,6 @@ import { Pilule } from '../../components/Pilule'
 import { Choix, Selection } from '../../components/Selection'
 import { ErreurApi } from '../../lib/api'
 import { dateDuJour } from '../../lib/dates'
-import { useCompte } from '../../state/compte'
 import { ChampCategorie } from '../charges/ChampCategorie'
 import { FormulaireVersement } from '../epargne/FormulaireVersement'
 import { IconeCategorie } from '../charges/IconeCategorie'
@@ -48,7 +47,8 @@ type Mode = 'depense' | 'epargne'
  */
 export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
   const [etat, setEtat] = useState<{ mode: Mode; depense?: DepenseDto; date?: string; objectifId?: string; cle: number } | null>(null)
-  const actif = Boolean(useCompte().id && useUtilisateurCourant())
+  // Toujours appelé (règle des hooks) : `useUtilisateurCourant` ne rend un compte que si un id est choisi.
+  const actif = Boolean(useUtilisateurCourant())
   const surProfils = useLocation().pathname === '/profils'
   const ouvrir = useCallback((depense?: DepenseDto, options?: { date?: string }) => setEtat({ mode: 'depense', depense, date: options?.date, cle: Date.now() }), [])
   const ouvrirVersement = useCallback((options?: { objectifId?: string }) => setEtat({ mode: 'epargne', objectifId: options?.objectifId, cle: Date.now() }), [])

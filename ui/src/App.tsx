@@ -1,7 +1,7 @@
 import * as Tooltip from '@radix-ui/react-tooltip'
-import { AnimatePresence, motion } from 'framer-motion'
 import { lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { ErreurPage } from './components/ErreurPage'
 import { GardeCompte } from './components/GardeCompte'
 import { MiseEnPage } from './components/MiseEnPage'
 import { Notifications } from './components/Notifications'
@@ -16,7 +16,6 @@ import { PagePlan } from './features/plan/PagePlan'
 import { PageProfils } from './features/profils/PageProfils'
 import { PageReglages } from './features/reglages/PageReglages'
 import { useReglages } from './features/reglages/requetes'
-import { transitionVue, transitionVueSobre } from './lib/animations'
 import { DESTINATIONS } from './lib/navigation'
 import { FournisseurAnimations, useAnimations } from './state/animations'
 import { FournisseurCompte } from './state/compte'
@@ -39,14 +38,17 @@ const compte = (page: ReactNode) => <GardeCompte>{page}</GardeCompte>
 
 function Vues() {
   const emplacement = useLocation()
-  const { animations } = useAnimations()
   const { ouvrir } = useSaisieRapide()
-  const transition = animations ? transitionVue : transitionVueSobre
 
   return (
     <MiseEnPage simple={emplacement.pathname === '/profils'} onSaisie={() => ouvrir()}>
-      <AnimatePresence mode="wait">
-        <motion.div key={emplacement.pathname} {...transition}>
+      {/*
+        Nouvelle page affichée tout de suite, avec une apparition en CSS. L'ancienne transition attendait la fin de
+        l'animation de sortie (AnimatePresence « wait ») : une navigation rapide pouvait laisser la page blanche.
+        Une erreur dans une page reste dans la page (ErreurPage), sans blanchir toute l'application.
+      */}
+      <div key={emplacement.pathname} className="apparition-vue">
+        <ErreurPage cle={emplacement.pathname}>
           <Routes location={emplacement}>
             <Route path="/profils" element={<PageProfils />} />
             <Route
@@ -70,8 +72,8 @@ function Vues() {
             ))}
             <Route path="*" element={<PageAVenir titre="Page introuvable" />} />
           </Routes>
-        </motion.div>
-      </AnimatePresence>
+        </ErreurPage>
+      </div>
     </MiseEnPage>
   )
 }
