@@ -109,3 +109,40 @@ function calculer(calendrier: Calendrier, cle: CleMois, statut: StatutPeriode, r
     { revenus: totaux.revenusReels, charges: totaux.sortiesReelles, epargne: epargneMois.reelle },
   )
 }
+
+/** Résumé d'une plage de mois (lot 14, vue calendrier) : totaux des mois suivis, cumul de fin, mois le plus bas. */
+export interface ResumeCumul {
+  revenus: Centimes
+  charges: Centimes
+  epargne: Centimes
+  /** Somme des restes des mois suivis. */
+  reste: Centimes
+  /** Cumul du dernier mois suivi ; `null` si aucun mois n'est suivi. */
+  cumulFin: Centimes | null
+  /** Mois au cumul le plus bas (le premier en cas d'égalité) ; `null` si aucun mois n'est suivi. */
+  plusBas: { cle: CleMois; cumul: Centimes } | null
+  /** Mois dont le cumul passe sous zéro. */
+  negatifs: CleMois[]
+  /** Nombre de mois réels, en cours et prévus dans la plage. */
+  natures: Record<Exclude<NatureCumul, 'avant'>, number>
+}
+
+export function resumeCumul(mois: MoisCumul[]): ResumeCumul {
+  const suivis = mois.filter((m): m is MoisCumul & { cumul: Centimes } => m.cumul !== null)
+  const somme = (champ: 'revenus' | 'charges' | 'epargne' | 'reste') => additionner(...suivis.map((m) => m[champ]))
+  const plusBas = suivis.reduce<MoisCumul & { cumul: Centimes } | null>((bas, m) => (bas === null || m.cumul < bas.cumul ? m : bas), null)
+  return {
+    revenus: somme('revenus'),
+    charges: somme('charges'),
+    epargne: somme('epargne'),
+    reste: somme('reste'),
+    cumulFin: suivis.at(-1)?.cumul ?? null,
+    plusBas: plusBas ? { cle: plusBas.cle, cumul: plusBas.cumul } : null,
+    negatifs: suivis.filter((m) => m.cumul < 0).map((m) => m.cle),
+    natures: {
+      reel: suivis.filter((m) => m.nature === 'reel').length,
+      enCours: suivis.filter((m) => m.nature === 'enCours').length,
+      prevu: suivis.filter((m) => m.nature === 'prevu').length,
+    },
+  }
+}

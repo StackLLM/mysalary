@@ -1,4 +1,4 @@
-import { bilanDuMois, cumulDesMois, debutCumul, rythmeDuMois, suiviDesSemaines, type CleMois, type DateCivile, type SuiviDesSemaines } from '@mysalary/moteur'
+import { bilanDuMois, cumulDesMois, debutCumul, resumeCumul, rythmeDuMois, suiviDesSemaines, type CleMois, type DateCivile, type SuiviDesSemaines } from '@mysalary/moteur'
 import { CODES_ERREUR, formaterMois, type BilanDto, type CumulDto, type EvenementCloture, type SemainesDto } from '@mysalary/partage'
 import type { PrismaClient } from '@prisma/client'
 import { ErreurApi } from '../../lib/erreurs'
@@ -48,12 +48,8 @@ export async function bilan(prisma: PrismaClient, utilisateurId: string, aujourd
 /** Cumul de mois en mois (lot 13) : le reste de chaque mois reporté sur le suivant, du premier mois suivi jusqu'à `au`. */
 export async function cumul(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile, du: CleMois, au: CleMois): Promise<CumulDto> {
   const { calendrier, regles, depart } = await chargerCalendrier(prisma, utilisateurId, aujourdhui)
-  return {
-    aujourdhui,
-    debut: debutCumul(calendrier, aujourdhui, depart),
-    depart,
-    mois: cumulDesMois(calendrier, du, au, { aujourdhui, regle: regles.realiste, depart }),
-  }
+  const mois = cumulDesMois(calendrier, du, au, { aujourdhui, regle: regles.realiste, depart })
+  return { aujourdhui, debut: debutCumul(calendrier, aujourdhui, depart), depart, mois, resume: resumeCumul(mois) }
 }
 
 /** Semaines du mois (lot 9) : figées si le mois est clôturé (clôture faite depuis le lot 9), sinon calculées. */

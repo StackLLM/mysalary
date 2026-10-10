@@ -1,6 +1,6 @@
 # Lot 13 — Cumul du reste de mois en mois
 
-> Statut : **livré** (09/10/2026), en attente de validation. Demande du 09/10/2026 : « ce qui reste du salaire doit entrer comme cumulé dans le salaire du mois prochain, pour bien savoir ma projection sur les mois prochains ».
+> Statut : **clôturé** le 10/10/2026 (livré le 09/10/2026). Demande du 09/10/2026 : « ce qui reste du salaire doit entrer comme cumulé dans le salaire du mois prochain, pour bien savoir ma projection sur les mois prochains ».
 
 ## Objectif
 

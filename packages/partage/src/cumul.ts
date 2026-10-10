@@ -1,8 +1,8 @@
-import type { DateCivile, MoisCumul } from '@mysalary/moteur'
+import type { DateCivile, MoisCumul, ResumeCumul } from '@mysalary/moteur'
 import { z } from 'zod'
 import { schemaCleMois } from './salaire'
 
-export type { Depart, MoisCumul, NatureCumul } from '@mysalary/moteur'
+export type { Depart, MoisCumul, NatureCumul, ResumeCumul } from '@mysalary/moteur'
 
 /** Plage de mois du cumul : 36 mois au plus. */
 export const schemaPlageCumul = z
@@ -22,4 +22,6 @@ export interface CumulDto {
   /** Solde de départ déclaré dans les Réglages. */
   depart: { mois: string; solde: number } | null
   mois: MoisCumul[]
+  /** Totaux de la plage, cumul de fin et mois le plus bas (lot 14). */
+  resume: ResumeCumul
 }

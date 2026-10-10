@@ -1,7 +1,7 @@
 # MySalary — Progression
 
 > Suivi de la construction de MySalary, lot par lot. Mis à jour à chaque lot.
-> État au 09/10/2026 : **lots 0 à 12 clôturés et validés**, **lot 13 livré, en attente de validation**, lots 14 à 22 à venir. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
+> État au 10/10/2026 : **lots 0 à 13 clôturés et validés**, **lot 14 livré, en attente de validation**, lots 15 à 22 à venir. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
 >
 > - Plan global de l'application (vision, architecture, données, règles métier) : [`Plan.md`](../Plan.md), à la racine.
 > - Bilan détaillé de chaque lot livré (périmètre, règles, tests, bugs corrigés) : [`docs/lots/`](lots/).
@@ -23,9 +23,9 @@
 | 10 | [Épargne & objectifs](#lot-10--épargne--objectifs) | 2 — Cœur métier | ✅ Clôturé | 09/10/2026 | 266 | [Lot-10-epargne-objectifs.md](lots/Lot-10-epargne-objectifs.md) |
 | 11 | [Simulateur & scénarios](#lot-11--simulateur--scénarios) | 3 — Intelligence et vues | ✅ Clôturé | 09/10/2026 | 288 | [Lot-11-simulateur.md](lots/Lot-11-simulateur.md) |
 | 12 | [Recommandations & KPI](#lot-12--recommandations--kpi) | 3 — Intelligence et vues | ✅ Clôturé | 09/10/2026 | 314 | [Lot-12-recommandations-kpi.md](lots/Lot-12-recommandations-kpi.md) |
-| 13 | [Cumul du reste de mois en mois](#lot-13--cumul-du-reste-de-mois-en-mois) | 3 — Intelligence et vues | 🟡 Livré, à valider | — | 323 | [Lot-13-cumul.md](lots/Lot-13-cumul.md) |
-| 14 | [Objectifs › vue Calendrier de l'année](#lot-14--objectifs--vue-calendrier-de-lannée) | 3 — Intelligence et vues | ⏳ Prochain | — | — | — |
-| 15 | [Semaines en cartes](#lot-15--semaines-en-cartes) | 3 — Intelligence et vues | À venir | — | — | — |
+| 13 | [Cumul du reste de mois en mois](#lot-13--cumul-du-reste-de-mois-en-mois) | 3 — Intelligence et vues | ✅ Clôturé | 10/10/2026 | 323 | [Lot-13-cumul.md](lots/Lot-13-cumul.md) |
+| 14 | [Objectifs › vue Calendrier de l'année](#lot-14--objectifs--vue-calendrier-de-lannée) | 3 — Intelligence et vues | 🟡 Livré, à valider | — | 329 | [Lot-14-calendrier-annee.md](lots/Lot-14-calendrier-annee.md) |
+| 15 | [Semaines en cartes](#lot-15--semaines-en-cartes) | 3 — Intelligence et vues | ⏳ Prochain | — | — | — |
 | 16 | [Aujourd'hui](#lot-16--aujourdhui) | 3 — Intelligence et vues | À venir | — | — | — |
 | 17 | [Calendrier](#lot-17--calendrier) | 3 — Intelligence et vues | À venir | — | — | — |
 | 18 | [Année](#lot-18--année) | 3 — Intelligence et vues | À venir | — | — | — |
@@ -39,9 +39,9 @@
 Autres sections :
 
 - [1. Méthode et règles de travail](#1-méthode-et-règles-de-travail)
-- [2. Lots clôturés](#2-lots-clôturés-0-à-12)
+- [2. Lots clôturés](#2-lots-clôturés-0-à-13)
 - [3. Lots livrés, en attente de validation](#3-lots-livrés-en-attente-de-validation)
-- [4. Lots à venir](#4-lots-à-venir-14-à-22)
+- [4. Lots à venir](#4-lots-à-venir-15-à-22)
 - [5. Points reportés, rangés par lot](#5-points-reportés-rangés-par-lot)
 - [6. Historique des commits](#6-historique-des-commits)
 - [7. Questions ouvertes](#7-questions-ouvertes)
@@ -62,7 +62,7 @@ Règles appliquées à chaque lot :
 - Serveur et interface écoutent seulement sur `127.0.0.1` (ports 3010 et 6010).
 - Code versionné dans le dépôt privé `github.com/oussamaalmouallim/mysalary` : commits en anglais, au nom de l'auteur. Le dossier `Salaire/` (données personnelles réelles), la base SQLite, `.env` et `.claude/` ne sont jamais versionnés.
 
-## 2. Lots clôturés (0 à 12)
+## 2. Lots clôturés (0 à 13)
 
 ### Lot 0 — Cadrage
 
@@ -202,11 +202,9 @@ Règles appliquées à chaque lot :
   - cloche de l'en-tête : pastille du nombre d'alertes, panneau « À faire » + « Suggestions », actions vers l'écran concerné ; carte « Suggestions » sur Objectifs ; « Simuler » pré-remplit le simulateur.
 - **Écarts** : le reste à dépenser retire aussi les charges datées encore à payer ; part variable sur les 12 prochains mois (prévu) ; écart du mois en cours comparé au prévu à date ; délai calculé en réaliste ; phrases rédigées dans `partage`.
 
-## 3. Lots livrés, en attente de validation
-
 ### Lot 13 — Cumul du reste de mois en mois
 
-- **Statut** : 🟡 livré le 09/10/2026, en attente de validation · 323 tests · `docs/lots/Lot-13-cumul.md`.
+- **Statut** : ✅ clôturé le 10/10/2026 · 323 tests · `docs/lots/Lot-13-cumul.md`.
 - **Livré** :
   - moteur `cumulDesMois` : report, revenus, charges, épargne, reste et cumul de fin de mois ; réel (passé), estimation (en cours), prévu en réaliste (futur) ;
   - solde de départ du compte courant au début d'un mois (Réglages › Compte courant), sinon 0 au premier mois suivi ;
@@ -214,12 +212,20 @@ Règles appliquées à chaque lot :
   - Mon plan › Salaire, tableau des Paies : Revenus · Charges · Épargne · Cumul fin de mois, mois par mois.
 - **Décision** : le cumul suppose que ce qui n'est pas versé à un objectif reste sur le compte ; les Objectifs supposent qu'il est épargné. Deux hypothèses, affichées comme telles.
 
-## 4. Lots à venir (14 à 22)
+## 3. Lots livrés, en attente de validation
 
 ### Lot 14 — Objectifs › vue Calendrier de l'année
 
-- **Demande** (09/10/2026) : sur Objectifs, une vue calendrier « premium » de l'année ; chaque mois en carte (salaire, cumul après charges), cliquable, avec une fenêtre détaillée et bien structurée du mois (revenus, charges, épargne, objectifs).
-- **Périmètre prévu** : bascule Liste / Calendrier sur Objectifs ; grille de 12 cartes, année précédente / suivante ; réel, en cours et projeté bien distingués ; fenêtre du mois ; composant réutilisé par la page Année (lot 18).
+- **Statut** : 🟡 livré le 10/10/2026, en attente de validation · 329 tests · `docs/lots/Lot-14-calendrier-annee.md`.
+- **Livré** :
+  - Objectifs : onglets « Objectifs » / « Calendrier de l'année », vue et année gardées dans l'adresse (`?vue=calendrier&annee=2027`) ;
+  - bandeau de l'année : cumul fin décembre, mois le plus bas, reste cumulé de l'année, report de l'année précédente, revenus, charges, épargne ; alerte si un mois passe sous zéro ;
+  - une carte par mois suivi : cumul fin de mois, jauge, revenus, charges, épargne, objectifs atteints (projection) ou à leur date souhaitée ; réel, en cours (cerclé) et prévu (pointillés, italique) ; les mois d'avant le suivi en une seule bande ;
+  - fenêtre du mois : le calcul (report + revenus − charges − épargne = cumul), les objectifs du mois, puis chaque revenu, charge et versement avec son statut ; mois précédent / suivant, « Ouvrir le mois » ;
+  - moteur `resumeCumul`, `resume` dans `GET /cumul` ; composant `Fenetre` (fenêtre centrée) ; `CalendrierAnnee` réutilisable par la page Année (lot 18).
+- **Écarts** : sous 640 px, deux cartes par ligne sans le détail revenus / charges / épargne (il est dans la fenêtre).
+
+## 4. Lots à venir (15 à 22)
 
 ### Lot 15 — Semaines en cartes
 
@@ -327,6 +333,9 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `faf0867` | Plan : lots 10 et 11 clôturés, lot 12 livré |
 | `81d2dfd` | Lot 13 : cumul du reste de mois en mois |
 | `c625cfe` | Plan : lots 13 à 15 ajoutés, lots suivants renumérotés |
+| `3c7f140` | Plan : commits du lot 13 |
+| `7e96fda` | Lot 13 : cumul fin de mois dans le tableau des Paies |
+| `ce91814` | Lot 13 : revenus, charges, épargne et cumul mois par mois dans les Paies |
 
 ## 7. Questions ouvertes
 

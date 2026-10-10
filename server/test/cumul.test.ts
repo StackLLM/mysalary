@@ -39,6 +39,7 @@ describe('cumul de mois en mois (lot 13)', () => {
       ['2027-02', 'prevu', 650_000, 1_300_000],
       ['2027-03', 'prevu', 1_300_000, 1_950_000],
     ])
+    expect(c.resume).toMatchObject({ revenus: 3_000_000, charges: 1_050_000, cumulFin: 1_950_000, plusBas: { cle: '2027-01', cumul: 650_000 }, negatifs: [] })
     expect((await lire<BilanDto>(id, '/mois/2027-02/bilan')).cumul).toMatchObject({ report: 650_000, cumul: 1_300_000 })
   })
 

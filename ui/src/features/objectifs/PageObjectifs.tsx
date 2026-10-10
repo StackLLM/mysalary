@@ -1,7 +1,7 @@
 import { formaterMois, formaterMontant, type ObjectifsDto, type SuiviObjectif, type TypeObjectif } from '@mysalary/partage'
 import { motion } from 'framer-motion'
 import { ChevronDown, ChevronUp, MoreHorizontal } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { BadgeNature, BadgeRisque } from '../../components/Badges'
 import { BarreProgression } from '../../components/BarreProgression'
@@ -11,42 +11,86 @@ import { CarteBandeau } from '../../components/CarteBandeau'
 import { BlocTotaux, Identite } from '../../components/Elements'
 import { FilAriane } from '../../components/FilAriane'
 import { Menu } from '../../components/Menu'
+import { Onglets } from '../../components/Onglets'
 import { Montant } from '../../components/Montant'
 import { ErreurApi } from '../../lib/api'
 import { conteneurCascade, elementApparition } from '../../lib/animations'
+import { CalendrierAnnee } from '../annee/CalendrierAnnee'
+import { anneeDe } from '../annee/saisie'
 import { ListeRecommandations } from '../conseils/Conseils'
 import { useConseils } from '../conseils/requetes'
 import { useSaisieRapide } from '../depenses/SaisieRapide'
 import { useObjectifs, useOrdonnerObjectifs, useStatutObjectif } from '../epargne/requetes'
+import { useMoisCourant } from '../salaire/requetes'
 import { phraseObjectif, SCENARIOS_LIBELLES, texteEstimation, texteRegle, TYPES } from './saisie'
 
 const GRILLE = 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_352px] xl:gap-12'
 
-/** Objectifs (UX.md § 5.7) : tous les objectifs, leur ordre de priorité, quand ils seront atteints. */
+const VUES = [
+  { valeur: 'liste', libelle: 'Objectifs' },
+  { valeur: 'calendrier', libelle: 'Calendrier de l’année' },
+] as const
+
+/**
+ * Objectifs (UX.md § 5.7) : tous les objectifs, leur ordre de priorité, quand ils seront atteints.
+ * Vue « Calendrier de l'année » (lot 14) : le cumul de chaque mois. La vue et l'année sont gardées dans l'adresse.
+ */
 export function PageObjectifs() {
   const objectifs = useObjectifs()
+  const courant = useMoisCourant()
+  const [parametres, setParametres] = useSearchParams()
+  const vue = VUES.find((v) => v.valeur === parametres.get('vue')) ?? VUES[0]
+  const annee = Number(parametres.get('annee')) || (courant.data ? anneeDe(courant.data.cle) : null)
+
+  const changer = (valeurs: { vue?: string; annee?: number }) => {
+    const suite = { vue: valeurs.vue ?? vue.valeur, annee: valeurs.annee ?? (parametres.get('annee') ? annee : null) }
+    setParametres(
+      Object.fromEntries(Object.entries({ vue: suite.vue === 'liste' ? null : suite.vue, annee: suite.vue === 'liste' || !suite.annee ? null : String(suite.annee) }).filter(([, v]) => v)) as Record<string, string>,
+      { replace: true },
+    )
+  }
+
+  const liste = objectifs.isError ? (
+    <Carte espacement="large">
+      <div className="rounded-bouton bg-alerte-fond p-5">
+        <p className="text-texte font-medium text-alerte">Impossible de charger tes objectifs.</p>
+        <Bouton variante="contour" taille="sm" className="mt-4" onClick={() => void objectifs.refetch()}>
+          Réessayer
+        </Bouton>
+      </div>
+    </Carte>
+  ) : objectifs.isPending ? (
+    <div className={GRILLE} aria-label="Chargement des objectifs">
+      <div className="h-96 animate-pulse rounded-carte bg-white shadow-carte" />
+      <div className="h-64 animate-pulse rounded-carte bg-white shadow-carte" />
+    </div>
+  ) : (
+    <Objectifs donnees={objectifs.data} />
+  )
+
   return (
     <motion.div variants={conteneurCascade} initial="cache" animate="visible">
       <motion.div variants={elementApparition}>
-        <FilAriane etapes={[{ libelle: 'Objectifs', chemin: '/objectifs' }, { libelle: 'Tous les objectifs' }]} />
+        <FilAriane etapes={[{ libelle: 'Objectifs', chemin: '/objectifs' }, { libelle: vue.valeur === 'liste' ? 'Tous les objectifs' : 'Calendrier de l’année' }]} />
       </motion.div>
-      {objectifs.isError ? (
-        <Carte espacement="large">
-          <div className="rounded-bouton bg-alerte-fond p-5">
-            <p className="text-texte font-medium text-alerte">Impossible de charger tes objectifs.</p>
-            <Bouton variante="contour" taille="sm" className="mt-4" onClick={() => void objectifs.refetch()}>
-              Réessayer
-            </Bouton>
-          </div>
-        </Carte>
-      ) : objectifs.isPending ? (
-        <div className={GRILLE} aria-label="Chargement des objectifs">
-          <div className="h-96 animate-pulse rounded-carte bg-white shadow-carte" />
-          <div className="h-64 animate-pulse rounded-carte bg-white shadow-carte" />
-        </div>
-      ) : (
-        <Objectifs donnees={objectifs.data} />
-      )}
+      <motion.div variants={elementApparition} className="-mt-2">
+        <Onglets
+          valeur={vue.valeur}
+          onChange={(v) => changer({ vue: v })}
+          onglets={VUES.map((v) => ({
+            valeur: v.valeur,
+            libelle: v.libelle,
+            contenu:
+              v.valeur === 'liste' ? (
+                liste
+              ) : annee === null ? (
+                <div className="h-96 animate-pulse rounded-carte bg-white shadow-carte" aria-label="Chargement du calendrier" />
+              ) : (
+                <CalendrierAnnee annee={annee} changerAnnee={(a) => changer({ annee: a })} />
+              ),
+          }))}
+        />
+      </motion.div>
     </motion.div>
   )
 }

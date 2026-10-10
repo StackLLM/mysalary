@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { centimes } from './argent'
 import type { Charge } from './charges'
-import { cumulDesMois, debutCumul } from './cumul'
+import { cumulDesMois, debutCumul, resumeCumul } from './cumul'
 import { lireCleMois as m, lireDate as d } from './dates'
 import type { Depense } from './depenses'
 import type { MouvementEpargne, Objectif } from './epargne'
@@ -136,5 +136,22 @@ describe('cumul de mois en mois (lot 13)', () => {
     const [janvier, fevrier] = cumulDesMois(vide, m('2027-01'), m('2027-02'), { aujourdhui: AUJOURDHUI })
     expect(janvier).toMatchObject({ report: 0, revenus: 1_000_000, charges: 350_000, cumul: 650_000 })
     expect(fevrier).toMatchObject({ report: 650_000, cumul: 1_300_000 })
+  })
+
+  it('résumé d’une année : totaux des mois suivis, cumul de fin, mois le plus bas', () => {
+    const mois = cumulDesMois(calendrier(depenses), m('2026-11'), m('2027-02'), { aujourdhui: AUJOURDHUI })
+    expect(resumeCumul(mois)).toEqual({
+      revenus: 3_100_000,
+      charges: 1_630_000,
+      epargne: 300_000,
+      reste: 1_170_000,
+      cumulFin: 1_170_000,
+      plusBas: { cle: '2026-12', cumul: 370_000 },
+      negatifs: [],
+      natures: { reel: 1, enCours: 1, prevu: 1 },
+    })
+    const decouvert = cumulDesMois(calendrier(depenses), m('2027-01'), m('2027-02'), { aujourdhui: AUJOURDHUI, depart: { mois: m('2027-01'), solde: centimes(-500_000) } })
+    expect(resumeCumul(decouvert)).toMatchObject({ cumulFin: 300_000, plusBas: { cle: '2027-01', cumul: -150_000 }, negatifs: ['2027-01'] })
+    expect(resumeCumul(mois.slice(0, 1))).toMatchObject({ revenus: 0, cumulFin: null, plusBas: null })
   })
 })
