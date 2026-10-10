@@ -341,6 +341,8 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `7e96fda` | Lot 13 : cumul fin de mois dans le tableau des Paies |
 | `ce91814` | Lot 13 : revenus, charges, épargne et cumul mois par mois dans les Paies |
 | `2f9d38f` | Lot 14 : calendrier de l'année dans Objectifs ; lot 13 clôturé |
+| `c2d05c5` | Plan : commit du lot 14 |
+| `8483013` | Lot 15 : semaines en cartes ; lot 14 clôturé |
 
 ## 7. Questions ouvertes
 
