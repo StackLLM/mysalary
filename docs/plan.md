@@ -344,6 +344,9 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `2f9d38f` | Lot 14 : calendrier de l'année dans Objectifs ; lot 13 clôturé |
 | `c2d05c5` | Plan : commit du lot 14 |
 | `8483013` | Lot 15 : semaines en cartes ; lot 14 clôturé |
+| `141026b` | Plan : commit du lot 15 |
+| `2d0a125` | Correctif : pages blanches en changeant de page |
+| `0c599d5` | Lot 14 revu : calendrier jour par jour, ligne « Reste », graphique du cumul |
 
 ## 7. Questions ouvertes
 
