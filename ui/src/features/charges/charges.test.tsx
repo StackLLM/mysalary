@@ -28,6 +28,7 @@ const resume = (totaux = zero) =>
   ({
     aujourdhui: AUJOURDHUI,
     mois: { cle: '2027-01', debut: '2026-12-27', fin: '2027-01-26', nbJours: 31, semaines: semainesDe({ debut: d('2026-12-27'), fin: d('2027-01-26') }, 1) },
+    moisSuivant: { cle: '2027-02', debut: '2027-01-27', fin: '2027-02-26', nbJours: 31, semaines: semainesDe({ debut: d('2027-01-27'), fin: d('2027-02-26') }, 1) },
     duMois: { lignes: [], totaux },
     parGroupe: { essentiel: totaux.fixe, flexible: totaux.enveloppe, engagement: totaux.dette },
     equivalentMensuel: { fixe: totaux.fixe, enveloppe: totaux.enveloppe, essentiel: totaux.fixe },
@@ -154,26 +155,31 @@ describe('Mon plan › Charges & enveloppes', () => {
     fireEvent.change(await screen.findByLabelText('Libellé'), { target: { value: 'Sorties' } })
     await waitFor(() => expect(screen.getByRole('option', { name: 'Loisirs' })).toBeInTheDocument())
     fireEvent.change(screen.getByLabelText('Catégorie'), { target: { value: 'c-loi' } })
-    // Moto : 300 DH pour le mois. Consommé librement par défaut ; l'utilisateur choisit « par semaine » et le montant de chaque semaine.
-    fireEvent.change(screen.getByLabelText('Budget du mois'), { target: { value: '300' } })
+    // 400 DH pour le mois, consommés par semaine : l'utilisateur met un montant différent sur chaque semaine, aucun n'est imposé.
+    fireEvent.change(screen.getByLabelText('Budget du mois'), { target: { value: '400' } })
     expect(screen.getByRole('radio', { name: 'Librement sur le mois' })).toHaveAttribute('aria-checked', 'true')
     fireEvent.click(screen.getByRole('radio', { name: 'Par semaine' }))
-    fireEvent.change(screen.getByLabelText('Montant par semaine'), { target: { value: '100' } })
-    const plan = screen.getByRole('region', { name: 'Semaines de ce mois' })
-    expect(within(plan).getByText('Budget du mois atteint le 4 janv.')).toBeInTheDocument()
-    // Rien la semaine du 4 janvier : la 4e semaine prend le relais ; MySalary ne divise rien.
-    fireEvent.change(within(plan).getByLabelText('Montant de la semaine 3'), { target: { value: '0' } })
-    expect(within(plan).getByText('Budget du mois atteint le 11 janv.')).toBeInTheDocument()
-    fireEvent.change(screen.getByLabelText('Montant par semaine'), { target: { value: '50' } })
-    expect(within(plan).getByText(/restent à répartir sur ce mois/).textContent!.replace(/\s+/g, ' ')).toBe('50 DH restent à répartir sur ce mois : augmente le montant d’une semaine.')
-    fireEvent.change(screen.getByLabelText('Montant par semaine'), { target: { value: '100' } })
+    expect(screen.queryByLabelText('Montant par semaine')).not.toBeInTheDocument()
+    const bloc = screen.getByRole('region', { name: 'Semaines du mois' })
+    const phrase = () => within(bloc).getAllByText(/mis|réparti|dépassent/).at(-1)!.textContent!.replace(/\s+/g, ' ')
+    expect(phrase()).toBe('0 DH mis : 400 DH restent à répartir sur ce mois.')
+    fireEvent.change(within(bloc).getByLabelText('Montant de la semaine 2'), { target: { value: '150' } })
+    fireEvent.change(within(bloc).getByLabelText('Montant de la semaine 3'), { target: { value: '100' } })
+    expect(phrase()).toBe('250 DH mis : 150 DH restent à répartir sur ce mois.')
+    fireEvent.change(within(bloc).getByLabelText('Montant de la semaine 4'), { target: { value: '200' } })
+    expect(within(bloc).getByRole('alert').textContent!.replace(/\s+/g, ' ')).toBe('Tes semaines dépassent le budget de l’enveloppe de 50 DH (450 DH mis).')
+    fireEvent.change(within(bloc).getByLabelText('Montant de la semaine 4'), { target: { value: '150' } })
+    expect(phrase()).toBe('Tout le budget est réparti : 400 DH.')
+    // Le mois suivant se prépare aussi.
+    fireEvent.click(within(bloc).getByRole('radio', { name: 'Février' }))
+    fireEvent.change(within(bloc).getByLabelText('Montant de la semaine 1'), { target: { value: '80' } })
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter cette enveloppe' }))
     await waitFor(() =>
       expect(api.creer).toHaveBeenCalledWith('/charges', {
         libelle: 'Sorties',
         categorieId: 'c-loi',
         nature: 'enveloppe',
-        montant: 30_000,
+        montant: 40_000,
         frequence: 'mensuelle',
         mois: [],
         jour: null,
@@ -181,8 +187,13 @@ describe('Mon plan › Charges & enveloppes', () => {
         fin: null,
         essentielle: false,
         unite: 'semaine',
-        rythme: 10_000,
-        semaines: [{ debut: '2027-01-04', montant: 0 }],
+        rythme: null,
+        semaines: [
+          { debut: '2026-12-28', montant: 15_000 },
+          { debut: '2027-01-04', montant: 10_000 },
+          { debut: '2027-01-11', montant: 15_000 },
+          { debut: '2027-01-27', montant: 8_000 },
+        ],
       }),
     )
 

@@ -73,10 +73,12 @@ export interface SuiviDesSemaines {
   semaines: SuiviSemaine[]
   /** Numéro de la semaine qui contient aujourd'hui. */
   courante: number | null
-  /** Budget flexible du mois (prévu). */
+  /** Prévu : total des montants que les semaines reçoivent de tes enveloppes (par semaine ou par jour). */
   budget: Centimes
-  /** Budget d'enveloppes qu'aucune semaine n'ouvre encore (montants par semaine ou par jour choisis trop bas). */
+  /** Budget d'enveloppes par semaine ou par jour qu'aucune semaine ne reçoit encore. */
   aRepartir: Centimes
+  /** Enveloppes consommées librement : suivies sur le mois, elles ne remplissent aucune semaine. */
+  libres: { id: string; libelle: string; budget: Centimes }[]
   /** Dépensé flexible du mois à date (réel). */
   depense: Centimes
   /** Mois en cours : budget des jours écoulés (prévu à date). */
@@ -95,9 +97,10 @@ const flexible = (imputation: string) => imputation === 'enveloppe' || imputatio
 export function suiviDesSemaines(calendrier: Calendrier, cle: CleMois, { debutSemaine = 1, report = false, aujourdhui }: OptionsSemaines): SuiviDesSemaines {
   const mois = calendrier.mois(cle)
   const jours = Array.from({ length: mois.nbJours }, (_, i) => ajouterJours(mois.debut, i))
-  const budget = additionner(...calendrier.suiviDuMois(cle).enveloppes.map((e) => e.budget))
-  // Chaque enveloppe ouvre ce que l'utilisateur a choisi : au fil du mois, par semaine ou par jour.
+  const enveloppesDuMois = calendrier.suiviDuMois(cle).enveloppes
+  // Une semaine ne reçoit que les montants mis par l'utilisateur (par semaine, ou par jour) : rien n'est inventé.
   const parJourDuMois = budgetEnveloppesParJour(calendrier, cle, debutSemaine)
+  const budget = additionner(...parJourDuMois)
   const budgetDu = (du: DateCivile, au: DateCivile) => additionner(...jours.flatMap((j, i) => (j >= du && j <= au ? [parJourDuMois[i]!] : [])))
 
   /** Dépensé flexible entre deux dates incluses. */
@@ -170,7 +173,7 @@ export function suiviDesSemaines(calendrier: Calendrier, cle: CleMois, { debutSe
   const depenseMois = somme(semaines.map((s) => ({ montant: s.depense })))
   const budgetADate = mois.statut === 'enCours' ? budgetDu(mois.debut, aujourdhui) : null
   let reponse: ReponseSemaines
-  if (budget === 0) reponse = { type: 'sansEnveloppe' }
+  if (enveloppesDuMois.length === 0) reponse = { type: 'sansEnveloppe' }
   else if (mois.statut === 'aVenir') reponse = { type: 'aVenir' }
   else if (budgetADate !== null) {
     const avance = soustraire(budgetADate, depenseMois)
@@ -188,6 +191,7 @@ export function suiviDesSemaines(calendrier: Calendrier, cle: CleMois, { debutSe
     courante: semaines.find((s) => s.statut === 'enCours')?.numero ?? null,
     budget,
     aRepartir: enveloppesARepartir(calendrier, cle, debutSemaine),
+    libres: enveloppesDuMois.filter((e) => e.unite === 'mois').map((e) => ({ id: e.id, libelle: e.libelle, budget: e.budget })),
     depense: depenseMois,
     budgetADate,
     reponse,

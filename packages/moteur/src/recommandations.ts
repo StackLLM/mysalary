@@ -107,14 +107,17 @@ export function alertes(calendrier: Calendrier, donnees: DonneesObjectifs, { auj
 
   if (!clos.has(courant)) {
     const mois = calendrier.mois(courant)
-    for (const e of calendrier.suiviDuMois(courant).enveloppes) {
+    const enveloppes = calendrier.suiviDuMois(courant).enveloppes
+    for (const e of enveloppes) {
       if (e.reste < 0) liste.push({ cle: `enveloppe:${e.id}`, type: 'enveloppeDepassee', id: e.id, libelle: e.libelle, budget: e.budget, depassement: centimes(-e.reste), mois: courant })
     }
     const semaines = suiviDesSemaines(calendrier, courant, { debutSemaine, report, aujourdhui })
     const s = semaines.semaines.find((x) => x.statut === 'enCours')
     if (s && semaines.budget > 0 && s.reste < 0) {
       const joursRestantsMois = ecartJours(aujourdhui, mois.fin) + 1
-      const budgetMoisRestant = centimes(Math.max(0, semaines.budget - semaines.depense))
+      // Vue du mois : le budget de toutes les enveloppes (les libres comprises), moins le dépensé flexible.
+      const budgetMois = enveloppes.reduce((t, e) => t + e.budget, 0)
+      const budgetMoisRestant = centimes(Math.max(0, budgetMois - semaines.depense))
       liste.push({
         cle: `semaine:${courant}:${s.numero}`,
         type: 'semaineDepassee',

@@ -176,15 +176,7 @@ function Semaines({
                 </li>
               ))}
             </ul>
-            {donnees.aRepartir > 0 && (
-              <p role="status" className="mt-4 rounded-bouton bg-attention-fond px-4 py-3 text-texte-sm text-attention">
-                <span className="font-semibold">{formaterMontant(donnees.aRepartir)}</span> de tes enveloppes ne sont ouverts par aucune semaine : les montants par semaine
-                ou par jour choisis n’atteignent pas le budget du mois.{' '}
-                <Link to="/plan?onglet=charges" className="font-semibold underline underline-offset-2">
-                  Ajuster mes enveloppes
-                </Link>
-              </p>
-            )}
+            <MessagesEnveloppes aRepartir={donnees.aRepartir} libres={donnees.libres ?? []} />
           </section>
 
           <Separateur className="my-7" />
@@ -619,7 +611,7 @@ function CarteCalcul({ donnees }: { donnees: SemainesDto }) {
   return (
     <Carte titre="Sur quoi repose ce calcul ?">
       <ul className="flex list-disc flex-col gap-2 pl-4 text-texte-sm text-gris">
-        <li>Le budget flexible, ce sont tes enveloppes (Mon plan › Charges). Chacune ouvre ce que tu as choisi : le montant de chaque semaine dès son premier jour, ou le montant de chaque jour, jusqu’à son budget du mois. Une enveloppe consommée librement arrive au fil des jours.</li>
+        <li>Le budget d’une semaine, ce sont les montants que tu as mis sur elle dans tes enveloppes (Mon plan › Charges), dès son premier jour, ou le montant par jour. Une semaine sans montant reçoit 0. Une enveloppe consommée librement est suivie sur le mois, pas sur les semaines.</li>
         <li>Le dépensé compte les dépenses liées à une enveloppe et les dépenses hors plan. Les charges fixes et les dettes sont à part.</li>
         <li>La tendance compare ton dépensé par jour à la moyenne des 4 semaines précédentes.</li>
         <li>
@@ -633,5 +625,29 @@ function CarteCalcul({ donnees }: { donnees: SemainesDto }) {
         {donnees.fige && <li>Mois clôturé : ces semaines sont figées telles qu’à la clôture.</li>}
       </ul>
     </Carte>
+  )
+}
+
+/** Sous les cartes : budget d'enveloppes pas encore mis sur une semaine, et enveloppes suivies sur le mois seulement. */
+function MessagesEnveloppes({ aRepartir, libres }: { aRepartir: number; libres: { id: string; libelle: string }[] }) {
+  if (aRepartir <= 0 && libres.length === 0) return null
+  const noms = libres.map((e) => e.libelle)
+  const liste = noms.length > 1 ? `${noms.slice(0, -1).join(', ')} et ${noms.at(-1)}` : noms[0]
+  return (
+    <div role="status" className="mt-4 flex flex-col gap-1.5 rounded-bouton bg-attention-fond px-4 py-3 text-texte-sm text-attention">
+      {aRepartir > 0 && (
+        <p>
+          <span className="font-semibold">{formaterMontant(aRepartir)}</span> de tes enveloppes ne sont encore mis sur aucune semaine.
+        </p>
+      )}
+      {libres.length > 0 && (
+        <p>
+          <span className="font-semibold">{liste}</span> {libres.length > 1 ? 'sont consommées' : 'est consommée'} librement : suivi sur le mois, sans montant de semaine.
+        </p>
+      )}
+      <Link to="/plan?onglet=charges" className="self-start font-semibold underline underline-offset-2">
+        Mettre mes montants par semaine
+      </Link>
+    </div>
   )
 }

@@ -102,9 +102,9 @@ export const schemaCharge = z
     essentielle: z.boolean().default(false),
     /** Enveloppe : rythme de consommation du budget du mois (ignoré pour une charge fixe). */
     unite: z.enum(UNITES_ENVELOPPE, { error: 'Rythme inconnu.' }).default('mois'),
-    /** Enveloppe par semaine ou par jour : montant ouvert chaque semaine ou chaque jour. */
+    /** Enveloppe par jour : montant reçu chaque jour. */
     rythme: montant.nullable().default(null),
-    /** Enveloppe par semaine : montant choisi pour des semaines précises (0 : rien cette semaine). */
+    /** Enveloppe par semaine : le montant que l'utilisateur met sur chaque semaine (une semaine absente reçoit 0). */
     semaines: z
       .array(z.strictObject({ debut: schemaDateCivile, montant: z.number().int('Montant en centimes entiers attendu.').min(0, 'Montant négatif.').max(MAXIMUM, 'Montant trop élevé.') }))
       .max(120)
@@ -116,10 +116,10 @@ export const schemaCharge = z
       ctx.addIssue({ code: 'custom', path: ['mois'], message: 'Choisis au moins un mois.' })
     }
     if (v.fin && v.fin < v.debut) ctx.addIssue({ code: 'custom', path: ['fin'], message: 'La fin doit suivre le début.' })
-    if (v.nature === 'enveloppe' && v.unite !== 'mois') {
-      const quand = v.unite === 'semaine' ? 'par semaine' : 'par jour'
-      if (v.rythme === null) ctx.addIssue({ code: 'custom', path: ['rythme'], message: `Indique le montant ${quand}.` })
-      else if (v.rythme > v.montant) ctx.addIssue({ code: 'custom', path: ['rythme'], message: `Le montant ${quand} ne peut pas dépasser le budget du mois.` })
+    // Par jour : un montant par jour, au plus le budget. Par semaine : chaque semaine a son propre montant (aucun imposé).
+    if (v.nature === 'enveloppe' && v.unite === 'jour') {
+      if (v.rythme === null) ctx.addIssue({ code: 'custom', path: ['rythme'], message: 'Indique le montant par jour.' })
+      else if (v.rythme > v.montant) ctx.addIssue({ code: 'custom', path: ['rythme'], message: 'Le montant par jour ne peut pas dépasser le budget du mois.' })
     }
   })
   .transform((v) =>
@@ -129,7 +129,7 @@ export const schemaCharge = z
           frequence: 'mensuelle' as const,
           mois: [],
           jour: null,
-          rythme: v.unite === 'mois' ? null : v.rythme,
+          rythme: v.unite === 'jour' ? v.rythme : null,
           semaines: v.unite === 'semaine' ? [...new Map(v.semaines.map((a) => [a.debut, a])).values()].sort((a, b) => a.debut.localeCompare(b.debut)) : [],
         }
       : { ...v, mois: v.frequence === 'moisChoisis' ? [...new Set(v.mois)].sort((a, b) => a - b) : [], unite: 'mois' as const, rythme: null, semaines: [] },
@@ -198,10 +198,20 @@ export interface DetteDto extends Omit<Dette, 'montantTotal' | 'mensualite'> {
 
 // --- Résumé ---
 
+export interface MoisAvecSemaines {
+  cle: CleMois
+  debut: DateCivile
+  fin: DateCivile
+  nbJours: number
+  semaines: Semaine[]
+}
+
 export interface ResumeChargesDto {
   aujourdhui: DateCivile
-  /** Mois en cours ; ses semaines servent à choisir le montant de chaque semaine d'une enveloppe. */
-  mois: { cle: CleMois; debut: DateCivile; fin: DateCivile; nbJours: number; semaines: Semaine[] }
+  /** Mois en cours ; ses semaines servent à mettre le montant de chaque semaine d'une enveloppe. */
+  mois: MoisAvecSemaines
+  /** Mois suivant : ses montants de semaine se préparent à la fin du mois en cours. */
+  moisSuivant: MoisAvecSemaines
   duMois: ChargesDuMois
   /** Mois en cours par groupe de catégorie ; les dettes comptent en « engagement ». */
   parGroupe: Record<GroupeCategorie, Centimes>

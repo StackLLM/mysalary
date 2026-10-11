@@ -25,7 +25,7 @@ async function compte(prenom = 'A') {
   const cat = (l: string) => categories.find((c) => c.libelle === l)!.id
   const loyer = (await ok(id, '/charges', { libelle: 'Loyer', categorieId: cat('Logement'), nature: 'fixe', montant: 350_000, jour: 5, debut: '2026-11', essentielle: true })).id
   await ok(id, '/charges', { libelle: 'Internet', categorieId: cat('Logement'), nature: 'fixe', montant: 30_000, jour: 8, debut: '2026-11' })
-  const courses = (await ok(id, '/charges', { libelle: 'Courses', categorieId: cat('Alimentation'), nature: 'enveloppe', montant: 200_000, debut: '2026-11', essentielle: true })).id
+  const courses = (await ok(id, '/charges', { libelle: 'Courses', categorieId: cat('Alimentation'), nature: 'enveloppe', montant: 200_000, unite: 'jour', rythme: 6_452, debut: '2026-11', essentielle: true })).id
   ctx.jour = '2027-01-10'
   await ok(id, '/salaire/paies/2027-01/reception', { dateReelle: '2026-12-27', salaireRecu: 1_000_000 })
   await ok(id, '/depenses', { date: '2027-01-05', montant: 350_000, categorieId: cat('Logement'), chargeId: loyer, echeance: '2027-01-05' })

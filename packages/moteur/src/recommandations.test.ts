@@ -34,7 +34,18 @@ const charge = (id: string, nature: Charge['nature'], montant: number, modif: Pa
 })
 const loyer = charge('Loyer', 'fixe', 350_000, { essentielle: true })
 const internet = charge('Internet', 'fixe', 30_000, { jour: 8 })
-const courses = charge('Courses', 'enveloppe', 200_000, { essentielle: true })
+// Courses : 2 000 DH consommés par semaine, avec un montant mis pour chaque semaine ; loisirs : consommés librement.
+const courses = charge('Courses', 'enveloppe', 200_000, {
+  essentielle: true,
+  unite: 'semaine',
+  semaines: [
+    { debut: d('2026-12-27'), montant: centimes(10_000) },
+    { debut: d('2026-12-28'), montant: centimes(50_000) },
+    { debut: d('2027-01-04'), montant: centimes(50_000) },
+    { debut: d('2027-01-11'), montant: centimes(50_000) },
+    { debut: d('2027-01-18'), montant: centimes(40_000) },
+  ],
+})
 const loisirs = charge('Loisirs', 'enveloppe', 150_000)
 const source = (id: string, modif: Partial<SourceRevenu>): SourceRevenu => ({
   id,
@@ -114,8 +125,8 @@ describe('KPI (Plan.md § 8)', () => {
     expect(k.tauxCharges).toMatchObject({ reel: 0.58, prevu: 0.73 })
     expect(k.ecart).toMatchObject({ base: 'aDate', reel: 580_000 })
     expect(k.ecart!.montant).toBe(k.ecart!.reel - k.ecart!.prevu)
-    // Semaine du 4 au 10 janv. : 2 300 DH dépensés pour un budget d'environ 790 DH.
-    expect(k.resteSemaine).toMatchObject({ numero: 3, depense: 230_000, joursRestants: 1, parJour: 0 })
+    // Semaine du 4 au 10 janv. : 2 300 DH dépensés pour les 500 DH mis sur cette semaine.
+    expect(k.resteSemaine).toMatchObject({ numero: 3, disponible: 50_000, depense: 230_000, joursRestants: 1, parJour: 0 })
     expect(k.resteSemaine!.reste).toBeLessThan(0)
   })
 

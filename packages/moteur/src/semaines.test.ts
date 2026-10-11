@@ -36,8 +36,8 @@ const loyer: Charge = {
   fin: null,
   essentielle: true,
 }
-// 3 100 DH sur 31 jours : 100 DH par jour.
-const courses: Charge = { ...loyer, id: 'courses', libelle: 'Courses', categorieId: 'alimentation', nature: 'enveloppe', montant: centimes(310_000), jour: null }
+// 3 100 DH sur 31 jours, consommés par jour : 100 DH chaque jour.
+const courses: Charge = { ...loyer, id: 'courses', libelle: 'Courses', categorieId: 'alimentation', nature: 'enveloppe', montant: centimes(310_000), jour: null, unite: 'jour', rythme: centimes(10_000) }
 
 const depense = (id: string, montant: number, date: string, lien: Partial<Depense> = {}): Depense => ({
   id,
@@ -103,9 +103,18 @@ describe('semaines d’un mois en cours', () => {
   })
 })
 
-describe('enveloppe consommée par semaine ou par jour, au rythme choisi par l’utilisateur', () => {
-  // Moto : 300 DH pour le mois. L'utilisateur choisit combien ouvrir chaque semaine (ou chaque jour) ; MySalary ne divise rien.
-  const moto: Charge = { ...courses, id: 'moto', libelle: 'Moto', montant: centimes(30_000), unite: 'semaine', rythme: centimes(10_000) }
+describe('enveloppe consommée par semaine ou par jour : les semaines ne reçoivent que les montants mis par l’utilisateur', () => {
+  // Moto : 300 DH pour le mois. Par semaine, l'utilisateur met un montant différent sur chaque semaine ; MySalary n'invente rien.
+  const semaine = (debut: string, montant: number) => ({ debut: d(debut), montant: centimes(montant) })
+  const moto: Charge = {
+    ...courses,
+    id: 'moto',
+    libelle: 'Moto',
+    montant: centimes(30_000),
+    unite: 'semaine',
+    rythme: null,
+    semaines: [semaine('2026-12-28', 10_000), semaine('2027-01-04', 5_000), semaine('2027-01-18', 12_000)],
+  }
   const plan = (charge: Charge, aujourdhui = '2027-01-06') => {
     const cal = calendrier(aujourdhui, { charges: [loyer, charge] })
     const mois = cal.mois(m('2027-01'))
@@ -113,52 +122,49 @@ describe('enveloppe consommée par semaine ou par jour, au rythme choisi par l�
     return { cal, e, p: planEnveloppe(e, mois, semainesDe(mois, 1)) }
   }
 
-  it('par semaine : 100 DH chaque semaine dès son premier jour, jusqu’à atteindre les 300 DH du mois', () => {
+  it('par semaine : chaque semaine reçoit son montant dès son premier jour ; sans montant, 0 ; le reste du budget est « à répartir »', () => {
     const { cal, e, p } = plan(moto)
-    expect(e).toMatchObject({ budget: 30_000, unite: 'semaine', rythme: 10_000 })
+    expect(e).toMatchObject({ budget: 30_000, unite: 'semaine' })
     expect(cal.chargesDuMois(m('2027-01')).totaux.enveloppe).toBe(30_000)
-    expect(p.semaines.map((x) => [x.demande, x.ouvert])).toEqual([
-      [10_000, 10_000],
-      [10_000, 10_000],
-      [10_000, 10_000],
-      [10_000, 0],
-      [10_000, 0],
-      [10_000, 0],
-    ])
-    expect(p).toMatchObject({ ouvert: 30_000, aRepartir: 0, atteintLe: '2027-01-04' })
-    // Le 27 déc. (case 0), le 28 déc. (case 1), le 4 janv. (case 8) : rien les autres jours.
-    expect(p.parJour.filter((x) => x > 0)).toEqual([10_000, 10_000, 10_000])
-    expect(p.parJour[8]).toBe(10_000)
-  })
-
-  it('par semaine : un montant choisi pour une semaine précise remplace le montant par semaine', () => {
-    const { p } = plan({ ...moto, semaines: [{ debut: d('2026-12-28'), montant: centimes(5_000) }, { debut: d('2027-01-04'), montant: centimes(0) }] })
     expect(p.semaines.map((x) => [x.ouvert, x.ajuste])).toEqual([
-      [10_000, false],
+      [0, false],
+      [10_000, true],
       [5_000, true],
-      [0, true],
-      [10_000, false],
-      [5_000, false],
+      [0, false],
+      [12_000, true],
       [0, false],
     ])
-    expect(p.atteintLe).toBe('2027-01-18')
+    expect(p).toMatchObject({ ouvert: 27_000, aRepartir: 3_000, depassement: 0 })
+    // Le 28 déc. (case 1), le 4 janv. (case 8), le 18 janv. (case 22).
+    expect([p.parJour[1], p.parJour[8], p.parJour[22]]).toEqual([10_000, 5_000, 12_000])
+    const s = suiviDesSemaines(cal, m('2027-01'), { aujourdhui: d('2027-01-06') })
+    expect(s.semaines.map((x) => x.budget)).toEqual([0, 10_000, 5_000, 0, 12_000, 0])
+    expect(s).toMatchObject({ budget: 27_000, aRepartir: 3_000, libres: [] })
   })
 
-  it('montants trop bas : le reste du budget n’est ouvert par aucune semaine, il reste « à répartir »', () => {
-    const { p, cal } = plan({ ...moto, rythme: centimes(2_000) })
-    expect(p).toMatchObject({ ouvert: 12_000, aRepartir: 18_000, atteintLe: null })
-    expect(suiviDesSemaines(cal, m('2027-01'), { aujourdhui: d('2027-01-06') })).toMatchObject({ budget: 30_000, aRepartir: 18_000 })
+  it('par semaine : des montants au-delà du budget sont gardés tels quels et signalés en dépassement', () => {
+    const { p } = plan({ ...moto, semaines: [...moto.semaines!, semaine('2027-01-11', 8_000)] })
+    expect(p.semaines.map((x) => x.ouvert)).toEqual([0, 10_000, 5_000, 8_000, 12_000, 0])
+    expect(p).toMatchObject({ ouvert: 35_000, aRepartir: 0, depassement: 5_000 })
   })
 
   it('par jour : 20 DH chaque jour jusqu’aux 300 DH, atteints le 15e jour', () => {
-    const { p, cal } = plan({ ...moto, unite: 'jour', rythme: centimes(2_000) })
+    const { p, cal } = plan({ ...moto, unite: 'jour', rythme: centimes(2_000), semaines: [] })
     expect(p.parJour.slice(0, 16)).toEqual([...Array(15).fill(2_000), 0])
     expect(p).toMatchObject({ ouvert: 30_000, aRepartir: 0, atteintLe: '2027-01-10' })
     expect(budgetEnveloppesParJour(cal, m('2027-01'))[14]).toBe(2_000)
     const s = suiviDesSemaines(cal, m('2027-01'), { aujourdhui: d('2027-01-06') })
     expect(s.semaines.map((x) => x.budget)).toEqual([2_000, 14_000, 14_000, 0, 0, 0])
-    const rythme = rythmeDuMois(cal, m('2027-01'), d('2027-01-06'))
-    expect(rythme.find((x) => x.date === '2027-01-10')!.prevu - rythme.find((x) => x.date === '2027-01-09')!.prevu).toBe(2_000)
+  })
+
+  it('librement : aucune semaine ne la reçoit, elle est suivie sur le mois ; le rythme du mois (bilan) la compte au fil des jours', () => {
+    const { p, cal } = plan({ ...moto, unite: 'mois', semaines: [] })
+    expect(p).toMatchObject({ ouvert: 0, aRepartir: 0 })
+    const s = suiviDesSemaines(cal, m('2027-01'), { aujourdhui: d('2027-01-06') })
+    expect(s.semaines.every((x) => x.budget === 0)).toBe(true)
+    expect(s).toMatchObject({ budget: 0, libres: [{ id: 'moto', libelle: 'Moto', budget: 30_000 }] })
+    expect(s.reponse.type).not.toBe('sansEnveloppe')
+    expect(rythmeDuMois(cal, m('2027-01'), d('2027-01-06')).at(-1)!.prevu).toBe(350_000 + 30_000)
   })
 
   it('le budget du mois reste le montant saisi, quel que soit le rythme', () => {
@@ -233,11 +239,14 @@ describe('mois terminé, à venir, sans enveloppe', () => {
 })
 
 describe('propriété', () => {
-  it('les budgets des semaines font toujours le budget du mois, au centime', () => {
+  it('les semaines reçoivent exactement les montants mis par l’utilisateur, au centime', () => {
     fc.assert(
-      fc.property(fc.integer({ min: 0, max: 10_000_000 }), fc.integer({ min: 1, max: 7 }), (montant, debutSemaine) => {
-        const s = suivre('2027-01-06', { charges: [{ ...courses, montant: centimes(montant) }], debutSemaine })
-        expect(s.semaines.reduce((t, x) => t + x.budget, 0)).toBe(montant)
+      fc.property(fc.array(fc.integer({ min: 0, max: 1_000_000 }), { minLength: 6, maxLength: 6 }), fc.integer({ min: 1, max: 7 }), (montants, debutSemaine) => {
+        const mois = calendrier('2027-01-06').mois(m('2027-01'))
+        const debuts = semainesDe(mois, debutSemaine).map((x) => x.debut)
+        const semaines = debuts.map((debut, i) => ({ debut, montant: centimes(montants[i] ?? 0) }))
+        const s = suivre('2027-01-06', { charges: [{ ...courses, unite: 'semaine', rythme: null, semaines }], debutSemaine })
+        expect(s.semaines.map((x) => x.budget)).toEqual(semaines.map((x) => x.montant))
       }),
     )
   })

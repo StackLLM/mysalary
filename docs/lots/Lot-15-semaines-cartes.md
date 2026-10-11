@@ -63,22 +63,16 @@ Compte « Essai » (supprimé ensuite), octobre 2026, enveloppes courses 1 500 D
 - [x] Prévu et réel toujours nommés, jamais par la couleur seule.
 - [x] Vérifié à 1342 px et 375 px.
 
-## Ajout du 12/10/2026 : budget du mois, consommé au rythme choisi par l'utilisateur
+## Ajout du 12/10/2026 : les semaines ne reçoivent que les montants mis par l'utilisateur
 
-Demande : « l'utilisateur choisit le montant qui va être sur chaque semaine. Le budget de base se fait par mois. […] Par exemple, je mets moto 300, et moi je contrôle de diviser ce budget, de le consommer par jour ou par semaine. Si c'est par semaine, je dois choisir chaque semaine mettre combien jusqu'à ce que le budget soit consommé. »
-Deux versions précédentes sont remplacées : la division automatique du budget (10/10), puis le montant saisi par semaine ou par jour et additionné (11/10).
+Demandes : « le budget prévu ne se définit pas : les semaines s'alimentent par les montants que je rentre ; semaine 1 sans montant, c'est 0 » ; « laisser à l'utilisateur la liberté de mettre un montant différent pour chaque semaine, et l'alerter s'il a dépassé le montant de l'enveloppe ». Remplace les versions des 10, 11 et 12/10 (division automatique, montant additionné, montant par semaine imposé).
 
-- **Formulaire d'une enveloppe** (Mon plan › Charges & enveloppes) : « Budget du mois » (ex. 300 DH), puis « Je consomme ce budget : Librement sur le mois / Par semaine / Par jour ».
-  - Par semaine : « Montant par semaine », puis le bloc « Ce mois-ci, semaine par semaine » : chaque semaine du mois en cours a son propre champ (vide = le montant par semaine), avec ce qu'elle ouvre réellement.
-  - Par jour : « Montant par jour », et ce que chaque semaine ouvre.
-  - En bas du bloc : « Budget du mois atteint le 12 oct. » ou « 300 DH restent à répartir sur ce mois : augmente le montant d'une semaine. ».
-- **Tableau des enveloppes** : « Budget du mois » et « Rythme » (« 100 DH / sem. », « 20 DH / jour » ou « Libre »).
-- **Règles (moteur, `planEnveloppe`)** — MySalary ne divise jamais le budget :
-  - par semaine : chaque semaine ouvre, dès son premier jour, le montant choisi pour elle (sinon le montant par semaine) ;
-  - par jour : chaque jour ouvre le montant par jour ;
-  - les ouvertures s'arrêtent quand le budget du mois est atteint ; ce qui n'est ouvert par aucune semaine reste « à répartir » (jamais inventé) ;
-  - librement : comme avant, le budget arrive au fil des jours dans le suivi.
-- **Onglet Semaines** : les semaines suivent ces ouvertures ; si une partie du budget n'est ouverte par aucune semaine, un message le dit avec un lien « Ajuster mes enveloppes ».
-- **Partout ailleurs** (charges du mois, reste à dépenser, cumul, fonds de sécurité) : le budget du mois, tel que saisi.
-- **Données** : `Charge.rythme` (montant par semaine ou par jour) et `Charge.semaines` (montants choisis semaine par semaine) ; `unite` devient le rythme. Migration `enveloppe_rythme` : colonnes ajoutées ; une enveloppe éventuellement saisie « par semaine / par jour » dans la version du 11/10 garde son montant comme rythme. Tes 3 enveloppes (Moto, Amina, 1000) étaient « par mois » : inchangées.
-- **Tests** : moteur (par semaine, semaine ajustée, à répartir, par jour, budget du mois), serveur (enregistrement, liste, semaines, rythme du bilan, refus), interface (choix, montants de semaine, phrase de fin, envoi). 355 tests au total.
+- **Enveloppe** : « Budget du mois » (ex. 400 DH), puis « Je consomme ce budget : Librement sur le mois / Par semaine / Par jour ».
+  - Par semaine : aucun montant imposé. Le bloc « Ce que je mets chaque semaine » a un champ par semaine (vide = 0), pour le mois en cours **ou le suivant** (choix « Octobre (en cours) / Novembre »), pour préparer ses montants en fin de mois.
+  - En bas du bloc : « 550 DH mis : 50 DH restent à répartir sur ce mois. », « Tout le budget est réparti : 600 DH. », ou en rouge « Tes semaines dépassent le budget de l'enveloppe de 50 DH (650 DH mis). » (alerte, l'enregistrement reste possible).
+  - Par jour : « Montant par jour », chaque jour le reçoit jusqu'au budget (« Budget du mois atteint le 19 oct. »).
+- **Semaines (Mois › Semaines, Aujourd'hui)** : le budget d'une semaine est la somme des montants mis sur elle (et des montants par jour) ; 0 sinon. Rien n'est calculé ni réparti par MySalary. Le dépensé reste le réel ; une semaine dont le dépensé dépasse son budget est dépassée (alerte « semaine dépassée »), et une enveloppe dont le dépensé du mois dépasse son budget déclenche « enveloppe dépassée ».
+- **Enveloppe libre** : suivie sur le mois seulement ; l'onglet Semaines le dit (« Courses est consommée librement : suivi sur le mois, sans montant de semaine. ») avec le lien « Mettre mes montants par semaine », ainsi que le budget pas encore mis sur une semaine. Le rythme du mois (bilan) la compte au fil des jours, vue du mois entier.
+- **Moteur** : `planEnveloppe` (montants de semaine tels quels, `aRepartir`, `depassement`), `SuiviDesSemaines.budget` = total reçu par les semaines, `libres`, `aRepartir`.
+- **Données** : `Charge.semaines` (montant de chaque semaine), `Charge.rythme` (par jour seulement) ; migration `enveloppe_rythme`. `GET /charges/resume` donne les semaines du mois en cours et du suivant.
+- **Tests** : 355 au total (moteur : montants de semaine, dépassement, par jour, libre, propriété « les semaines reçoivent exactement les montants mis » ; serveur ; interface).

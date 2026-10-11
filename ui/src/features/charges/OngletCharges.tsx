@@ -222,13 +222,13 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
                 <Cellule className="px-3" prefixe="DH">
                   <Montant valeur={c.montant} sansDevise />
                 </Cellule>
-                <Cellule className="px-3" attenue={!c.rythme} titre={RYTHMES[c.unite ?? 'mois'].explication}>
-                  {c.rythme ? (
+                <Cellule className="px-3" attenue={(c.unite ?? 'mois') === 'mois'} titre={RYTHMES[c.unite ?? 'mois'].explication}>
+                  {c.unite === 'jour' && c.rythme ? (
                     <span className="whitespace-nowrap">
-                      <Montant valeur={c.rythme} /> <span className="text-mention text-gris">/ {RYTHMES[c.unite ?? 'mois'].court}</span>
+                      <Montant valeur={c.rythme} /> <span className="text-mention text-gris">/ jour</span>
                     </span>
                   ) : (
-                    RYTHMES.mois.court
+                    RYTHMES[c.unite ?? 'mois'].court
                   )}
                 </Cellule>
                 {menu(c.libelle, () => setEdition({ type: 'enveloppe', charge: c }), () => setSuppression({ type: 'charge', id: c.id, libelle: c.libelle }))}
@@ -356,7 +356,7 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
             initial={edition.charge}
             aujourdhui={resume.aujourdhui}
             moisCourant={resume.mois.cle}
-            mois={resume.mois}
+            moisSemaines={[resume.mois, resume.moisSuivant]}
             chargement={enregistrerCharge.isPending}
             onEnregistrer={async (saisie) => {
               await enregistrerCharge.mutateAsync({ ...saisie, id: edition.charge?.id })

@@ -52,24 +52,27 @@ export function libelleFinDette(etat: { soldee: boolean; finPrevue: string | nul
 export const part = (valeur: number, total: number) => (total > 0 ? Math.min(1, Math.max(0, valeur / total)) : 0)
 
 /**
- * Rythme de consommation d'une enveloppe (Mon plan › Charges). Le budget est celui du mois ;
- * par semaine ou par jour, l'utilisateur choisit combien ouvrir, jusqu'à atteindre le budget. MySalary ne divise rien.
+ * Rythme de consommation d'une enveloppe (Mon plan › Charges). Le budget est celui du mois ; par semaine,
+ * l'utilisateur met le montant qu'il veut sur chaque semaine ; par jour, un montant par jour. MySalary ne divise rien.
  */
-export const RYTHMES: Record<UniteEnveloppe, { libelle: string; champ: string | null; court: string; explication: string }> = {
-  mois: { libelle: 'Librement sur le mois', champ: null, court: 'Libre', explication: 'Tout le budget est disponible sur le mois ; le suivi de la semaine le voit arriver au fil des jours.' },
-  semaine: { libelle: 'Par semaine', champ: 'Montant par semaine', court: 'sem.', explication: 'Chaque semaine ouvre ce montant dès son premier jour, jusqu’à atteindre le budget du mois. Tu peux choisir un autre montant pour une semaine précise.' },
-  jour: { libelle: 'Par jour', champ: 'Montant par jour', court: 'jour', explication: 'Chaque jour ouvre ce montant, jusqu’à atteindre le budget du mois.' },
+export const RYTHMES: Record<UniteEnveloppe, { libelle: string; court: string; explication: string }> = {
+  mois: { libelle: 'Librement sur le mois', court: 'Libre', explication: 'Suivie sur le mois seulement : elle ne remplit aucune semaine.' },
+  semaine: { libelle: 'Par semaine', court: 'Par semaine', explication: 'Mets le montant que tu veux sur chaque semaine, dès son premier jour. Une semaine sans montant reçoit 0.' },
+  jour: { libelle: 'Par jour', court: 'jour', explication: 'Chaque jour reçoit ce montant, jusqu’à atteindre le budget du mois.' },
 }
 
-/** Fin de la consommation d'une enveloppe : « Budget atteint le 4 janv. » ou « 180 DH restent à répartir ». */
-export function phrasePlanEnveloppe(plan: Pick<PlanEnveloppe, 'aRepartir' | 'atteintLe'>, unite: UniteEnveloppe): { texte: string; ton: Ton } {
-  if (plan.atteintLe) {
+/** Bas du bloc des semaines : tout le budget est mis, il en reste à répartir, ou les semaines dépassent le budget. */
+export function phrasePlanEnveloppe(plan: Pick<PlanEnveloppe, 'ouvert' | 'aRepartir' | 'depassement' | 'atteintLe'>, unite: UniteEnveloppe): { texte: string; ton: Ton } {
+  if (plan.depassement > 0) {
+    return { texte: `Tes semaines dépassent le budget de l’enveloppe de ${formaterMontant(plan.depassement)} (${formaterMontant(plan.ouvert)} mis).`, ton: 'alerte' }
+  }
+  if (unite === 'jour' && plan.atteintLe) {
     // « 4 janv. » finit déjà par un point.
     const date = formaterDate(plan.atteintLe, 'court')
     return { texte: `Budget du mois atteint le ${date}${date.endsWith('.') ? '' : '.'}`, ton: 'positif' }
   }
-  const quoi = unite === 'jour' ? 'augmente le montant par jour' : 'augmente le montant d’une semaine'
-  return { texte: `${formaterMontant(plan.aRepartir)} restent à répartir sur ce mois : ${quoi}.`, ton: 'alerte' }
+  if (plan.aRepartir === 0) return { texte: `Tout le budget est réparti : ${formaterMontant(plan.ouvert)}.`, ton: 'positif' }
+  return { texte: `${formaterMontant(plan.ouvert)} mis : ${formaterMontant(plan.aRepartir)} restent à répartir sur ce mois.`, ton: 'info' }
 }
 
 export const dateOuMois = (l: ChargePrevue) => (l.date ? formaterDate(l.date, 'court') : 'Tout le mois')

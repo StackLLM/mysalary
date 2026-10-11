@@ -8,6 +8,7 @@ import {
   etatDette,
   moisDe,
   semainesDe,
+  type MoisBudgetaire,
   plafondPaiement,
   type Centimes,
   type Charge,
@@ -303,6 +304,7 @@ export async function resume(prisma: PrismaClient, utilisateurId: string, aujour
     prisma.dette.findMany({ where: { utilisateurId } }),
   ])
   const courant = calendrier.moisCourant()
+  const avecSemaines = (p: MoisBudgetaire) => ({ cle: p.cle, debut: p.debut, fin: p.fin, nbJours: p.nbJours, semaines: semainesDe(p, debutSemaine) })
   const duMois = calendrier.chargesDuMois(courant.cle)
   const suivant = calendrier.chargesDuMois(decalerMois(courant.cle, 1))
   const groupes = new Map(categories.map((c) => [c.id, c.groupe as GroupeCategorie]))
@@ -318,7 +320,8 @@ export async function resume(prisma: PrismaClient, utilisateurId: string, aujour
 
   return {
     aujourdhui,
-    mois: { cle: courant.cle, debut: courant.debut, fin: courant.fin, nbJours: courant.nbJours, semaines: semainesDe(courant, debutSemaine) },
+    mois: avecSemaines(courant),
+    moisSuivant: avecSemaines(calendrier.mois(decalerMois(courant.cle, 1))),
     duMois,
     parGroupe,
     equivalentMensuel: {

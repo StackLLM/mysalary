@@ -235,8 +235,8 @@ export function rythmeDuMois(calendrier: Calendrier, cle: CleMois, aujourdhui: D
   const mois = calendrier.mois(cle)
   const suivi = calendrier.suiviDuMois(cle)
   const jours = Array.from({ length: mois.nbJours }, (_, i) => ajouterJours(mois.debut, i))
-  // Enveloppes : par jour, ou la part de chaque semaine dès son premier jour (réglage de chaque enveloppe).
-  const enveloppes = budgetEnveloppesParJour(calendrier, cle, debutSemaine)
+  // Enveloppes : les montants de chaque semaine (ou de chaque jour) ; une enveloppe libre, au fil des jours (vue du mois entier).
+  const enveloppes = budgetEnveloppesParJour(calendrier, cle, debutSemaine, { libresAuFilDesJours: true })
   // Prévu daté : le montant de l'échéancier pour les dettes (pas le reste attendu), comme dans le bilan.
   const datees = new Map<DateCivile, number>()
   for (const l of suivi.lignes) datees.set(l.date, (datees.get(l.date) ?? 0) + l.montant)
