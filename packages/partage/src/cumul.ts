@@ -1,8 +1,8 @@
-import type { CalendrierDuMois, DateCivile, EvenementJour, MoisCumul, ResumeCumul } from '@mysalary/moteur'
+import type { CalendrierDuMois, DateCivile, SuiviAnnuel, EvenementJour, MoisCumul, ResumeCumul } from '@mysalary/moteur'
 import { z } from 'zod'
 import { schemaCleMois } from './salaire'
 
-export type { CalendrierDuMois, Depart, EvenementCalendrier, EvenementJour, JourCalendrier, MoisCumul, TypeEvenement, NatureCumul, ResumeCumul } from '@mysalary/moteur'
+export type { CalendrierDuMois, CoutMois, Depart, EvenementCalendrier, EvenementJour, JourCalendrier, MoisAnnuel, MoisCumul, ProgressionAnnuelle, TotalAnnuel, TypeEvenement, NatureCumul, ResumeCumul } from '@mysalary/moteur'
 
 /** Plage de mois du cumul : 36 mois au plus. */
 export const schemaPlageCumul = z
@@ -43,4 +43,9 @@ export interface AnneeDto extends CumulDto {
 export interface CalendrierMoisDto extends CalendrierDuMois {
   /** 1 = lundi, 7 = dimanche (Réglages). */
   debutSemaine: 1 | 7
+}
+
+/** Suivi annuel (lot 18) : revenus, dépenses et épargne de l'année (réel et projeté séparés), mois coûteux, objectifs. */
+export interface SuiviAnnuelDto extends SuiviAnnuel {
+  aujourdhui: DateCivile
 }

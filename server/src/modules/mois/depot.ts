@@ -1,5 +1,5 @@
-import { bilanDuMois, calendrierDuMois, cumulDesMois, debutCumul, evenementsDuMois, lireCleMois, resumeCumul, rythmeDuMois, suiviDesSemaines, type CleMois, type DateCivile, type SuiviDesSemaines } from '@mysalary/moteur'
-import { CODES_ERREUR, formaterMois, type AnneeDto, type BilanDto, type CalendrierMoisDto, type CumulDto, type EvenementCloture, type SemainesDto } from '@mysalary/partage'
+import { bilanDuMois, calendrierDuMois, cumulDesMois, debutCumul, evenementsDuMois, lireCleMois, resumeCumul, rythmeDuMois, suiviAnnuel, suiviDesSemaines, type CleMois, type DateCivile, type SuiviDesSemaines } from '@mysalary/moteur'
+import { CODES_ERREUR, formaterMois, type AnneeDto, type BilanDto, type CalendrierMoisDto, type CumulDto, type EvenementCloture, type SemainesDto, type SuiviAnnuelDto } from '@mysalary/partage'
 import type { PrismaClient } from '@prisma/client'
 import { ErreurApi } from '../../lib/erreurs'
 import { chargerCalendrier } from '../salaire/depot'
@@ -67,6 +67,12 @@ export async function annee(prisma: PrismaClient, utilisateurId: string, aujourd
     resume: resumeCumul(mois),
     evenements: Object.fromEntries(mois.map((m) => [m.cle, evenementsDuMois(calendrier, m.cle)])),
   }
+}
+
+/** Suivi annuel (lot 18) : les douze mois d'une année, réel à date et projeté restant, objectifs. */
+export async function suiviAnnee(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile, an: number): Promise<SuiviAnnuelDto> {
+  const { calendrier, epargne, regles, depart } = await chargerCalendrier(prisma, utilisateurId, aujourdhui)
+  return { ...suiviAnnuel(calendrier, epargne, an, { aujourdhui, regles, depart }), aujourdhui }
 }
 
 /** Calendrier d'un mois (lot 17) : ce qui tombe chaque jour, et le solde du mois jour par jour. */

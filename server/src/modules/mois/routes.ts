@@ -51,6 +51,11 @@ export async function routesMois(app: FastifyInstance) {
     depot.calendrierMois(app.prisma, utilisateurDe(requete), app.aujourdhui(), valider(schemaCleMois, requete.params.cle)),
   )
 
+  // Suivi annuel (lot 18).
+  app.get<{ Params: { annee: string } }>('/annee/:annee/suivi', async (requete) =>
+    depot.suiviAnnee(app.prisma, utilisateurDe(requete), app.aujourdhui(), valider(schemaAnnee, requete.params.annee)),
+  )
+
   // Calendrier de l'année (lot 14).
   app.get<{ Params: { annee: string } }>('/annee/:annee', async (requete) =>
     depot.annee(app.prisma, utilisateurDe(requete), app.aujourdhui(), valider(schemaAnnee, requete.params.annee)),

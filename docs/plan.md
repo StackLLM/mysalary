@@ -1,7 +1,7 @@
 # MySalary — Progression
 
 > Suivi de la construction de MySalary, lot par lot. Mis à jour à chaque lot.
-> État au 12/10/2026 : **lots 0 à 16 clôturés et validés**, **lot 17 livré, en attente de validation**, lots 18 à 22 à venir. Depuis le 11/10/2026, c'est toi qui commites : je donne seulement les messages de commit. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
+> État au 12/10/2026 : **lots 0 à 17 clôturés et validés**, **lot 18 livré, en attente de validation**, lots 19 à 22 à venir. Depuis le 11/10/2026, c'est toi qui commites : je donne seulement les messages de commit. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
 >
 > - Plan global de l'application (vision, architecture, données, règles métier) : [`Plan.md`](../Plan.md), à la racine.
 > - Bilan détaillé de chaque lot livré (périmètre, règles, tests, bugs corrigés) : [`docs/lots/`](lots/).
@@ -27,9 +27,9 @@
 | 14 | [Objectifs › vue Calendrier de l'année](#lot-14--objectifs--vue-calendrier-de-lannée) | 3 — Intelligence et vues | ✅ Clôturé | 10/10/2026 | 329 | [Lot-14-calendrier-annee.md](lots/Lot-14-calendrier-annee.md) |
 | 15 | [Semaines en cartes](#lot-15--semaines-en-cartes) | 3 — Intelligence et vues | ✅ Clôturé | 11/10/2026 | 343 | [Lot-15-semaines-cartes.md](lots/Lot-15-semaines-cartes.md) |
 | 16 | [Aujourd'hui](#lot-16--aujourdhui) | 3 — Intelligence et vues | ✅ Clôturé | 12/10/2026 | 353 | [Lot-16-aujourdhui.md](lots/Lot-16-aujourdhui.md) |
-| 17 | [Calendrier](#lot-17--calendrier) | 3 — Intelligence et vues | 🟡 Livré, à valider | — | 370 | [Lot-17-calendrier.md](lots/Lot-17-calendrier.md) |
-| 18 | [Année](#lot-18--année) | 3 — Intelligence et vues | ⏳ Prochain | — | — | — |
-| 19 | [Onboarding & import V0](#lot-19--onboarding--import-v0) | 4 — Entrée et finitions | À venir | — | — | — |
+| 17 | [Calendrier](#lot-17--calendrier) | 3 — Intelligence et vues | ✅ Clôturé | 12/10/2026 | 370 | [Lot-17-calendrier.md](lots/Lot-17-calendrier.md) |
+| 18 | [Année](#lot-18--année) | 3 — Intelligence et vues | 🟡 Livré, à valider | — | 384 | [Lot-18-annee.md](lots/Lot-18-annee.md) |
+| 19 | [Onboarding & import V0](#lot-19--onboarding--import-v0) | 4 — Entrée et finitions | ⏳ Prochain | — | — | — |
 | 20 | [Export & sauvegarde](#lot-20--export--sauvegarde) | 4 — Entrée et finitions | À venir | — | — | — |
 | 21 | [Finitions (polish)](#lot-21--finitions-polish) | 4 — Entrée et finitions | À venir | — | — | — |
 | 22 | [Authentification](#lot-22--authentification) | 4 — Entrée et finitions | À venir | — | — | — |
@@ -248,7 +248,7 @@ Règles appliquées à chaque lot :
 
 ### Lot 17 — Calendrier
 
-- **Statut** : 🟡 livré le 12/10/2026, en attente de validation · 370 tests · `docs/lots/Lot-17-calendrier.md`.
+- **Statut** : ✅ clôturé le 12/10/2026 · 370 tests · `docs/lots/Lot-17-calendrier.md`.
 - **Livré** :
   - page `/calendrier` : grille du mois budgétaire et vue liste ; navigation de mois ; vue et mois gardés dans l'adresse ;
   - événements typés (paie et primes, autres revenus, charges fixes, échéances de dettes, ponctuels) et dates d'objectifs ; filtre par type ; pastille « +N » ; marqueur « passé, pas confirmé » ;
@@ -257,12 +257,18 @@ Règles appliquées à chaque lot :
   - moteur `calendrierDuMois` ; route `GET /mois/:cle/calendrier` ; lien « Ouvrir le calendrier » depuis Aujourd'hui.
 - **Écart** : modifier une charge ou un ponctuel passe par Mon plan (lien), pas par une fenêtre du calendrier ; le solde du calendrier part du début du mois (le report des mois précédents est dans le cumul, lot 13).
 
-## 4. Lots à venir (18 à 22)
-
 ### Lot 18 — Année
 
-- **Objectif** : comprendre l'année sans lire chaque mois (UX.md § 4.8, § 5.6).
-- **Périmètre prévu** : 12 mois de l'année ; revenus, dépenses, épargne (réel à date + projeté restant, séparés) ; graphique mensuel (composant du lot 2) ; mois les plus coûteux, part variable du revenu, épargne cumulée, progression des objectifs ; clic sur un mois → Mois ; mois sans données grisés ; année future marquée « projection ».
+- **Statut** : 🟡 livré le 12/10/2026, en attente de validation · 384 tests · `docs/lots/Lot-18-annee.md`.
+- **Livré** :
+  - page `/annee`, onglets Synthèse et Calendrier (réutilise le calendrier de l'année du lot 14) ; année et vue dans l'adresse ;
+  - revenus, dépenses, épargne de l'année : réel à date et projeté restant séparés ; bandeau « Année en cours / terminée / Projection » ;
+  - graphique mensuel (plein = réel, hachuré = en cours ou prévu) ; les douze mois cliquables vers Mois, mois avant le suivi grisés ;
+  - mois les plus coûteux, part variable du revenu, épargne cumulée, progression de chaque objectif (début, aujourd'hui, fin projetée) ;
+  - moteur `suiviAnnuel` ; route `GET /annee/:annee/suivi` ; lien « Voir l'année » depuis Aujourd'hui.
+- **Écart** : l'épargne cumulée est celle de l'année (somme des mois), pas le solde total des comptes ; le calendrier de l'année reste aussi dans Objectifs.
+
+## 4. Lots à venir (19 à 22)
 
 ### Lot 19 — Onboarding & import V0
 
@@ -360,6 +366,7 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `ed0e51d` | Lot 16 : page Aujourd'hui ; budget d'enveloppe saisi par mois, par semaine ou par jour |
 | — (à commiter) | Enveloppe : budget du mois, montant libre sur chaque semaine ; les semaines ne reçoivent que ces montants |
 | — (à commiter) | Lot 17 : calendrier du mois (grille, liste, solde projeté) |
+| — (à commiter) | Lot 18 : page Année (suivi annuel) |
 
 ## 7. Questions ouvertes
 

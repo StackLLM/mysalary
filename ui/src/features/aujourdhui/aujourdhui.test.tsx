@@ -122,6 +122,7 @@ describe('Aujourd’hui', () => {
     const jours = screen.getByRole('region', { name: '7 prochains jours' })
     expect(visible(jours)).toContain('Aujourd’huiSalairePrévu+10 000DHDemainAssurancePrévu−1 200DH')
     expect(within(jours).getByRole('link', { name: 'Ouvrir le calendrier' })).toHaveAttribute('href', '/calendrier')
+    expect(within(jours).getByRole('link', { name: 'Voir l’année' })).toHaveAttribute('href', '/annee')
 
     expect(visible(screen.getByText('Épargne du mois').closest('section')!)).toContain('500DHsur 1 000DH prévus')
     expect(screen.getByRole('link', { name: 'Ouvrir l’objectif' })).toHaveAttribute('href', '/objectifs/moto')

@@ -1,4 +1,4 @@
-import type { AnneeDto, BilanDto, CumulDto, SaisieCloture, SemainesDto } from '@mysalary/partage'
+import type { AnneeDto, BilanDto, CumulDto, SaisieCloture, SemainesDto, SuiviAnnuelDto } from '@mysalary/partage'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
@@ -67,6 +67,17 @@ export function useAnnee(annee: number) {
   return useQuery({
     queryKey: [...mois, 'annee', annee],
     queryFn: () => api.lire<AnneeDto>(`/annee/${annee}`),
+    enabled: actif,
+    placeholderData: keepPreviousData,
+  })
+}
+
+/** Suivi annuel (lot 18) : revenus, dépenses, épargne de l'année, mois coûteux, objectifs. */
+export function useSuiviAnnuel(annee: number) {
+  const { mois, actif } = useCles()
+  return useQuery({
+    queryKey: [...mois, 'annee', annee, 'suivi'],
+    queryFn: () => api.lire<SuiviAnnuelDto>(`/annee/${annee}/suivi`),
     enabled: actif,
     placeholderData: keepPreviousData,
   })
