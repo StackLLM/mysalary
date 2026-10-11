@@ -65,23 +65,30 @@ const suivre = (aujourdhui: string, options: { report?: boolean; debutSemaine?: 
   suiviDesSemaines(calendrier(aujourdhui, options), m(options.cle ?? '2027-01'), { aujourdhui: d(aujourdhui), report: options.report, debutSemaine: options.debutSemaine })
 
 describe('enveloppes vues depuis chaque semaine', () => {
-  it('le reste de l’enveloppe sur le mois, après le dépensé de la semaine et des précédentes', () => {
+  const semaineCourses = { ...courses, unite: 'semaine' as const, rythme: null, semaines: [{ debut: d('2027-01-04'), montant: centimes(100_000) }, { debut: d('2027-01-11'), montant: centimes(100_000) }] }
+
+  it('le reste de l’enveloppe sur le mois, après le dépensé de la semaine et des précédentes ; les semaines à venir aussi', () => {
     const depenses = [...DEPENSES, depense('m2', 20_000, '2027-01-12', { chargeId: 'courses' }), depense('hors', 7_000, '2027-01-12', { chargeId: 'inconnue' })]
     const { semaines } = suivre('2027-01-14', { depenses })
-    const lignes = semaines.map((x) => x.enveloppes.map((e) => [e.libelle, e.avant, e.depense, e.reste]))
-    // Semaine du 4 au 10 : 300 DH dépensés ; semaine du 11 au 17 : 200 DH de plus. Un lien disparu n'est pas une enveloppe.
-    expect(lignes.flat().filter((l) => l[2] !== 0)).toEqual([
+    const reste = semaines.map((x) => x.enveloppes.map((e) => [e.libelle, e.avant, e.depense, e.reste]))
+    // 300 DH dépensés la semaine du 4 au 10, 200 DH de plus la suivante ; un lien disparu n'est pas une enveloppe.
+    expect(reste.map((l) => l[0]).filter((l) => l![2] !== 0)).toEqual([
       ['Courses', 0, 30_000, 280_000],
       ['Courses', 30_000, 20_000, 260_000],
     ])
-    expect(semaines.every((x) => x.enveloppes.every((e) => e.budget === 310_000))).toBe(true)
+    const derniere = semaines.at(-1)!
+    expect(derniere.statut).toBe('aVenir')
+    expect(derniere.enveloppes).toMatchObject([{ libelle: 'Courses', avant: 50_000, depense: 0, reste: 260_000 }])
   })
 
-  it('une enveloppe sans montant mis ni dépense cette semaine n’apparaît pas', () => {
-    const { semaines } = suivre('2027-01-14', { depenses: [] })
-    expect(semaines.every((x) => x.enveloppes.every((e) => e.depense === 0))).toBe(true)
-    const libres = suivre('2027-01-14', { charges: [loyer, { ...courses, unite: 'mois', rythme: null }], depenses: [] })
-    expect(libres.semaines.flatMap((x) => x.enveloppes)).toEqual([])
+  it('un montant mis sur une enveloppe déjà consommée donne une alerte ; l’écart n’existe que s’il y a un montant mis', () => {
+    const depenses = [depense('m1', 40_000, '2027-01-05', { chargeId: 'courses' })]
+    const { semaines } = suivre('2027-01-14', { charges: [loyer, semaineCourses], depenses })
+    const [, , premiere, seconde] = semaines.map((x) => x.enveloppes[0]!)
+    expect(premiere).toMatchObject({ mis: 100_000, dejaConsommee: false, ecart: 60_000 })
+    expect(seconde).toMatchObject({ mis: 100_000, dejaConsommee: true, ecart: 100_000, avant: 40_000 })
+    const libre = suivre('2027-01-14', { charges: [loyer, { ...courses, unite: 'mois', rythme: null }], depenses })
+    expect(libre.semaines.flatMap((x) => x.enveloppes).every((e) => e.mis === 0 && !e.dejaConsommee && e.ecart === null)).toBe(true)
   })
 })
 

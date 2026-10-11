@@ -1,5 +1,5 @@
 import { analyserMoneyGuru, decider, type AnalyseImport, type Centimes, type DateCivile, type DecisionImport, type LigneImport } from '@mysalary/moteur'
-import type { ImportDto, OnboardingDto, schemaDecisionImport, schemaEtapeOnboarding } from '@mysalary/partage'
+import { FORMAT_EXPORT, type ImportDto, type OnboardingDto, schemaDecisionImport, schemaEtapeOnboarding } from '@mysalary/partage'
 import type { ImportSource, PrismaClient } from '@prisma/client'
 import type { z } from 'zod'
 import { introuvable } from '../../lib/erreurs'
@@ -28,6 +28,7 @@ export async function enregistrerEtape(prisma: PrismaClient, utilisateurId: stri
 
 /** Analyse le fichier déposé, l'archive tel quel et remplace un éventuel import précédent. N'écrit rien dans le plan. */
 export async function apercuImport(prisma: PrismaClient, utilisateurId: string, fichier: unknown, aujourdhui: DateCivile): Promise<ImportDto> {
+  if ((fichier as { format?: unknown } | null)?.format === FORMAT_EXPORT) throw regle('Ce fichier est un export MySalary. Importe-le depuis l’écran Profils.', { fichier: 'Export MySalary.' })
   const analyse = analyserMoneyGuru(fichier, aujourdhui)
   if (!analyse.ok) throw regle(analyse.erreur, { fichier: analyse.erreur })
   const donnees = {

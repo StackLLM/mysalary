@@ -34,7 +34,7 @@ export function Confirmation({
     <Dialog.Root open={ouvert} onOpenChange={(o) => !o && onFermer()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-encre/20" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,440px)] -translate-x-1/2 -translate-y-1/2 rounded-carte bg-white p-6 shadow-flottant">
+        <Dialog.Content onInteractOutside={(e) => e.preventDefault()} className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,440px)] -translate-x-1/2 -translate-y-1/2 rounded-carte bg-white p-6 shadow-flottant">
           <Dialog.Title className="text-titre text-encre">{titre}</Dialog.Title>
           {/* Un div : la description peut contenir une liste (résumé des changements). */}
           <Dialog.Description asChild>

@@ -22,6 +22,7 @@ import {
   useRenommerUtilisateur,
   useUtilisateurs,
 } from './requetes'
+import { ImportCompte } from '../sauvegarde/ImportCompte'
 import { SuppressionCompte } from './SuppressionCompte'
 
 const ID_FORMULAIRE = 'formulaire-nouveau-compte'
@@ -81,6 +82,7 @@ export function PageProfils() {
 
         <motion.div variants={elementApparition} className="flex min-w-0 flex-col gap-8">
           <NouveauCompte onCree={(u) => ouvrirCompte(u, true)} />
+          <ImportCompte />
         </motion.div>
       </div>
 

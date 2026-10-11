@@ -142,15 +142,6 @@ export function texteTendance(t: Tendance | null): { texte: string; ton: Ton; de
   return { texte: `${t.sens === 'hausse' ? '+' : '−'}${pourcent} %`, ton, detail }
 }
 
-/**
- * Où devrait en être le dépensé de la semaine en cours, de 0 à 1 du disponible (repère de la barre) :
- * le budget à date du moteur (écart + dépensé), qui suit le rythme choisi pour chaque enveloppe (par semaine ou par jour).
- */
-export function rythmeSemaine(s: { ecart: number | null; depense: number; disponible: number; report: number }): number {
-  if (s.ecart === null || s.disponible <= 0) return 0
-  return Math.min(1, Math.max(0, (s.ecart + s.depense + s.report) / s.disponible))
-}
-
 /** Ce qui est dans une semaine (affichage) : dates comprises entre son début et sa fin. */
 export const dansSemaine = (s: Periode) => (x: { date: string }) => x.date >= s.debut && x.date <= s.fin
 

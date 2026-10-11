@@ -1,5 +1,5 @@
 import type { BilanDto, CategorieDto, DepenseDto, SemainesDto, SuiviDepensesDto, SuiviSemaine, Utilisateur } from '@mysalary/partage'
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../../lib/api'
 import { rendre } from '../../test/outils'
@@ -81,7 +81,7 @@ const semaines = (modif: Record<string, unknown> = {}) =>
     reponse: { type: 'retard', montant: 15_000 },
     semaines: [
       semaine(1, '2026-12-27', '2026-12-27', 1, {}),
-      semaine(4, '2027-01-11', '2027-01-17', 7, { depense: 90_000, reste: -20_000, ecart: -20_000, enveloppes: [{ id: 'fun', libelle: 'Fun', budget: 100_000, avant: 0, depense: 40_000, reste: 60_000 }], tendance: { moyenneSemaine: 60_000, variation: 0.5, sens: 'hausse' } }),
+      semaine(4, '2027-01-11', '2027-01-17', 7, { depense: 90_000, reste: -20_000, ecart: -20_000, enveloppes: [{ id: 'fun', libelle: 'Fun', budget: 100_000, avant: 0, depense: 40_000, reste: 60_000, mis: 0, dejaConsommee: false, ecart: null }], tendance: { moyenneSemaine: 60_000, variation: 0.5, sens: 'hausse' } }),
       semaine(5, '2027-01-18', '2027-01-24', 7, {
         statut: 'enCours',
         joursEcoules: 3,
@@ -92,7 +92,7 @@ const semaines = (modif: Record<string, unknown> = {}) =>
         chargesPrevues: 25_000,
         charges: [{ origine: 'fixe', id: 'net', libelle: 'Internet', date: '2027-01-22', montant: 25_000, statut: 'prevue' }],
       }),
-      semaine(6, '2027-01-25', '2027-01-26', 2, { statut: 'aVenir', joursEcoules: 0, ecart: null }),
+      semaine(6, '2027-01-25', '2027-01-26', 2, { statut: 'aVenir', joursEcoules: 0, ecart: null, enveloppes: [{ id: 'fun', libelle: 'Fun', budget: 100_000, avant: 70_000, depense: 0, reste: 30_000, mis: 20_000, dejaConsommee: true, ecart: null }] }),
     ],
     ...modif,
   }) as unknown as SemainesDto
@@ -163,30 +163,36 @@ describe('Mois › Semaines', () => {
     const grille = screen.getByRole('list', { name: 'Semaines du mois' })
     const cartes = within(grille).getAllByRole('button')
     expect(cartes.map((c) => espaces(c.getAttribute('aria-label')))).toEqual([
-      'Semaine 1, 27 déc. : reste 100 DH, passée. Voir le détail.',
-      'Semaine 4, 11 janv. – 17 janv. : reste −200 DH, passée. Voir le détail.',
-      'Semaine 5, 18 janv. – 24 janv. : reste 300 DH, en cours. Voir le détail.',
-      'Semaine 6, 25 janv. – 26 janv. : 200 DH disponibles, à venir. Voir le détail.',
+      'Semaine 1, 27 déc., passée. Voir le détail.',
+      'Semaine 4, 11 janv. – 17 janv., passée. Voir le détail.',
+      'Semaine 5, 18 janv. – 24 janv., en cours. Voir le détail.',
+      'Semaine 6, 25 janv. – 26 janv., à venir. Voir le détail.',
     ])
     expect(cartes[0]).toHaveTextContent('1 jour')
     expect(cartes[1]).toHaveTextContent('+50 %')
     expect(cartes[2]).toHaveTextContent('1 charge')
+    // Chaque carte suit les enveloppes : reste, consommé cette semaine ; plus de reste de semaine ni de budget prévu.
     expect(espaces(cartes[1]!.textContent)).toContain('Fun600DH')
     expect(espaces(cartes[1]!.textContent)).toContain('400 DH cette semaine')
     expect(cartes[1]).not.toHaveTextContent('Budget (prévu)')
-    expect(cartes[3]).toHaveTextContent('Disponible (prévu)')
-    expect(screen.getByText('Reste flexible (semaine)')).toBeInTheDocument()
+    expect(cartes[1]).not.toHaveTextContent('Disponible')
+    // Une semaine à venir montre aussi ce qui reste sur l'enveloppe, avec l'alerte « déjà consommé ».
+    expect(espaces(cartes[3]!.textContent)).toContain('Fun300DH')
+    expect(espaces(cartes[3]!.textContent)).toContain('Déjà consommé : 700DH')
+    expect(screen.queryByText('Reste flexible (semaine)')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sur quoi repose ce calcul ?')).not.toBeInTheDocument()
     // Aucune semaine n'est ouverte d'office.
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('un clic ouvre la fenêtre de la semaine : calcul, ses seules dépenses, charges datées ; semaine précédente', async () => {
+  it('un clic ouvre la fenêtre de la semaine : écart et tendance, enveloppes, ses seules dépenses, charges datées ; semaine précédente', async () => {
     ouvrirSemaines()
     fireEvent.click(await screen.findByRole('button', { name: /^Semaine 5,/ }))
     const fenetre = await screen.findByRole('dialog', { name: 'Semaine 5' })
     const calcul = within(fenetre).getByRole('region', { name: 'Calcul de la semaine' })
-    expect(espaces(calcul.textContent)).toContain('Jour 3 sur 7 · tu peux dépenser')
-    expect(espaces(calcul.textContent)).toContain('par jour pendant 5 jours.')
+    expect(espaces(calcul.textContent)).toContain('Écart sur le rythme')
+    expect(espaces(calcul.textContent)).not.toContain('Reste de la semaine')
+    expect(espaces(calcul.textContent)).not.toContain('Budget (prévu)')
     const depenses = within(fenetre).getByRole('region', { name: 'Dépenses de la semaine 5' })
     expect(within(depenses).getByText('Marché')).toBeInTheDocument()
     expect(within(depenses).queryByText('Prêt voiture')).not.toBeInTheDocument()
@@ -196,10 +202,15 @@ describe('Mois › Semaines', () => {
     expect(await screen.findByRole('dialog', { name: 'Semaine 4' })).toBeInTheDocument()
   })
 
-  it('le bouton de la carte « Cette semaine » ouvre la semaine en cours', async () => {
+  it('un clic à côté de la fenêtre ne la ferme pas ; seule la croix la ferme', async () => {
     ouvrirSemaines()
-    fireEvent.click(await screen.findByRole('button', { name: 'Voir le détail de la semaine' }))
-    expect(await screen.findByRole('dialog', { name: 'Semaine 5' })).toBeInTheDocument()
+    fireEvent.click(await screen.findByRole('button', { name: /^Semaine 5,/ }))
+    await screen.findByRole('dialog', { name: 'Semaine 5' })
+    fireEvent.pointerDown(document.body)
+    fireEvent.click(document.body)
+    expect(screen.getByRole('dialog', { name: 'Semaine 5' })).toBeInTheDocument()
+    fireEvent.click(screen.getAllByRole('button', { name: 'Fermer' })[0]!)
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
   it('ouvrir une semaine passée et y ajouter une dépense à son dernier jour', async () => {

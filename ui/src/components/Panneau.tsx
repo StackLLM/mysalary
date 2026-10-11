@@ -33,7 +33,7 @@ export function Panneau({ ouvert, onFermer, titre, description, children, pied }
                 exit={{ opacity: 0 }}
               />
             </Dialog.Overlay>
-            <Dialog.Content asChild forceMount>
+            <Dialog.Content asChild forceMount onInteractOutside={(e) => e.preventDefault()}>
               <motion.div
                 className="fixed border border-filet bg-white shadow-flottant inset-x-0 bottom-0 z-50 flex max-h-[88vh] flex-col rounded-t-carte p-6 sm:inset-y-3 sm:left-auto sm:right-3 sm:max-h-none sm:w-[440px] sm:rounded-carte"
                 initial={bureau ? { opacity: 0, x: 48 } : { opacity: 0, y: 48 }}

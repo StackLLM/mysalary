@@ -31,7 +31,7 @@ export function Fenetre({ ouvert, onFermer, titre, description, entete, children
               <motion.div className="fixed inset-0 z-40 bg-encre/25 backdrop-blur-[2px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
             </Dialog.Overlay>
             <div className="pointer-events-none fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
-              <Dialog.Content asChild forceMount>
+              <Dialog.Content asChild forceMount onInteractOutside={(e) => e.preventDefault()}>
                 <motion.div
                   className="pointer-events-auto flex max-h-[92vh] w-full flex-col rounded-t-carte border border-filet bg-white shadow-flottant sm:max-h-[86vh] sm:max-w-[760px] sm:rounded-carte"
                   initial={bureau ? { opacity: 0, y: 16, scale: 0.98 } : { opacity: 0, y: 48 }}

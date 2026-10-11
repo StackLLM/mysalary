@@ -37,6 +37,12 @@ export interface EnveloppeDeSemaine {
   depense: Centimes
   /** Budget − dépensé jusqu'à la fin de cette semaine ; négatif si dépassé. */
   reste: Centimes
+  /** Montant que l'utilisateur a mis sur cette semaine pour l'enveloppe (0 sinon). */
+  mis: Centimes
+  /** Un montant est mis sur cette semaine alors que l'enveloppe a déjà été consommée avant elle. */
+  dejaConsommee: boolean
+  /** Semaine passée ou en cours, avec un montant mis : montant mis − dépensé cette semaine ; sinon `null`. */
+  ecart: Centimes | null
 }
 
 export interface TendanceSemaine {
@@ -69,7 +75,7 @@ export interface SuiviSemaine extends Semaine {
   /** Réel : charges fixes, ponctuels et dettes payés dans la semaine. */
   chargesPayees: Centimes
   charges: ChargeDeSemaine[]
-  /** Enveloppes touchées cette semaine (un montant mis ou une dépense), avec leur reste sur le mois. */
+  /** Toutes les enveloppes du mois : consommé avant, cette semaine, reste sur le mois. */
   enveloppes: EnveloppeDeSemaine[]
   /** Réel : versements − retraits d'épargne de la semaine (jamais une dépense). */
   epargne: Centimes
@@ -147,6 +153,7 @@ export function suiviDesSemaines(calendrier: Calendrier, cle: CleMois, { debutSe
     return { moyenneSemaine: centimes(Math.round(moyenneJour * 7)), variation, sens }
   }
 
+  const plans = new Map(enveloppesDuMois.map((e) => [e.id, planEnveloppe(e, mois, semainesDe(mois, debutSemaine))]))
   let reportSuivant = centimes(0)
   const semaines: SuiviSemaine[] = semainesDe(mois, debutSemaine).map((s) => {
     const statut: StatutPeriode = s.fin < aujourdhui ? 'passe' : s.debut > aujourdhui ? 'aVenir' : 'enCours'
@@ -165,13 +172,13 @@ export function suiviDesSemaines(calendrier: Calendrier, cle: CleMois, { debutSe
           : null
     const restants = s.nbJours - joursEcoules + 1
     const surEnveloppes = calendrier.sortiesEntre(mois.debut, s.fin).depenses.filter((d) => d.imputation === 'enveloppe')
-    const enveloppes = enveloppesDuMois.flatMap((e): EnveloppeDeSemaine[] => {
+    const enveloppes = enveloppesDuMois.map((e): EnveloppeDeSemaine => {
       const miennes = surEnveloppes.filter((d) => d.chargeId === e.id)
       const dansSemaine = somme(miennes.filter((d) => d.date >= s.debut))
       const avant = somme(miennes.filter((d) => d.date < s.debut))
-      const mis = planEnveloppe(e, mois, [s]).semaines[0]!.ouvert
-      if (dansSemaine === 0 && mis === 0) return []
-      return [{ id: e.id, libelle: e.libelle, budget: e.budget, avant, depense: dansSemaine, reste: soustraire(e.budget, additionner(avant, dansSemaine)) }]
+      const mis = plans.get(e.id)!.semaines.find((x) => x.debut === s.debut)!.ouvert
+      const ecart = mis > 0 && statut !== 'aVenir' ? soustraire(mis, dansSemaine) : null
+      return { id: e.id, libelle: e.libelle, budget: e.budget, avant, depense: dansSemaine, reste: soustraire(e.budget, additionner(avant, dansSemaine)), mis, dejaConsommee: mis > 0 && avant > 0, ecart }
     })
     const charges = datees.filter((c) => c.date >= s.debut && c.date <= s.fin)
     // Seul le reste d'une semaine terminée se reporte ; jamais d'un mois à l'autre.

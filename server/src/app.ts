@@ -9,6 +9,7 @@ import { routesEpargne } from './modules/epargne/routes'
 import { routesSimulation } from './modules/simulation/routes'
 import { routesMois } from './modules/mois/routes'
 import { routesOnboarding } from './modules/onboarding/routes'
+import { routesSauvegarde } from './modules/sauvegarde/routes'
 import { routesReglages } from './modules/reglages/routes'
 import { routesRevenus } from './modules/revenus/routes'
 import { routesSalaire } from './modules/salaire/routes'
@@ -37,6 +38,7 @@ export async function construireApp({ prisma, logger = false, horloge }: Options
       // Routes publiques (aucun compte requis).
       api.get('/sante', async () => ({ statut: 'ok' }))
       await api.register(routesUtilisateurs)
+      await api.register(routesSauvegarde)
 
       // Routes du compte courant : toutes passent par exigerUtilisateur.
       await api.register(async (compte) => {

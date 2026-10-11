@@ -29,8 +29,8 @@
 | 16 | [Aujourd'hui](#lot-16--aujourdhui) | 3 — Intelligence et vues | ✅ Clôturé | 12/10/2026 | 353 | [Lot-16-aujourdhui.md](lots/Lot-16-aujourdhui.md) |
 | 17 | [Calendrier](#lot-17--calendrier) | 3 — Intelligence et vues | ✅ Clôturé | 12/10/2026 | 370 | [Lot-17-calendrier.md](lots/Lot-17-calendrier.md) |
 | 18 | [Année](#lot-18--année) | 3 — Intelligence et vues | ✅ Clôturé | 12/10/2026 | 384 | [Lot-18-annee.md](lots/Lot-18-annee.md) |
-| 19 | [Onboarding & import V0](#lot-19--onboarding--import-v0) | 4 — Entrée et finitions | 🟡 Livré, à valider | — | 414 | [Lot-19-onboarding.md](lots/Lot-19-onboarding.md) |
-| 20 | [Export & sauvegarde](#lot-20--export--sauvegarde) | 4 — Entrée et finitions | ⏳ Prochain | — | — | — |
+| 19 | [Onboarding & import V0](#lot-19--onboarding--import-v0) | 4 — Entrée et finitions | ✅ Clôturé | 12/10/2026 | 414 | [Lot-19-onboarding.md](lots/Lot-19-onboarding.md) |
+| 20 | [Export & sauvegarde](#lot-20--export--sauvegarde) | 4 — Entrée et finitions | 🟡 Livré, à valider | — | 426 | [Lot-20-export-sauvegarde.md](lots/Lot-20-export-sauvegarde.md) |
 | 21 | [Finitions (polish)](#lot-21--finitions-polish) | 4 — Entrée et finitions | À venir | — | — | — |
 | 22 | [Authentification](#lot-22--authentification) | 4 — Entrée et finitions | À venir | — | — | — |
 
@@ -283,7 +283,8 @@ Règles appliquées à chaque lot :
 
 ### Lot 20 — Export & sauvegarde
 
-- **Périmètre prévu** : export et import JSON d'un compte ; sauvegarde de la base ; export proposé avant la suppression d'un compte (lot 3) et avant la réinitialisation d'un compte (Réglages).
+- **Livré** : export JSON d'un compte, import en nouveau compte, réinitialisation, export proposé avant suppression et réinitialisation, `npm run sauvegarde`. Détail : `docs/lots/Lot-20-export-sauvegarde.md`.
+- **Écart** : pas de bouton de sauvegarde dans l'interface ; pas de restauration automatique.
 
 ### Lot 21 — Finitions (polish)
 
@@ -314,7 +315,7 @@ Tout ce qu'un lot livré a laissé de côté, et le lot qui doit le reprendre.
 | Calendrier des revenus et des charges | lot 5 | 17 |
 | Dates cibles des objectifs dans le calendrier | lot 10 | 17 |
 | Graphique annuel | lot 8 | 18 |
-| Export avant suppression d'un compte ; réinitialisation d'un compte | lot 3 | 20 |
+| Export avant suppression d'un compte ; réinitialisation d'un compte | lot 3 | ✅ fait au lot 20 |
 | Toast « Ajoutée à novembre » pour une dépense datée hors du mois affiché | lot 7 | 21 |
 | Paquet JS à alléger | lot 2 | 21 |
 | Glisser-déposer pour l'ordre des objectifs (aujourd'hui : monter / descendre) | lot 10 | 21 |

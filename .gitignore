@@ -9,6 +9,9 @@ server/prisma/*.db
 server/prisma/*.db-journal
 coverage/
 
+# Database backups (npm run sauvegarde)
+/sauvegardes/
+
 # Personal financial data (V0 export and study) — never versioned
 /Salaire/
 

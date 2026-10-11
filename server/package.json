@@ -11,6 +11,7 @@
     "build": "tsc -p .",
     "db:migrer": "prisma migrate dev",
     "db:generer": "prisma generate",
+    "sauvegarde": "tsx scripts/sauvegarde.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

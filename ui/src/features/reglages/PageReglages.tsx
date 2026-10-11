@@ -17,6 +17,8 @@ import { useCompte } from '../../state/compte'
 import { useRenommerUtilisateur, useUtilisateurCourant } from '../profils/requetes'
 import { lireMontant, versSaisie } from '../salaire/saisie'
 import { useMoisCourant } from '../salaire/requetes'
+import { BoutonExport } from '../sauvegarde/BoutonExport'
+import { ReinitialisationCompte } from '../sauvegarde/ReinitialisationCompte'
 import { SuppressionCompte } from '../profils/SuppressionCompte'
 import { useModifierReglages, useReglages } from './requetes'
 
@@ -236,6 +238,7 @@ function CarteCompte() {
   const compte = useCompte()
   const naviguer = useNavigate()
   const [confirmer, setConfirmer] = useState(false)
+  const [reinitialiser, setReinitialiser] = useState(false)
   if (!utilisateur) return null
 
   return (
@@ -248,10 +251,11 @@ function CarteCompte() {
         />
         <Separateur className="my-5" />
         <p className="text-texte-sm text-gris">Tes données restent sur cet ordinateur et sont séparées de celles des autres comptes.</p>
+        <BoutonExport utilisateur={utilisateur} className="mt-6 w-full" />
         <Bouton
           variante="teinte"
           taille="md"
-          className="mt-6 w-full"
+          className="mt-3 w-full"
           onClick={() => {
             compte.quitter()
             naviguer('/profils')
@@ -262,12 +266,16 @@ function CarteCompte() {
       </Carte>
 
       <Carte titre="Zone sensible">
-        <p className="text-texte-sm text-gris">La suppression efface définitivement toutes les données de ce compte.</p>
-        <Bouton variante="danger" taille="md" className="mt-5 w-full" onClick={() => setConfirmer(true)}>
+        <p className="text-texte-sm text-gris">Efface définitivement les données de ce compte.</p>
+        <Bouton variante="contour" taille="md" className="mt-5 w-full" onClick={() => setReinitialiser(true)}>
+          Réinitialiser ce compte
+        </Bouton>
+        <Bouton variante="danger" taille="md" className="mt-3 w-full" onClick={() => setConfirmer(true)}>
           Supprimer ce compte
         </Bouton>
       </Carte>
 
+      <ReinitialisationCompte utilisateur={reinitialiser ? utilisateur : null} onFermer={() => setReinitialiser(false)} onFait={() => naviguer('/onboarding')} />
       <SuppressionCompte utilisateur={confirmer ? utilisateur : null} onFermer={() => setConfirmer(false)} onSupprime={() => naviguer('/profils')} />
     </>
   )

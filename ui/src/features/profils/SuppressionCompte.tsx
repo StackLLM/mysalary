@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Champ } from '../../components/Champ'
 import { Confirmation } from '../../components/Confirmation'
+import { BoutonExport } from '../sauvegarde/BoutonExport'
 import { useSupprimerUtilisateur } from './requetes'
 
 /**
@@ -46,12 +47,15 @@ export function SuppressionCompte({
         })
       }}
     >
-      <Champ
-        libelle={`Pour confirmer, tape « ${utilisateur?.prenom ?? ''} »`}
-        value={saisie}
-        onChange={(e) => setSaisie(e.target.value)}
-        autoComplete="off"
-      />
+      <div className="flex flex-col gap-4">
+        {utilisateur && <BoutonExport utilisateur={utilisateur} className="w-full" />}
+        <Champ
+          libelle={`Pour confirmer, tape « ${utilisateur?.prenom ?? ''} »`}
+          value={saisie}
+          onChange={(e) => setSaisie(e.target.value)}
+          autoComplete="off"
+        />
+      </div>
     </Confirmation>
   )
 }
