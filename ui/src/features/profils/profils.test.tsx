@@ -90,16 +90,27 @@ describe('écran Profils', () => {
     expect(api.creer).not.toHaveBeenCalled()
   })
 
-  it('crée le compte, l’ouvre et le retient sur l’appareil', async () => {
+  it('crée le compte, l’ouvre, le retient sur l’appareil et commence par la mise en route', async () => {
     serveur([])
     vi.mocked(api.creer).mockResolvedValue(oussama)
-    rendre(<PageProfils />, { route: '/profils', autres: { '/': <p>Aujourd’hui</p> } })
+    rendre(<PageProfils />, { route: '/profils', autres: { '/': <p>Aujourd’hui</p>, '/onboarding': <p>Mise en route</p> } })
     fireEvent.change(await screen.findByLabelText('Prénom'), { target: { value: 'Oussama' } })
     fireEvent.click(screen.getByRole('button', { name: 'Créer le compte' }))
-    expect(await screen.findByText('Aujourd’hui')).toBeInTheDocument()
+    expect(await screen.findByText('Mise en route')).toBeInTheDocument()
     expect(api.creer).toHaveBeenCalledWith('/utilisateurs', { prenom: 'Oussama', devise: 'MAD' })
     expect(api.creer).toHaveBeenCalledWith('/utilisateurs/u1/ouvrir', {})
     expect(lireUtilisateurCourant()).toBe('u1')
+  })
+})
+
+describe('ouvrir un compte existant', () => {
+  it('mène à Aujourd’hui, pas à la mise en route : un compte déjà utilisé n’est pas relancé', async () => {
+    serveur([oussama])
+    vi.mocked(api.creer).mockResolvedValue(oussama)
+    rendre(<PageProfils />, { route: '/profils', autres: { '/': <p>Aujourd’hui</p>, '/onboarding': <p>Mise en route</p> } })
+    fireEvent.click((await screen.findAllByRole('button', { name: /Oussama/ }))[0]!)
+    expect(await screen.findByText('Aujourd’hui')).toBeInTheDocument()
+    expect(screen.queryByText('Mise en route')).not.toBeInTheDocument()
   })
 })
 

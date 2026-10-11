@@ -35,6 +35,7 @@ model Utilisateur {
   mouvementsEpargne MouvementEpargne[]
   objectifs         Objectif[]
   scenarios         Scenario[]
+  importSource      ImportSource?
 }
 
 model Reglages {
@@ -371,4 +372,17 @@ model Scenario {
   horizon       Int         @default(12)
   creeLe        DateTime    @default(now())
   modifieLe     DateTime    @updatedAt
+}
+
+/// Fichier importé à l'onboarding (lot 19) : le fichier brut est archivé, l'analyse garde la décision de chaque ligne.
+model ImportSource {
+  id            String      @id @default(cuid())
+  utilisateurId String      @unique
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  /// `moneyGuruV0`.
+  type          String
+  fichierBrut   String
+  /// JSON : lignes proposées (avec leur statut), éléments non importés, profil.
+  analyse       String
+  importeLe     DateTime    @default(now())
 }

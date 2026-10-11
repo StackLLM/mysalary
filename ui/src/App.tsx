@@ -10,6 +10,7 @@ import { PageAnnee } from './features/annee/PageAnnee'
 import { PageAujourdhui } from './features/aujourdhui/PageAujourdhui'
 import { PageCalendrier } from './features/calendrier/PageCalendrier'
 import { FournisseurSaisieRapide, useSaisieRapide } from './features/depenses/SaisieRapide'
+import { PageOnboarding } from './features/onboarding/PageOnboarding'
 import { PageMois } from './features/mois/PageMois'
 import { PageEditionObjectif } from './features/objectifs/PageEditionObjectif'
 import { PageObjectif } from './features/objectifs/PageObjectif'
@@ -44,7 +45,7 @@ function Vues() {
   const { ouvrir } = useSaisieRapide()
 
   return (
-    <MiseEnPage simple={emplacement.pathname === '/profils'} onSaisie={() => ouvrir()}>
+    <MiseEnPage simple={emplacement.pathname === '/profils' || emplacement.pathname === '/onboarding'} onSaisie={() => ouvrir()}>
       {/*
         Nouvelle page affichée tout de suite, avec une apparition en CSS. L'ancienne transition attendait la fin de
         l'animation de sortie (AnimatePresence « wait ») : une navigation rapide pouvait laisser la page blanche.
@@ -63,6 +64,7 @@ function Vues() {
               }
             />
             <Route path="/" element={compte(<PageAujourdhui />)} />
+            <Route path="/onboarding" element={compte(<PageOnboarding />)} />
             <Route path="/annee" element={compte(<PageAnnee />)} />
             <Route path="/calendrier" element={compte(<PageCalendrier />)} />
             <Route path="/reglages" element={compte(<PageReglages />)} />
@@ -73,7 +75,7 @@ function Vues() {
             <Route path="/objectifs/:id" element={compte(<PageObjectif />)} />
             <Route path="/objectifs/:id/modifier" element={compte(<PageEditionObjectif />)} />
             <Route path="/simulateur" element={compte(<PageSimulateur />)} />
-            {DESTINATIONS.filter((d) => !['/', '/plan', '/mois', '/objectifs', '/calendrier', '/annee'].includes(d.chemin)).map((d) => (
+            {DESTINATIONS.filter((d) => !['/', '/plan', '/mois', '/objectifs', '/calendrier', '/annee', '/onboarding'].includes(d.chemin)).map((d) => (
               <Route key={d.chemin} path={d.chemin} element={compte(<PageAVenir titre={d.libelle} lot={d.lot} />)} />
             ))}
             <Route path="*" element={<PageAVenir titre="Page introuvable" />} />

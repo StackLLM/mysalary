@@ -1,7 +1,7 @@
 # MySalary — Progression
 
 > Suivi de la construction de MySalary, lot par lot. Mis à jour à chaque lot.
-> État au 12/10/2026 : **lots 0 à 17 clôturés et validés**, **lot 18 livré, en attente de validation**, lots 19 à 22 à venir. Depuis le 11/10/2026, c'est toi qui commites : je donne seulement les messages de commit. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
+> État au 12/10/2026 : **lots 0 à 18 clôturés et validés**, **lot 19 livré, en attente de validation**, lots 20 à 22 à venir. Depuis le 11/10/2026, c'est toi qui commites : je donne seulement les messages de commit. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
 >
 > - Plan global de l'application (vision, architecture, données, règles métier) : [`Plan.md`](../Plan.md), à la racine.
 > - Bilan détaillé de chaque lot livré (périmètre, règles, tests, bugs corrigés) : [`docs/lots/`](lots/).
@@ -28,9 +28,9 @@
 | 15 | [Semaines en cartes](#lot-15--semaines-en-cartes) | 3 — Intelligence et vues | ✅ Clôturé | 11/10/2026 | 343 | [Lot-15-semaines-cartes.md](lots/Lot-15-semaines-cartes.md) |
 | 16 | [Aujourd'hui](#lot-16--aujourdhui) | 3 — Intelligence et vues | ✅ Clôturé | 12/10/2026 | 353 | [Lot-16-aujourdhui.md](lots/Lot-16-aujourdhui.md) |
 | 17 | [Calendrier](#lot-17--calendrier) | 3 — Intelligence et vues | ✅ Clôturé | 12/10/2026 | 370 | [Lot-17-calendrier.md](lots/Lot-17-calendrier.md) |
-| 18 | [Année](#lot-18--année) | 3 — Intelligence et vues | 🟡 Livré, à valider | — | 384 | [Lot-18-annee.md](lots/Lot-18-annee.md) |
-| 19 | [Onboarding & import V0](#lot-19--onboarding--import-v0) | 4 — Entrée et finitions | ⏳ Prochain | — | — | — |
-| 20 | [Export & sauvegarde](#lot-20--export--sauvegarde) | 4 — Entrée et finitions | À venir | — | — | — |
+| 18 | [Année](#lot-18--année) | 3 — Intelligence et vues | ✅ Clôturé | 12/10/2026 | 384 | [Lot-18-annee.md](lots/Lot-18-annee.md) |
+| 19 | [Onboarding & import V0](#lot-19--onboarding--import-v0) | 4 — Entrée et finitions | 🟡 Livré, à valider | — | 414 | [Lot-19-onboarding.md](lots/Lot-19-onboarding.md) |
+| 20 | [Export & sauvegarde](#lot-20--export--sauvegarde) | 4 — Entrée et finitions | ⏳ Prochain | — | — | — |
 | 21 | [Finitions (polish)](#lot-21--finitions-polish) | 4 — Entrée et finitions | À venir | — | — | — |
 | 22 | [Authentification](#lot-22--authentification) | 4 — Entrée et finitions | À venir | — | — | — |
 
@@ -259,7 +259,7 @@ Règles appliquées à chaque lot :
 
 ### Lot 18 — Année
 
-- **Statut** : 🟡 livré le 12/10/2026, en attente de validation · 384 tests · `docs/lots/Lot-18-annee.md`.
+- **Statut** : ✅ clôturé le 12/10/2026 · 384 tests · `docs/lots/Lot-18-annee.md`.
 - **Livré** :
   - page `/annee`, onglets Synthèse et Calendrier (réutilise le calendrier de l'année du lot 14) ; année et vue dans l'adresse ;
   - revenus, dépenses, épargne de l'année : réel à date et projeté restant séparés ; bandeau « Année en cours / terminée / Projection » ;
@@ -268,16 +268,18 @@ Règles appliquées à chaque lot :
   - moteur `suiviAnnuel` ; route `GET /annee/:annee/suivi` ; lien « Voir l'année » depuis Aujourd'hui.
 - **Écart** : l'épargne cumulée est celle de l'année (somme des mois), pas le solde total des comptes ; le calendrier de l'année reste aussi dans Objectifs.
 
-## 4. Lots à venir (19 à 22)
-
 ### Lot 19 — Onboarding & import V0
 
-- **Objectif** : une première vue utile en moins de 5 minutes (UX.md § 4.1, § 5.1 ; `Plan.md` § 7.1 bis).
-- **Périmètre prévu** :
-  - dix étapes : bienvenue, import, salaire, primes, charges fixes, enveloppes, dettes et ponctuels, épargne, premier objectif, résumé ;
-  - import money-guru ligne par ligne (importer, modifier, ignorer), conflits posés en question, valeurs marquées « importé · à confirmer » ;
-  - progression visible, sauvegarde à chaque étape, reprise, retour sans perte, mode « mes revenus varient ».
-- **Pourquoi si tard** : l'onboarding enchaîne des formulaires qui doivent d'abord exister et être testés seuls (lots 3 à 10).
+- **Statut** : 🟡 livré le 12/10/2026, en attente de validation · 414 tests · `docs/lots/Lot-19-onboarding.md`.
+- **Livré** :
+  - page `/onboarding`, dix étapes que l'on peut passer, barre de progression, étape sauvegardée par compte, reprise, retour arrière sans perte ; un compte créé commence par la mise en route, un compte commencé affiche « Reprendre » sur Aujourd'hui ;
+  - import d'un export money-guru : aperçu groupé par thème, Importer / Modifier / Ignorer, conflits posés en question (quel salaire ? dette ou aide ?) ; rien n'est importé comme réel ni créé sans confirmation ; « Savings » jamais en charge ; un même écart sur trois mois devient une charge fixe proposée ;
+  - lignes importées « importé · à confirmer » aux étapes 3 à 9, confirmées avec les formulaires de Mon plan préremplis ; mode « mes revenus varient » ;
+  - résumé : mois budgétaire, revenu et charges prévus, capacité d'épargne et date du premier objectif marquées « projection » ;
+  - moteur `analyserMoneyGuru` et `decider` ; table `ImportSource` ; routes `/onboarding` et `/import/*`.
+- **Écart** : l'étude HTML de la V0 n'est pas lue (ses chiffres se saisissent à la main) ; l'import d'un export MySalary arrive avec le lot 20 ; pas encore de bouton « relancer la mise en route » dans les Réglages.
+
+## 4. Lots à venir (20 à 22)
 
 ### Lot 20 — Export & sauvegarde
 
@@ -367,6 +369,7 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | — (à commiter) | Enveloppe : budget du mois, montant libre sur chaque semaine ; les semaines ne reçoivent que ces montants |
 | — (à commiter) | Lot 17 : calendrier du mois (grille, liste, solde projeté) |
 | — (à commiter) | Lot 18 : page Année (suivi annuel) |
+| — (à commiter) | Lot 19 : onboarding et import de l'ancienne app |
 
 ## 7. Questions ouvertes
 

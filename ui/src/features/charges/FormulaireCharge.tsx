@@ -32,9 +32,18 @@ function MessageErreur({ texte }: { texte?: string }) {
   ) : null
 }
 
+/** Valeurs proposées à l'ouverture (suggestion, ligne importée) : l'utilisateur les confirme ou les corrige. */
+export interface ProposeCharge {
+  libelle?: string
+  categorieId?: string
+  /** Centimes. */
+  montant?: number
+}
+
 interface ProprietesCharge {
   nature: NatureCharge
   initial?: ChargeDto
+  prefill?: ProposeCharge
   aujourdhui: string
   /** Mois budgétaire en cours : début proposé pour une enveloppe. */
   moisCourant: string
@@ -45,11 +54,11 @@ interface ProprietesCharge {
 }
 
 /** Charge fixe (datée, récurrente) ou enveloppe (budget par mois budgétaire). */
-export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, moisSemaines = [], chargement, onEnregistrer }: ProprietesCharge) {
+export function FormulaireCharge({ nature, initial, prefill, aujourdhui, moisCourant, moisSemaines = [], chargement, onEnregistrer }: ProprietesCharge) {
   const fixe = nature === 'fixe'
-  const [libelle, setLibelle] = useState(initial?.libelle ?? '')
-  const [categorieId, setCategorieId] = useState(initial?.categorieId ?? '')
-  const [montant, setMontant] = useState(initial ? versSaisie(initial.montant) : '')
+  const [libelle, setLibelle] = useState(initial?.libelle ?? prefill?.libelle ?? '')
+  const [categorieId, setCategorieId] = useState(initial?.categorieId ?? prefill?.categorieId ?? '')
+  const [montant, setMontant] = useState(initial ? versSaisie(initial.montant) : prefill?.montant ? versSaisie(prefill.montant) : '')
   const [frequence, setFrequence] = useState<FrequenceCharge>(initial?.frequence ?? 'mensuelle')
   const [mois, setMois] = useState<number[]>(initial?.mois ?? [])
   const [jour, setJour] = useState(String(initial?.jour ?? 1))
@@ -199,6 +208,7 @@ export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, moi
 
 interface ProprietesPonctuel {
   initial?: PonctuelDto
+  prefill?: ProposeCharge
   aujourdhui: string
   /** Date proposée pour un nouveau ponctuel (ex. le jour choisi dans le calendrier) ; aujourd'hui sinon. */
   dateInitiale?: string
@@ -207,10 +217,10 @@ interface ProprietesPonctuel {
 }
 
 /** Charge unique connue et datée : assurance de décembre, permis, réparation prévue. */
-export function FormulairePonctuel({ initial, aujourdhui, dateInitiale, chargement, onEnregistrer }: ProprietesPonctuel) {
-  const [libelle, setLibelle] = useState(initial?.libelle ?? '')
-  const [categorieId, setCategorieId] = useState(initial?.categorieId ?? '')
-  const [montant, setMontant] = useState(initial ? versSaisie(initial.montant) : '')
+export function FormulairePonctuel({ initial, prefill, aujourdhui, dateInitiale, chargement, onEnregistrer }: ProprietesPonctuel) {
+  const [libelle, setLibelle] = useState(initial?.libelle ?? prefill?.libelle ?? '')
+  const [categorieId, setCategorieId] = useState(initial?.categorieId ?? prefill?.categorieId ?? '')
+  const [montant, setMontant] = useState(initial ? versSaisie(initial.montant) : prefill?.montant ? versSaisie(prefill.montant) : '')
   const [date, setDate] = useState<string>(initial?.date ?? dateInitiale ?? aujourdhui)
   const [certitude, setCertitude] = useState<Certitude>(initial?.certitude ?? 'garanti')
   const [erreurs, setErreurs] = useState<Record<string, string>>({})

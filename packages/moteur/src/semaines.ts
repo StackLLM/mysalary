@@ -1,7 +1,7 @@
 import { additionner, centimes, soustraire, type Centimes } from './argent'
 import { ajouterJours, ecartJours, type CleMois, type DateCivile } from './dates'
 import { somme, type StatutCouverture } from './depenses'
-import { budgetEnveloppesParJour, enveloppesARepartir } from './enveloppes'
+import { budgetEnveloppesParJour, enveloppesARepartir, planEnveloppe } from './enveloppes'
 import { semainesDe, type Calendrier, type MoisBudgetaire, type Semaine, type StatutPeriode } from './periodes'
 
 /**
@@ -23,6 +23,20 @@ export interface ChargeDeSemaine {
   /** Prévu (montant de l'échéancier pour une dette, comme dans le bilan). */
   montant: Centimes
   statut: StatutCouverture
+}
+
+/** Une enveloppe vue depuis une semaine : ce qu'elle a consommé du budget du mois, et ce qui reste. */
+export interface EnveloppeDeSemaine {
+  id: string
+  libelle: string
+  /** Budget du mois de l'enveloppe. */
+  budget: Centimes
+  /** Réel : dépensé sur l'enveloppe avant cette semaine (depuis le début du mois). */
+  avant: Centimes
+  /** Réel : dépensé sur l'enveloppe pendant cette semaine. */
+  depense: Centimes
+  /** Budget − dépensé jusqu'à la fin de cette semaine ; négatif si dépassé. */
+  reste: Centimes
 }
 
 export interface TendanceSemaine {
@@ -55,6 +69,8 @@ export interface SuiviSemaine extends Semaine {
   /** Réel : charges fixes, ponctuels et dettes payés dans la semaine. */
   chargesPayees: Centimes
   charges: ChargeDeSemaine[]
+  /** Enveloppes touchées cette semaine (un montant mis ou une dépense), avec leur reste sur le mois. */
+  enveloppes: EnveloppeDeSemaine[]
   /** Réel : versements − retraits d'épargne de la semaine (jamais une dépense). */
   epargne: Centimes
   tendance: TendanceSemaine | null
@@ -148,6 +164,15 @@ export function suiviDesSemaines(calendrier: Calendrier, cle: CleMois, { debutSe
           ? soustraire(budgetDu(s.debut, aujourdhui), depense)
           : null
     const restants = s.nbJours - joursEcoules + 1
+    const surEnveloppes = calendrier.sortiesEntre(mois.debut, s.fin).depenses.filter((d) => d.imputation === 'enveloppe')
+    const enveloppes = enveloppesDuMois.flatMap((e): EnveloppeDeSemaine[] => {
+      const miennes = surEnveloppes.filter((d) => d.chargeId === e.id)
+      const dansSemaine = somme(miennes.filter((d) => d.date >= s.debut))
+      const avant = somme(miennes.filter((d) => d.date < s.debut))
+      const mis = planEnveloppe(e, mois, [s]).semaines[0]!.ouvert
+      if (dansSemaine === 0 && mis === 0) return []
+      return [{ id: e.id, libelle: e.libelle, budget: e.budget, avant, depense: dansSemaine, reste: soustraire(e.budget, additionner(avant, dansSemaine)) }]
+    })
     const charges = datees.filter((c) => c.date >= s.debut && c.date <= s.fin)
     // Seul le reste d'une semaine terminée se reporte ; jamais d'un mois à l'autre.
     reportSuivant = statut === 'passe' ? reste : centimes(0)
@@ -165,6 +190,7 @@ export function suiviDesSemaines(calendrier: Calendrier, cle: CleMois, { debutSe
       chargesPrevues: somme(charges),
       chargesPayees: additionner(somme(sorties.depenses.filter((d) => !flexible(d.imputation))), somme(sorties.paiementsDettes)),
       charges,
+      enveloppes,
       epargne: calendrier.epargneEntre(s.debut, s.fin),
       tendance: tendance(s, joursEcoules, depense),
     }

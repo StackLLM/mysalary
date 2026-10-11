@@ -8,6 +8,7 @@ import { routesDepenses } from './modules/depenses/routes'
 import { routesEpargne } from './modules/epargne/routes'
 import { routesSimulation } from './modules/simulation/routes'
 import { routesMois } from './modules/mois/routes'
+import { routesOnboarding } from './modules/onboarding/routes'
 import { routesReglages } from './modules/reglages/routes'
 import { routesRevenus } from './modules/revenus/routes'
 import { routesSalaire } from './modules/salaire/routes'
@@ -49,6 +50,7 @@ export async function construireApp({ prisma, logger = false, horloge }: Options
         await compte.register(routesEpargne)
         await compte.register(routesSimulation)
         await compte.register(routesConseils)
+        await compte.register(routesOnboarding)
       })
     },
     { prefix: PREFIXE_API },

@@ -85,6 +85,16 @@ function Journee({ donnees }: { donnees: AujourdhuiDto }) {
     <div className={GRILLE}>
       <motion.div variants={elementApparition} className="min-w-0">
         <Carte espacement="large">
+          {utilisateur && utilisateur.onboardingEtape > 0 && !utilisateur.onboardingTermine && (
+            <p className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-champ bg-info-fond px-4 py-3 text-texte-sm text-info">
+              <span>
+                <span className="font-semibold">Ta mise en route n’est pas terminée</span> (étape {utilisateur.onboardingEtape} sur 10).
+              </span>
+              <Link to="/onboarding" className="font-semibold underline underline-offset-2">
+                Reprendre
+              </Link>
+            </p>
+          )}
           <div className="flex flex-col justify-between gap-5 sm:flex-row">
             <Identite initiale={prenom.charAt(0).toUpperCase() || '·'} nom={prenom ? `Bonjour ${prenom}` : 'Bonjour'} detail={dateDuJour(aujourdhui)} />
             <div className="flex flex-col gap-1 text-texte text-gris sm:items-end sm:text-right">

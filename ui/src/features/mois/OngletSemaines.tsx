@@ -1,4 +1,4 @@
-import { deMois, formaterDate, formaterMontant, type CategorieDto, type SemainesDto, type SuiviDepensesDto, type SuiviSemaine } from '@mysalary/partage'
+import { deMois, formaterDate, formaterMontant, type CategorieDto, type SemainesDto, type SuiviDepensesDto, type EnveloppeDeSemaine, type SuiviSemaine } from '@mysalary/partage'
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
@@ -291,10 +291,6 @@ function CarteSemaine({ semaine: s, onOuvrir }: { semaine: SuiviSemaine; onOuvri
           {aVenir ? <span className="text-gris">—</span> : <Montant valeur={s.depense} className="font-medium text-encre-2" />}
         </span>
         <span className="flex items-baseline justify-between gap-3">
-          <span className="text-gris">Disponible</span>
-          <Montant valeur={s.disponible} className="text-gris" />
-        </span>
-        <span className="flex items-baseline justify-between gap-3">
           <span className="text-gris">Écart</span>
           <span className={cn(s.ecart === null || s.ecart === 0 ? 'text-gris' : s.ecart > 0 ? 'text-positif' : 'text-alerte')}>
             {s.ecart === null ? (
@@ -308,6 +304,14 @@ function CarteSemaine({ semaine: s, onOuvrir }: { semaine: SuiviSemaine; onOuvri
           </span>
         </span>
       </span>
+
+      {!aVenir && s.enveloppes.length > 0 && (
+        <span className="mt-3 flex flex-col gap-2.5 sm:mt-4">
+          {s.enveloppes.map((e) => (
+            <FriseEnveloppe key={e.id} enveloppe={e} />
+          ))}
+        </span>
+      )}
 
       <span className="mt-3 flex flex-wrap gap-1.5 sm:mt-4">
         {s.tendance && (
@@ -326,6 +330,32 @@ function CarteSemaine({ semaine: s, onOuvrir }: { semaine: SuiviSemaine; onOuvri
 
       <span className="mt-auto hidden pt-4 text-mention font-semibold text-lien opacity-70 transition-opacity group-hover:opacity-100 sm:block">Voir le détail →</span>
     </button>
+  )
+}
+
+/** Frise d'une enveloppe : le budget du mois en trois temps, déjà consommé avant la semaine, cette semaine, ce qui reste. */
+function FriseEnveloppe({ enveloppe: e }: { enveloppe: EnveloppeDeSemaine }) {
+  const depasse = e.reste < 0
+  const total = Math.max(e.budget, e.avant + e.depense) || 1
+  const pct = (v: number) => `${(Math.max(0, v) / total) * 100}%`
+  return (
+    <span className="block" role="group" aria-label={`${e.libelle} : reste ${formaterMontant(e.reste)} sur ${formaterMontant(e.budget)}`}>
+      <span className="flex items-baseline justify-between gap-2 text-mention">
+        <span className="min-w-0 truncate text-encre-2">{e.libelle}</span>
+        <span className={cn('shrink-0 font-semibold tabular-nums', depasse ? 'text-alerte' : 'text-encre')}>
+          <Montant valeur={e.reste} />
+        </span>
+      </span>
+      <span className="mt-1 flex h-2 gap-px overflow-hidden rounded-pilule bg-teinte" aria-hidden>
+        <span className="bg-sauge-200" style={{ width: pct(e.avant) }} />
+        <span className={depasse ? 'bg-alerte' : 'bg-primaire'} style={{ width: pct(e.depense) }} />
+      </span>
+      {e.depense > 0 && (
+        <span className="mt-0.5 block text-mention text-gris">
+          −<Montant valeur={e.depense} /> cette semaine
+        </span>
+      )}
+    </span>
   )
 }
 
@@ -354,7 +384,6 @@ function FenetreSemaine({
   const tendance = texteTendance(s.tendance)
   const partielle = joursSemaine(s)
   const cases = [
-    { cle: 'budget', libelle: 'Budget (prévu)', valeur: s.budget, signe: '' },
     ...(s.report !== 0 ? [{ cle: 'report', libelle: 'Report', valeur: s.report, signe: plus(s.report) }] : []),
     { cle: 'disponible', libelle: 'Disponible', valeur: s.disponible, signe: '' },
     { cle: 'depense', libelle: 'Dépensé', valeur: s.depense, signe: s.depense > 0 ? '−' : '' },
@@ -391,11 +420,11 @@ function FenetreSemaine({
       }
     >
       <section aria-label="Calcul de la semaine">
-        <div className={cn('grid grid-cols-2 gap-2', cases.length === 4 ? 'sm:grid-cols-4' : 'sm:grid-cols-3')}>
+        <div className={cn('grid grid-cols-2 gap-2', cases.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
           {cases.map((c) => (
             <div key={c.cle} className="min-w-0 rounded-champ bg-interne px-3 py-2.5 shadow-bouton">
               <span className="block truncate text-mention text-gris">{c.libelle}</span>
-              <span className={cn('block text-texte font-semibold tabular-nums', c.cle === 'budget' ? 'italic text-encre-2' : 'text-encre')}>
+              <span className={cn('block text-texte font-semibold tabular-nums', 'text-encre')}>
                 {c.signe}
                 <Montant valeur={c.valeur} />
               </span>
@@ -433,6 +462,13 @@ function FenetreSemaine({
             Tendance : <span className={cn('font-semibold', TONS[tendance.ton])}>{tendance.texte}</span>. {tendance.detail}
           </li>
         </ul>
+        {!aVenir && s.enveloppes.length > 0 && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {s.enveloppes.map((e) => (
+              <FriseEnveloppe key={e.id} enveloppe={e} />
+            ))}
+          </div>
+        )}
       </section>
       <Separateur className="my-5" />
       <DetailSemaine semaine={s} suivi={suivi} categories={categories} aujourdhui={aujourdhui} lectureSeule={lectureSeule || aVenir} />

@@ -1,6 +1,6 @@
 import type { DateCivile, SuiviDesSemaines } from '@mysalary/moteur'
 
-export type { ChargeDeSemaine, ReponseSemaines, SuiviSemaine, TendanceSemaine } from '@mysalary/moteur'
+export type { ChargeDeSemaine, EnveloppeDeSemaine, ReponseSemaines, SuiviSemaine, TendanceSemaine } from '@mysalary/moteur'
 
 /** Mois › Semaines : semaines calculées, ou figées si le mois est clôturé. */
 export interface SemainesDto extends SuiviDesSemaines {

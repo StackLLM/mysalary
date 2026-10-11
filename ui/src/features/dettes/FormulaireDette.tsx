@@ -8,15 +8,17 @@ import { lireMontant, versSaisie } from '../salaire/saisie'
 
 interface Proprietes {
   initial?: DetteDto
+  /** Valeurs proposées (ligne importée) : à confirmer ou corriger. */
+  prefill?: { libelle?: string; creancier?: string }
   aujourdhui: string
   chargement?: boolean
   onEnregistrer: (saisie: SaisieDette) => Promise<unknown>
 }
 
 /** Une dette = un total et un échéancier, jamais une charge sans fin (R9). */
-export function FormulaireDette({ initial, aujourdhui, chargement, onEnregistrer }: Proprietes) {
-  const [libelle, setLibelle] = useState(initial?.libelle ?? '')
-  const [creancier, setCreancier] = useState(initial?.creancier ?? '')
+export function FormulaireDette({ initial, prefill, aujourdhui, chargement, onEnregistrer }: Proprietes) {
+  const [libelle, setLibelle] = useState(initial?.libelle ?? prefill?.libelle ?? '')
+  const [creancier, setCreancier] = useState(initial?.creancier ?? prefill?.creancier ?? '')
   const [total, setTotal] = useState(initial ? versSaisie(initial.montantTotal) : '')
   const [mensualite, setMensualite] = useState(initial ? versSaisie(initial.mensualite) : '')
   const [premiere, setPremiere] = useState<string>(initial?.premiereEcheance ?? aujourdhui)

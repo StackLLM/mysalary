@@ -10,6 +10,8 @@ import { apercuSource, CERTITUDES_INFO, certitudeParDefaut, FREQUENCES_LIBELLES,
 
 interface Proprietes {
   initial?: SourceRevenuDto
+  /** Valeurs proposées (ligne importée) : à confirmer ou corriger. Montant en centimes. */
+  prefill?: { libelle?: string; type?: TypeRevenu; montant?: number; frequence?: Frequence; debut?: string }
   aujourdhui: string
   /** Contrat en vigueur : pour dire quel mois une prime « avec la paie » finance. `null` = pas de contrat. */
   financeMoisSuivant: boolean | null
@@ -18,17 +20,17 @@ interface Proprietes {
 }
 
 /** Formulaire d'une source de revenus. La saisie est conservée si l'enregistrement échoue. */
-export function FormulaireSource({ initial, aujourdhui, financeMoisSuivant, chargement, onEnregistrer }: Proprietes) {
-  const [libelle, setLibelle] = useState(initial?.libelle ?? '')
-  const [type, setType] = useState<TypeRevenu>(initial?.type ?? 'prime')
-  const [montant, setMontant] = useState(initial ? versSaisie(initial.montant) : '')
-  const [frequence, setFrequence] = useState<Frequence>(initial?.frequence ?? 'moisChoisis')
+export function FormulaireSource({ initial, prefill, aujourdhui, financeMoisSuivant, chargement, onEnregistrer }: Proprietes) {
+  const [libelle, setLibelle] = useState(initial?.libelle ?? prefill?.libelle ?? '')
+  const [type, setType] = useState<TypeRevenu>(initial?.type ?? prefill?.type ?? 'prime')
+  const [montant, setMontant] = useState(initial ? versSaisie(initial.montant) : prefill?.montant ? versSaisie(prefill.montant) : '')
+  const [frequence, setFrequence] = useState<Frequence>(initial?.frequence ?? prefill?.frequence ?? 'moisChoisis')
   const [mois, setMois] = useState<number[]>(initial?.mois ?? [])
   const [versement, setVersement] = useState(initial?.versement ?? (financeMoisSuivant === null ? 'dateSeparee' : 'avecPaie'))
   const [jour, setJour] = useState(String(initial?.jour ?? 1))
   const [certitude, setCertitude] = useState<Certitude>(initial?.certitude ?? 'probable')
   const [certitudeTouchee, setCertitudeTouchee] = useState(Boolean(initial))
-  const [debut, setDebut] = useState<string>(initial?.debut ?? aujourdhui.slice(0, 7))
+  const [debut, setDebut] = useState<string>(initial?.debut ?? prefill?.debut ?? aujourdhui.slice(0, 7))
   const [fin, setFin] = useState<string>(initial?.fin ?? '')
   const [erreurs, setErreurs] = useState<Record<string, string>>({})
 

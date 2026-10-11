@@ -64,6 +64,27 @@ function calendrier(aujourdhui: string, { charges = [loyer, courses], depenses =
 const suivre = (aujourdhui: string, options: { report?: boolean; debutSemaine?: number; cle?: string } & Parameters<typeof calendrier>[1] = {}) =>
   suiviDesSemaines(calendrier(aujourdhui, options), m(options.cle ?? '2027-01'), { aujourdhui: d(aujourdhui), report: options.report, debutSemaine: options.debutSemaine })
 
+describe('enveloppes vues depuis chaque semaine', () => {
+  it('le reste de l’enveloppe sur le mois, après le dépensé de la semaine et des précédentes', () => {
+    const depenses = [...DEPENSES, depense('m2', 20_000, '2027-01-12', { chargeId: 'courses' }), depense('hors', 7_000, '2027-01-12', { chargeId: 'inconnue' })]
+    const { semaines } = suivre('2027-01-14', { depenses })
+    const lignes = semaines.map((x) => x.enveloppes.map((e) => [e.libelle, e.avant, e.depense, e.reste]))
+    // Semaine du 4 au 10 : 300 DH dépensés ; semaine du 11 au 17 : 200 DH de plus. Un lien disparu n'est pas une enveloppe.
+    expect(lignes.flat().filter((l) => l[2] !== 0)).toEqual([
+      ['Courses', 0, 30_000, 280_000],
+      ['Courses', 30_000, 20_000, 260_000],
+    ])
+    expect(semaines.every((x) => x.enveloppes.every((e) => e.budget === 310_000))).toBe(true)
+  })
+
+  it('une enveloppe sans montant mis ni dépense cette semaine n’apparaît pas', () => {
+    const { semaines } = suivre('2027-01-14', { depenses: [] })
+    expect(semaines.every((x) => x.enveloppes.every((e) => e.depense === 0))).toBe(true)
+    const libres = suivre('2027-01-14', { charges: [loyer, { ...courses, unite: 'mois', rythme: null }], depenses: [] })
+    expect(libres.semaines.flatMap((x) => x.enveloppes)).toEqual([])
+  })
+})
+
 describe('semaines d’un mois en cours', () => {
   const s = suivre('2027-01-06')
 

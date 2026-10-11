@@ -62,6 +62,7 @@ const semaine = (numero: number, debut: string, fin: string, nbJours: number, mo
     chargesPrevues: 0,
     chargesPayees: 0,
     charges: [],
+    enveloppes: [],
     tendance: null,
     ...modif,
   }) as unknown as SuiviSemaine
@@ -80,7 +81,7 @@ const semaines = (modif: Record<string, unknown> = {}) =>
     reponse: { type: 'retard', montant: 15_000 },
     semaines: [
       semaine(1, '2026-12-27', '2026-12-27', 1, {}),
-      semaine(4, '2027-01-11', '2027-01-17', 7, { depense: 90_000, reste: -20_000, ecart: -20_000, tendance: { moyenneSemaine: 60_000, variation: 0.5, sens: 'hausse' } }),
+      semaine(4, '2027-01-11', '2027-01-17', 7, { depense: 90_000, reste: -20_000, ecart: -20_000, enveloppes: [{ id: 'fun', libelle: 'Fun', budget: 100_000, avant: 0, depense: 40_000, reste: 60_000 }], tendance: { moyenneSemaine: 60_000, variation: 0.5, sens: 'hausse' } }),
       semaine(5, '2027-01-18', '2027-01-24', 7, {
         statut: 'enCours',
         joursEcoules: 3,
@@ -170,6 +171,9 @@ describe('Mois › Semaines', () => {
     expect(cartes[0]).toHaveTextContent('1 jour')
     expect(cartes[1]).toHaveTextContent('+50 %')
     expect(cartes[2]).toHaveTextContent('1 charge')
+    expect(espaces(cartes[1]!.textContent)).toContain('Fun600DH')
+    expect(espaces(cartes[1]!.textContent)).toContain('400 DH cette semaine')
+    expect(cartes[1]).not.toHaveTextContent('Budget (prévu)')
     expect(cartes[3]).toHaveTextContent('Disponible (prévu)')
     expect(screen.getByText('Reste flexible (semaine)')).toBeInTheDocument()
     // Aucune semaine n'est ouverte d'office.

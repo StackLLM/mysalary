@@ -35,11 +35,12 @@ export function PageProfils() {
   const [aRenommer, setARenommer] = useState<Utilisateur | null>(null)
   const [aSupprimer, setASupprimer] = useState<Utilisateur | null>(null)
 
-  function ouvrirCompte(u: Utilisateur) {
+  function ouvrirCompte(u: Utilisateur, nouveau = false) {
     ouvrir.mutate(u.id, {
       onSuccess: () => {
         compte.choisir(u.id)
-        naviguer('/')
+        // Un compte qu'on vient de créer commence par la mise en route (lot 19).
+        naviguer(nouveau ? '/onboarding' : '/')
       },
       onError: () => toast('Impossible d’ouvrir ce compte. Réessaie.'),
     })
@@ -79,7 +80,7 @@ export function PageProfils() {
         </motion.div>
 
         <motion.div variants={elementApparition} className="flex min-w-0 flex-col gap-8">
-          <NouveauCompte onCree={ouvrirCompte} />
+          <NouveauCompte onCree={(u) => ouvrirCompte(u, true)} />
         </motion.div>
       </div>
 
