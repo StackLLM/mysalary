@@ -16,6 +16,8 @@ model Utilisateur {
   devise            String    @default("MAD")
   onboardingEtape   Int       @default(0)
   onboardingTermine Boolean   @default(false)
+  /// Hash scrypt du mot de passe (lot 22) ; vide = compte sans mot de passe.
+  motDePasse        String?
   derniereOuverture DateTime?
   creeLe            DateTime  @default(now())
   modifieLe         DateTime  @updatedAt
@@ -36,6 +38,7 @@ model Utilisateur {
   objectifs         Objectif[]
   scenarios         Scenario[]
   importSource      ImportSource?
+  sessions          Session[]
 }
 
 model Reglages {
@@ -385,4 +388,15 @@ model ImportSource {
   /// JSON : lignes proposées (avec leur statut), éléments non importés, profil.
   analyse       String
   importeLe     DateTime    @default(now())
+}
+
+/// Session ouverte avec le mot de passe d'un compte (lot 22). `id` = empreinte SHA-256 du jeton du cookie : le jeton n'est jamais stocké.
+model Session {
+  id            String      @id
+  utilisateurId String
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  creeLe        DateTime    @default(now())
+  expireLe      DateTime
+
+  @@index([utilisateurId])
 }

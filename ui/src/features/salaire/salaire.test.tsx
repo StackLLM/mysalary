@@ -16,7 +16,7 @@ const compte: Utilisateur = {
   prenom: 'Essai',
   devise: 'MAD',
   onboardingEtape: 0,
-  onboardingTermine: false,
+  onboardingTermine: false, protege: false,
   creeLe: '2026-10-07T10:00:00.000Z',
   derniereOuverture: null,
 }

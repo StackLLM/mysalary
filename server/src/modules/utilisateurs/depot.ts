@@ -1,14 +1,16 @@
 import type { CreationUtilisateur, Devise, Utilisateur } from '@mysalary/partage'
 import { REGLAGES_PAR_DEFAUT } from '@mysalary/partage'
+import { hacher } from '../../lib/motDePasse'
 import type { PrismaClient, Utilisateur as LigneUtilisateur } from '@prisma/client'
 
-function versDto(ligne: LigneUtilisateur): Utilisateur {
+export function versDto(ligne: LigneUtilisateur): Utilisateur {
   return {
     id: ligne.id,
     prenom: ligne.prenom,
     devise: ligne.devise as Devise,
     onboardingEtape: ligne.onboardingEtape,
     onboardingTermine: ligne.onboardingTermine,
+    protege: ligne.motDePasse !== null,
     creeLe: ligne.creeLe.toISOString(),
     derniereOuverture: ligne.derniereOuverture?.toISOString() ?? null,
   }
@@ -23,11 +25,11 @@ export async function lister(prisma: PrismaClient) {
 }
 
 /** Crée le compte et ses réglages par défaut dans la même écriture. */
-export async function creer(prisma: PrismaClient, donnees: Required<CreationUtilisateur>) {
+export async function creer(prisma: PrismaClient, { motDePasse, ...donnees }: Required<Omit<CreationUtilisateur, 'motDePasse'>> & { motDePasse?: string }) {
   // Règles des scénarios et solde de départ absents : valeurs par défaut (lots 11 et 13).
   const { reglesScenarios: _defaut, depart: _depart, ...reglages } = REGLAGES_PAR_DEFAUT
   const ligne = await prisma.utilisateur.create({
-    data: { ...donnees, reglages: { create: reglages } },
+    data: { ...donnees, ...(motDePasse ? { motDePasse: await hacher(motDePasse) } : {}), reglages: { create: reglages } },
   })
   return versDto(ligne)
 }

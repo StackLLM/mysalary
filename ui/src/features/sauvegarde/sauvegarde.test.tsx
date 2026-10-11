@@ -15,7 +15,7 @@ vi.mock('../../lib/api', async (original) => ({
   api: { lire: vi.fn(), creer: vi.fn(), modifier: vi.fn(), supprimer: vi.fn() },
 }))
 
-const u1: Utilisateur = { id: 'u1', prenom: 'Léa', devise: 'MAD', onboardingEtape: 10, onboardingTermine: true, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
+const u1: Utilisateur = { id: 'u1', prenom: 'Léa', devise: 'MAD', onboardingEtape: 10, onboardingTermine: true, protege: false, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
 const reglages: Reglages = { modePeriode: 'cyclePaie', debutSemaine: 1, reportHebdo: false, animations: true, reglesScenarios: REGLES_SCENARIOS_DEFAUT, depart: null }
 const EXPORT = { format: 'mysalary-export', version: 1, compte: { prenom: 'Léa', devise: 'MAD' }, donnees: {} }
 

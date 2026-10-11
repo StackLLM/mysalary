@@ -17,6 +17,8 @@ import { useCompte } from '../../state/compte'
 import { useRenommerUtilisateur, useUtilisateurCourant } from '../profils/requetes'
 import { lireMontant, versSaisie } from '../salaire/saisie'
 import { useMoisCourant } from '../salaire/requetes'
+import { deconnecter } from '../authentification/requetes'
+import { MotDePasseCompte } from '../authentification/MotDePasseCompte'
 import { BoutonExport } from '../sauvegarde/BoutonExport'
 import { ReinitialisationCompte } from '../sauvegarde/ReinitialisationCompte'
 import { SuppressionCompte } from '../profils/SuppressionCompte'
@@ -256,7 +258,8 @@ function CarteCompte() {
           variante="teinte"
           taille="md"
           className="mt-3 w-full"
-          onClick={() => {
+          onClick={async () => {
+            if (utilisateur.protege) await deconnecter()
             compte.quitter()
             naviguer('/profils')
           }}
@@ -264,6 +267,8 @@ function CarteCompte() {
           Changer de compte
         </Bouton>
       </Carte>
+
+      <MotDePasseCompte utilisateur={utilisateur} />
 
       <Carte titre="Zone sensible">
         <p className="text-texte-sm text-gris">Efface définitivement les données de ce compte.</p>

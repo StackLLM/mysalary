@@ -22,7 +22,7 @@ const oussama: Utilisateur = {
   prenom: 'Oussama',
   devise: 'MAD',
   onboardingEtape: 0,
-  onboardingTermine: false,
+  onboardingTermine: false, protege: false,
   creeLe: '2026-10-07T10:00:00.000Z',
   derniereOuverture: '2026-10-07T12:00:00.000Z',
 }

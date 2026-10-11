@@ -13,7 +13,7 @@ vi.mock('../../lib/api', async (original) => ({
   api: { lire: vi.fn(), creer: vi.fn(), modifier: vi.fn(), supprimer: vi.fn() },
 }))
 
-const compte: Utilisateur = { id: 'u1', prenom: 'Essai', devise: 'MAD', onboardingEtape: 0, onboardingTermine: false, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
+const compte: Utilisateur = { id: 'u1', prenom: 'Essai', devise: 'MAD', onboardingEtape: 0, onboardingTermine: false, protege: false, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
 const categories = [{ id: 'c-ali', libelle: 'Alimentation', groupe: 'essentiel', icone: 'panier', ordre: 0, utilisee: true, depenses: 1 }] as unknown as CategorieDto[]
 const mois = { cle: '2027-01', debut: '2026-12-27', fin: '2027-01-26', nbJours: 31, statut: 'enCours', sourceDebut: 'reelle', sourceFin: 'prevue' }
 

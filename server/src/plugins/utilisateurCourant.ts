@@ -1,6 +1,7 @@
 import { CODES_ERREUR, ENTETE_UTILISATEUR } from '@mysalary/partage'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { ErreurApi } from '../lib/erreurs'
+import { exigerAcces } from './session'
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -11,7 +12,7 @@ declare module 'fastify' {
 
 /**
  * Résout le compte courant à partir de l'en-tête `X-Utilisateur`.
- * Pas d'authentification en v1 (Plan.md § 5.7) : ce hook sera remplacé par la session.
+ * Un compte protégé par mot de passe exige en plus la session de son cookie (lot 22).
  */
 export function exigerUtilisateur(app: FastifyInstance) {
   return async (requete: FastifyRequest) => {
@@ -24,6 +25,7 @@ export function exigerUtilisateur(app: FastifyInstance) {
     if (!utilisateur) {
       throw new ErreurApi(401, CODES_ERREUR.UTILISATEUR_INCONNU, 'Ce compte n’existe pas.')
     }
+    await exigerAcces(app.prisma, requete, utilisateur.id)
     requete.utilisateurId = utilisateur.id
   }
 }

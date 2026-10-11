@@ -13,6 +13,7 @@ import { routesSauvegarde } from './modules/sauvegarde/routes'
 import { routesReglages } from './modules/reglages/routes'
 import { routesRevenus } from './modules/revenus/routes'
 import { routesSalaire } from './modules/salaire/routes'
+import { routesSession } from './modules/session/routes'
 import { routesUtilisateurs } from './modules/utilisateurs/routes'
 import { installerBase } from './plugins/base'
 import { installerErreurs } from './plugins/erreurs'
@@ -23,13 +24,15 @@ interface Options {
   logger?: FastifyServerOptions['logger']
   /** Horloge du serveur ; les tests la fixent pour rendre les dates reproductibles. */
   horloge?: () => Date
+  /** Écoute hors de cette machine : mot de passe obligatoire pour tout compte (lot 22). */
+  reseau?: boolean
 }
 
 /** Construit l'application sans l'écouter : utilisé par le serveur et par les tests. */
-export async function construireApp({ prisma, logger = false, horloge }: Options) {
+export async function construireApp({ prisma, logger = false, horloge, reseau = false }: Options) {
   const app = Fastify({ logger, bodyLimit: 1024 * 1024 })
 
-  installerBase(app, prisma, horloge)
+  installerBase(app, prisma, horloge, reseau)
   installerErreurs(app)
   await app.register(helmet)
 
@@ -39,6 +42,7 @@ export async function construireApp({ prisma, logger = false, horloge }: Options
       api.get('/sante', async () => ({ statut: 'ok' }))
       await api.register(routesUtilisateurs)
       await api.register(routesSauvegarde)
+      await api.register(routesSession)
 
       // Routes du compte courant : toutes passent par exigerUtilisateur.
       await api.register(async (compte) => {

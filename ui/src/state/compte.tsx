@@ -1,5 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { toast } from 'sonner'
+import { EVENEMENT_SESSION_EXPIREE } from '../lib/api'
 import { choisirUtilisateur, lireUtilisateurCourant } from './utilisateur'
 
 interface ContexteCompte {
@@ -43,6 +45,16 @@ export function FournisseurCompte({ children }: { children: ReactNode }) {
     }),
     [id, viderCache],
   )
+
+  const quitter = valeur.quitter
+  useEffect(() => {
+    const surExpiration = () => {
+      quitter()
+      toast('Session expirée. Reconnecte-toi.', { id: 'session-expiree' })
+    }
+    window.addEventListener(EVENEMENT_SESSION_EXPIREE, surExpiration)
+    return () => window.removeEventListener(EVENEMENT_SESSION_EXPIREE, surExpiration)
+  }, [quitter])
 
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>
 }

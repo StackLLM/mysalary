@@ -22,6 +22,7 @@ import {
   useRenommerUtilisateur,
   useUtilisateurs,
 } from './requetes'
+import { ConnexionCompte } from '../authentification/ConnexionCompte'
 import { ImportCompte } from '../sauvegarde/ImportCompte'
 import { SuppressionCompte } from './SuppressionCompte'
 
@@ -35,6 +36,7 @@ export function PageProfils() {
   const ouvrir = useOuvrirUtilisateur()
   const [aRenommer, setARenommer] = useState<Utilisateur | null>(null)
   const [aSupprimer, setASupprimer] = useState<Utilisateur | null>(null)
+  const [aConnecter, setAConnecter] = useState<{ u: Utilisateur; nouveau: boolean } | null>(null)
 
   function ouvrirCompte(u: Utilisateur, nouveau = false) {
     ouvrir.mutate(u.id, {
@@ -43,7 +45,11 @@ export function PageProfils() {
         // Un compte qu'on vient de créer commence par la mise en route (lot 19).
         naviguer(nouveau ? '/onboarding' : '/')
       },
-      onError: () => toast('Impossible d’ouvrir ce compte. Réessaie.'),
+      onError: (e) => {
+        // Compte protégé : le mot de passe d'abord, puis le compte s'ouvre.
+        if (e instanceof ErreurApi && e.code === 'SESSION_REQUISE') setAConnecter({ u, nouveau })
+        else toast('Impossible d’ouvrir ce compte. Réessaie.')
+      },
     })
   }
 
@@ -65,7 +71,7 @@ export function PageProfils() {
           <Carte espacement="large">
             <TitreSection
               titre="Choisis ton compte"
-              sousTitre="Pas de mot de passe pour l’instant : n’utilise MySalary que sur ton ordinateur."
+              sousTitre="Un compte protégé demande son mot de passe à l’ouverture."
             />
             <div className="mt-6">
               <ListeComptes
@@ -87,6 +93,7 @@ export function PageProfils() {
       </div>
 
       <Renommer utilisateur={aRenommer} onFermer={() => setARenommer(null)} />
+      <ConnexionCompte utilisateur={aConnecter?.u ?? null} onFermer={() => setAConnecter(null)} onConnecte={(u) => ouvrirCompte(u, aConnecter?.nouveau)} />
       <SuppressionCompte utilisateur={aSupprimer} onFermer={() => setASupprimer(null)} />
     </motion.div>
   )
@@ -182,12 +189,13 @@ function NouveauCompte({ onCree }: { onCree: (u: Utilisateur) => void }) {
   const creer = useCreerUtilisateur()
   const [prenom, setPrenom] = useState('')
   const [devise, setDevise] = useState<Devise>('MAD')
+  const [motDePasse, setMotDePasse] = useState('')
   const [erreurs, setErreurs] = useState<Record<string, string>>({})
 
   function soumettre(evenement: FormEvent) {
     evenement.preventDefault()
     // Même schéma que le serveur : l'erreur s'affiche sans aller-retour.
-    const resultat = schemaCreationUtilisateur.safeParse({ prenom, devise })
+    const resultat = schemaCreationUtilisateur.safeParse({ prenom, devise, ...(motDePasse ? { motDePasse } : {}) })
     if (!resultat.success) {
       setErreurs(Object.fromEntries(resultat.error.issues.map((i) => [String(i.path[0] ?? '_'), i.message])))
       return
@@ -196,6 +204,7 @@ function NouveauCompte({ onCree }: { onCree: (u: Utilisateur) => void }) {
     creer.mutate(resultat.data, {
       onSuccess: (u) => {
         setPrenom('')
+        setMotDePasse('')
         toast(`Compte de ${u.prenom} créé.`)
         onCree(u)
       },
@@ -215,6 +224,15 @@ function NouveauCompte({ onCree }: { onCree: (u: Utilisateur) => void }) {
             value={prenom}
             onChange={(e) => setPrenom(e.target.value)}
             erreur={erreurs.prenom}
+          />
+          <Champ
+            libelle="Mot de passe (facultatif)"
+            type="password"
+            autoComplete="new-password"
+            aide="8 caractères au moins."
+            value={motDePasse}
+            onChange={(e) => setMotDePasse(e.target.value)}
+            erreur={erreurs.motDePasse}
           />
           <fieldset>
             <legend className="mb-2 text-texte-sm text-gris">Devise</legend>

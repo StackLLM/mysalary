@@ -1,6 +1,9 @@
 import { CODES_ERREUR, ENTETE_UTILISATEUR, PREFIXE_API, type CodeErreur, type ReponseErreur } from '@mysalary/partage'
 import { lireUtilisateurCourant } from '../state/utilisateur'
 
+/** Émis quand le serveur refuse le compte ouvert faute de session. */
+export const EVENEMENT_SESSION_EXPIREE = 'mysalary:session-expiree'
+
 /** Erreur renvoyée par le serveur, au format commun. */
 export class ErreurApi extends Error {
   constructor(
@@ -43,6 +46,8 @@ export async function appelerApi<T>(methode: Methode, chemin: string, corps?: un
 
   if (!reponse.ok) {
     const erreur = (donnees as Partial<ReponseErreur> | undefined)?.erreur
+    // Session perdue ou expirée sur un compte ouvert : l'app le quitte et demande de se reconnecter.
+    if (erreur?.code === CODES_ERREUR.SESSION_REQUISE && utilisateur && !chemin.startsWith('/utilisateurs')) window.dispatchEvent(new Event(EVENEMENT_SESSION_EXPIREE))
     throw new ErreurApi(
       reponse.status,
       erreur?.code ?? CODES_ERREUR.INTERNE,

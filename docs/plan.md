@@ -31,8 +31,8 @@
 | 18 | [Année](#lot-18--année) | 3 — Intelligence et vues | ✅ Clôturé | 12/10/2026 | 384 | [Lot-18-annee.md](lots/Lot-18-annee.md) |
 | 19 | [Onboarding & import V0](#lot-19--onboarding--import-v0) | 4 — Entrée et finitions | ✅ Clôturé | 12/10/2026 | 414 | [Lot-19-onboarding.md](lots/Lot-19-onboarding.md) |
 | 20 | [Export & sauvegarde](#lot-20--export--sauvegarde) | 4 — Entrée et finitions | ✅ Clôturé | 12/10/2026 | 426 | [Lot-20-export-sauvegarde.md](lots/Lot-20-export-sauvegarde.md) |
-| 21 | [Finitions (polish)](#lot-21--finitions-polish) | 4 — Entrée et finitions | 🟡 Livré en partie, à valider | — | 429 | [Lot-21-finitions.md](lots/Lot-21-finitions.md) |
-| 22 | [Authentification](#lot-22--authentification) | 4 — Entrée et finitions | À venir | — | — | — |
+| 21 | [Finitions (polish)](#lot-21--finitions-polish) | 4 — Entrée et finitions | ✅ Clôturé (en partie) | 12/10/2026 | 429 | [Lot-21-finitions.md](lots/Lot-21-finitions.md) |
+| 22 | [Authentification](#lot-22--authentification) | 4 — Entrée et finitions | 🟡 Livré, à valider | — | 441 | [Lot-22-authentification.md](lots/Lot-22-authentification.md) |
 
 « Tests » = nombre total de tests automatiques du projet à la clôture du lot (partage + moteur + serveur + interface).
 
@@ -297,7 +297,8 @@ Règles appliquées à chaque lot :
 
 ### Lot 22 — Authentification
 
-- **Périmètre prévu** : mot de passe par compte, sessions ; obligatoire avant toute mise en ligne ou ouverture du réseau (aujourd'hui tout reste sur `127.0.0.1`).
+- **Livré** : mot de passe par compte (facultatif en local), sessions par cookie, blocage après 5 essais ; ouvert au réseau, le serveur exige un mot de passe sur tous les comptes. Détail : `docs/lots/Lot-22-authentification.md`.
+- **Écart** : pas de récupération de mot de passe, pas de HTTPS intégré.
 
 ## 5. Points reportés, rangés par lot
 

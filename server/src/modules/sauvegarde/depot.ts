@@ -2,6 +2,7 @@ import { CODES_ERREUR, FORMAT_EXPORT, REGLAGES_PAR_DEFAUT, VERSION_EXPORT, type 
 import type { Prisma, PrismaClient } from '@prisma/client'
 import { randomUUID } from 'node:crypto'
 import { ErreurApi, introuvable } from '../../lib/erreurs'
+import { versDto } from '../utilisateurs/depot'
 
 /**
  * Tables d'un compte, des parents aux enfants (ordre d'import ; l'inverse sert à vider).
@@ -43,10 +44,6 @@ type Delegue = {
   deleteMany(args: unknown): Promise<unknown>
 }
 const delegue = (client: Prisma.TransactionClient | PrismaClient, cle: string) => (client as unknown as Record<string, Delegue>)[cle]!
-
-function versUtilisateur(u: { id: string; prenom: string; devise: string; onboardingEtape: number; onboardingTermine: boolean; creeLe: Date; derniereOuverture: Date | null }): Utilisateur {
-  return { id: u.id, prenom: u.prenom, devise: u.devise as Devise, onboardingEtape: u.onboardingEtape, onboardingTermine: u.onboardingTermine, creeLe: u.creeLe.toISOString(), derniereOuverture: u.derniereOuverture?.toISOString() ?? null }
-}
 
 /** Toutes les données du compte. Les identifiants d'origine restent dans le fichier pour relier les lignes entre elles. */
 export async function exporter(prisma: PrismaClient, id: string, maintenant: Date): Promise<ExportCompte> {
@@ -126,7 +123,7 @@ export async function importer(prisma: PrismaClient, fichier: ExportCompte): Pro
         } else {
           await tx.reglages.create({ data: reglagesParDefaut(cree.id) })
         }
-        return { utilisateur: versUtilisateur(cree), lignes: total }
+        return { utilisateur: versDto(cree), lignes: total }
       },
       { timeout: 60_000 },
     )
@@ -149,6 +146,6 @@ export async function reinitialiser(prisma: PrismaClient, id: string): Promise<U
     await tx.importSource.deleteMany({ where: { utilisateurId: id } })
     await tx.reglages.deleteMany({ where: { utilisateurId: id } })
     await tx.reglages.create({ data: reglagesParDefaut(id) })
-    return versUtilisateur(await tx.utilisateur.update({ where: { id }, data: { onboardingEtape: 0, onboardingTermine: false } }))
+    return versDto(await tx.utilisateur.update({ where: { id }, data: { onboardingEtape: 0, onboardingTermine: false } }))
   })
 }
