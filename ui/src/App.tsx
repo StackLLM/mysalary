@@ -1,30 +1,32 @@
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { lazy, Suspense, useEffect, type ReactNode } from 'react'
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom'
+import { styleBouton } from './components/Bouton'
+import { Carte } from './components/Carte'
 import { ErreurPage } from './components/ErreurPage'
+import { FilAriane } from './components/FilAriane'
 import { GardeCompte } from './components/GardeCompte'
 import { MiseEnPage } from './components/MiseEnPage'
 import { Notifications } from './components/Notifications'
-import { PageAVenir } from './features/a-venir/PageAVenir'
-import { PageAnnee } from './features/annee/PageAnnee'
-import { PageAujourdhui } from './features/aujourdhui/PageAujourdhui'
-import { PageCalendrier } from './features/calendrier/PageCalendrier'
 import { FournisseurSaisieRapide, useSaisieRapide } from './features/depenses/SaisieRapide'
-import { PageOnboarding } from './features/onboarding/PageOnboarding'
-import { PageMois } from './features/mois/PageMois'
-import { PageEditionObjectif } from './features/objectifs/PageEditionObjectif'
-import { PageObjectif } from './features/objectifs/PageObjectif'
-import { PageObjectifs } from './features/objectifs/PageObjectifs'
-import { PageSimulateur } from './features/simulateur/PageSimulateur'
-import { PagePlan } from './features/plan/PagePlan'
-import { PageProfils } from './features/profils/PageProfils'
-import { PageReglages } from './features/reglages/PageReglages'
 import { useReglages } from './features/reglages/requetes'
-import { DESTINATIONS } from './lib/navigation'
 import { FournisseurAnimations, useAnimations } from './state/animations'
 import { FournisseurCompte } from './state/compte'
 
-// Chargée à la demande : elle embarque les graphiques (lourds).
+// Chaque page est chargée à la demande : le premier écran ne porte que ce qu'il affiche.
+const PageAnnee = lazy(() => import('./features/annee/PageAnnee').then((m) => ({ default: m.PageAnnee })))
+const PageAujourdhui = lazy(() => import('./features/aujourdhui/PageAujourdhui').then((m) => ({ default: m.PageAujourdhui })))
+const PageCalendrier = lazy(() => import('./features/calendrier/PageCalendrier').then((m) => ({ default: m.PageCalendrier })))
+const PageOnboarding = lazy(() => import('./features/onboarding/PageOnboarding').then((m) => ({ default: m.PageOnboarding })))
+const PageMois = lazy(() => import('./features/mois/PageMois').then((m) => ({ default: m.PageMois })))
+const PageEditionObjectif = lazy(() => import('./features/objectifs/PageEditionObjectif').then((m) => ({ default: m.PageEditionObjectif })))
+const PageObjectif = lazy(() => import('./features/objectifs/PageObjectif').then((m) => ({ default: m.PageObjectif })))
+const PageObjectifs = lazy(() => import('./features/objectifs/PageObjectifs').then((m) => ({ default: m.PageObjectifs })))
+const PageSimulateur = lazy(() => import('./features/simulateur/PageSimulateur').then((m) => ({ default: m.PageSimulateur })))
+const PagePlan = lazy(() => import('./features/plan/PagePlan').then((m) => ({ default: m.PagePlan })))
+const PageProfils = lazy(() => import('./features/profils/PageProfils').then((m) => ({ default: m.PageProfils })))
+const PageReglages = lazy(() => import('./features/reglages/PageReglages').then((m) => ({ default: m.PageReglages })))
+// La vitrine du design system n'existe qu'en développement.
 const PageVitrine = lazy(() => import('./features/vitrine/PageVitrine').then((m) => ({ default: m.PageVitrine })))
 
 /** Le réglage « animations » du compte ouvert pilote la bascule globale. */
@@ -36,6 +38,20 @@ function SynchroAnimations() {
     if (actives !== undefined) definir(actives)
   }, [actives, definir])
   return null
+}
+
+function PageIntrouvable() {
+  return (
+    <>
+      <FilAriane etapes={[{ libelle: 'Page introuvable' }]} />
+      <Carte espacement="large" className="max-w-2xl">
+        <h1 className="text-titre text-encre">Cette page n’existe pas.</h1>
+        <Link to="/" className={styleBouton({ variante: 'teinte', taille: 'md', className: 'mt-6' })}>
+          Retour à Aujourd’hui
+        </Link>
+      </Carte>
+    </>
+  )
 }
 
 const compte = (page: ReactNode) => <GardeCompte>{page}</GardeCompte>
@@ -53,16 +69,10 @@ function Vues() {
       */}
       <div key={emplacement.pathname} className="apparition-vue">
         <ErreurPage cle={emplacement.pathname}>
+          <Suspense fallback={<div className="py-16 text-center text-texte-sm text-gris" role="status">Chargement…</div>}>
           <Routes location={emplacement}>
             <Route path="/profils" element={<PageProfils />} />
-            <Route
-              path="/vitrine"
-              element={
-                <Suspense fallback={<div className="py-16 text-center text-texte-sm text-gris">Chargement…</div>}>
-                  <PageVitrine />
-                </Suspense>
-              }
-            />
+            {import.meta.env.DEV && <Route path="/vitrine" element={<PageVitrine />} />}
             <Route path="/" element={compte(<PageAujourdhui />)} />
             <Route path="/onboarding" element={compte(<PageOnboarding />)} />
             <Route path="/annee" element={compte(<PageAnnee />)} />
@@ -75,11 +85,9 @@ function Vues() {
             <Route path="/objectifs/:id" element={compte(<PageObjectif />)} />
             <Route path="/objectifs/:id/modifier" element={compte(<PageEditionObjectif />)} />
             <Route path="/simulateur" element={compte(<PageSimulateur />)} />
-            {DESTINATIONS.filter((d) => !['/', '/plan', '/mois', '/objectifs', '/calendrier', '/annee', '/onboarding'].includes(d.chemin)).map((d) => (
-              <Route key={d.chemin} path={d.chemin} element={compte(<PageAVenir titre={d.libelle} lot={d.lot} />)} />
-            ))}
-            <Route path="*" element={<PageAVenir titre="Page introuvable" />} />
+            <Route path="*" element={<PageIntrouvable />} />
           </Routes>
+          </Suspense>
         </ErreurPage>
       </div>
     </MiseEnPage>

@@ -30,8 +30,8 @@
 | 17 | [Calendrier](#lot-17--calendrier) | 3 — Intelligence et vues | ✅ Clôturé | 12/10/2026 | 370 | [Lot-17-calendrier.md](lots/Lot-17-calendrier.md) |
 | 18 | [Année](#lot-18--année) | 3 — Intelligence et vues | ✅ Clôturé | 12/10/2026 | 384 | [Lot-18-annee.md](lots/Lot-18-annee.md) |
 | 19 | [Onboarding & import V0](#lot-19--onboarding--import-v0) | 4 — Entrée et finitions | ✅ Clôturé | 12/10/2026 | 414 | [Lot-19-onboarding.md](lots/Lot-19-onboarding.md) |
-| 20 | [Export & sauvegarde](#lot-20--export--sauvegarde) | 4 — Entrée et finitions | 🟡 Livré, à valider | — | 426 | [Lot-20-export-sauvegarde.md](lots/Lot-20-export-sauvegarde.md) |
-| 21 | [Finitions (polish)](#lot-21--finitions-polish) | 4 — Entrée et finitions | À venir | — | — | — |
+| 20 | [Export & sauvegarde](#lot-20--export--sauvegarde) | 4 — Entrée et finitions | ✅ Clôturé | 12/10/2026 | 426 | [Lot-20-export-sauvegarde.md](lots/Lot-20-export-sauvegarde.md) |
+| 21 | [Finitions (polish)](#lot-21--finitions-polish) | 4 — Entrée et finitions | 🟡 Livré en partie, à valider | — | 429 | [Lot-21-finitions.md](lots/Lot-21-finitions.md) |
 | 22 | [Authentification](#lot-22--authentification) | 4 — Entrée et finitions | À venir | — | — | — |
 
 « Tests » = nombre total de tests automatiques du projet à la clôture du lot (partage + moteur + serveur + interface).
@@ -316,8 +316,8 @@ Tout ce qu'un lot livré a laissé de côté, et le lot qui doit le reprendre.
 | Dates cibles des objectifs dans le calendrier | lot 10 | 17 |
 | Graphique annuel | lot 8 | 18 |
 | Export avant suppression d'un compte ; réinitialisation d'un compte | lot 3 | ✅ fait au lot 20 |
-| Toast « Ajoutée à novembre » pour une dépense datée hors du mois affiché | lot 7 | 21 |
-| Paquet JS à alléger | lot 2 | 21 |
+| Toast « Ajoutée à novembre » pour une dépense datée hors du mois affiché | lot 7 | ✅ fait au lot 21 |
+| Paquet JS à alléger | lot 2 | ✅ fait au lot 21 |
 | Glisser-déposer pour l'ordre des objectifs (aujourd'hui : monter / descendre) | lot 10 | 21 |
 | Scénario « perso » avec ses propres règles | lot 11 | non planifié |
 | Réglages › Catégories (renommer, fusionner) | lot 6 | 21 (proposé, à confirmer) |

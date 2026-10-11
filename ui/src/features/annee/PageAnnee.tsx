@@ -2,6 +2,7 @@ import { formaterMois, formaterMontant, type SuiviAnnuelDto, type TotalAnnuel } 
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { RaccourcisPeriode } from '../../components/RaccourcisPeriode'
 import { BarreProgression } from '../../components/BarreProgression'
 import { Bouton } from '../../components/Bouton'
 import { Carte, Separateur, TitreSection } from '../../components/Carte'
@@ -57,6 +58,7 @@ export function PageAnnee() {
     if (valeur === 'calendrier') return <CalendrierAnnee annee={annee} changerAnnee={(a) => changer({ annee: a })} />
     return (
       <Carte espacement="large">
+        <RaccourcisPeriode precedent={() => changer({ annee: annee - 1 })} suivant={() => changer({ annee: annee + 1 })} />
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="text-titre text-encre">Année {annee}</h2>

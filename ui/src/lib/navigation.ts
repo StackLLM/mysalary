@@ -12,16 +12,14 @@ export interface Destination {
   chemin: string
   libelle: string
   Icone: ComponentType<SVGProps<SVGSVGElement>>
-  /** Lot qui construit la page (pages encore à venir). */
-  lot: number
 }
 
 /** Navigation principale, en haut comme dans le template (UX.md § 3). */
 export const DESTINATIONS: Destination[] = [
-  { chemin: '/', libelle: 'Aujourd’hui', Icone: IconeGrille, lot: 16 },
-  { chemin: '/mois', libelle: 'Mois', Icone: IconeMois, lot: 8 },
-  { chemin: '/annee', libelle: 'Année', Icone: IconeAnnee, lot: 18 },
-  { chemin: '/objectifs', libelle: 'Objectifs', Icone: IconeObjectif, lot: 10 },
-  { chemin: '/calendrier', libelle: 'Calendrier', Icone: IconeCalendrier, lot: 17 },
-  { chemin: '/plan', libelle: 'Mon plan', Icone: IconePortefeuille, lot: 4 },
+  { chemin: '/', libelle: 'Aujourd’hui', Icone: IconeGrille },
+  { chemin: '/mois', libelle: 'Mois', Icone: IconeMois },
+  { chemin: '/annee', libelle: 'Année', Icone: IconeAnnee },
+  { chemin: '/objectifs', libelle: 'Objectifs', Icone: IconeObjectif },
+  { chemin: '/calendrier', libelle: 'Calendrier', Icone: IconeCalendrier },
+  { chemin: '/plan', libelle: 'Mon plan', Icone: IconePortefeuille },
 ]

@@ -2,6 +2,7 @@ import { formaterDate, formaterMois } from '@mysalary/partage'
 import { ChevronLeft, ChevronRight, Lock } from 'lucide-react'
 import { Bouton } from '../../components/Bouton'
 import { Identite } from '../../components/Elements'
+import { RaccourcisPeriode } from '../../components/RaccourcisPeriode'
 import { joursRestants, moisVoisin } from '../depenses/saisie'
 
 interface Proprietes {
@@ -26,6 +27,7 @@ export function EnteteMois({ titre, mois, aujourdhui, cloture, changerMois }: Pr
         : 'Terminé'
   return (
     <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+      <RaccourcisPeriode precedent={() => changerMois(moisVoisin(mois.cle, -1))} suivant={() => changerMois(moisVoisin(mois.cle, 1))} />
       <Identite initiale={nom.charAt(0)} nom={titre} detail={`Du ${formaterDate(mois.debut, 'court')} au ${formaterDate(mois.fin, 'court')}`} />
       <div className="flex items-center gap-2 self-start sm:self-auto">
         <Bouton variante="contour" taille="sm" className="h-10 w-10 rounded-pilule p-0" aria-label="Mois précédent" onClick={() => changerMois(moisVoisin(mois.cle, -1))}>

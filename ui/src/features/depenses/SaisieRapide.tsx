@@ -1,4 +1,4 @@
-import { formaterMontant, type DepenseDto, type SaisieDepense } from '@mysalary/partage'
+import { formaterMois, formaterMontant, type DepenseDto, type SaisieDepense } from '@mysalary/partage'
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -14,6 +14,7 @@ import { FormulaireVersement } from '../epargne/FormulaireVersement'
 import { IconeCategorie } from '../charges/IconeCategorie'
 import { useCategories } from '../charges/requetes'
 import { useUtilisateurCourant } from '../profils/requetes'
+import { useMoisCourant } from '../salaire/requetes'
 import { lireMontant, versSaisie } from '../salaire/saisie'
 import { useEnregistrerDepense, useRattachements, useSupprimerDepense } from './requetes'
 import { ContexteSaisieRapide, useSaisieRapide } from './contexteSaisieRapide'
@@ -120,6 +121,7 @@ function FormulaireDepense({ initiale, dateProposee, onTermine, onAutre }: { ini
 
   const dateValide = /^\d{4}-\d{2}-\d{2}$/.test(date) && date <= aujourdhui
   const rattachements = useRattachements(dateValide ? date : null)
+  const moisCourant = useMoisCourant()
   const options = useMemo<OptionLien[]>(() => {
     const liste = rattachements.data ? optionsLien(rattachements.data) : []
     // En modification, le lien actuel reste proposé même si la ligne est maintenant payée.
@@ -151,7 +153,9 @@ function FormulaireDepense({ initiale, dateProposee, onTermine, onAutre }: { ini
     const saisie: SaisieDepense = { date, montant: lu.valeur, categorieId, libelle: libelle.trim(), ...(note.trim() ? { note: note.trim() } : {}), ...versLien(lien) }
     try {
       const { id } = await enregistrer.mutateAsync({ ...saisie, id: initiale?.id })
-      const quoi = `${formaterMontant(lu.valeur)}${choisi ? ` · ${choisi.libelle}` : ''}`
+      const moisDeLaDate = rattachements.data?.mois
+      const horsMois = moisDeLaDate && moisCourant.data && moisDeLaDate !== moisCourant.data.cle ? ` · ajoutée à ${formaterMois(moisDeLaDate)}` : ''
+      const quoi = `${formaterMontant(lu.valeur)}${choisi ? ` · ${choisi.libelle}` : ''}${horsMois}`
       if (initiale) toast(`Dépense modifiée : ${quoi}.`)
       else toast(`Dépense notée : ${quoi}.`, { action: { label: 'Annuler', onClick: () => supprimer.mutate(id) } })
       if (enchainer.current && !initiale) onAutre()
