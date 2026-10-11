@@ -200,16 +200,18 @@ export function FormulaireCharge({ nature, initial, aujourdhui, moisCourant, moi
 interface ProprietesPonctuel {
   initial?: PonctuelDto
   aujourdhui: string
+  /** Date proposée pour un nouveau ponctuel (ex. le jour choisi dans le calendrier) ; aujourd'hui sinon. */
+  dateInitiale?: string
   chargement?: boolean
   onEnregistrer: (saisie: SaisiePonctuel) => Promise<unknown>
 }
 
 /** Charge unique connue et datée : assurance de décembre, permis, réparation prévue. */
-export function FormulairePonctuel({ initial, aujourdhui, chargement, onEnregistrer }: ProprietesPonctuel) {
+export function FormulairePonctuel({ initial, aujourdhui, dateInitiale, chargement, onEnregistrer }: ProprietesPonctuel) {
   const [libelle, setLibelle] = useState(initial?.libelle ?? '')
   const [categorieId, setCategorieId] = useState(initial?.categorieId ?? '')
   const [montant, setMontant] = useState(initial ? versSaisie(initial.montant) : '')
-  const [date, setDate] = useState<string>(initial?.date ?? aujourdhui)
+  const [date, setDate] = useState<string>(initial?.date ?? dateInitiale ?? aujourdhui)
   const [certitude, setCertitude] = useState<Certitude>(initial?.certitude ?? 'garanti')
   const [erreurs, setErreurs] = useState<Record<string, string>>({})
 

@@ -165,6 +165,9 @@ function Journee({ donnees }: { donnees: AujourdhuiDto }) {
           <section className="mt-8" aria-label="7 prochains jours">
             <TitreSection titre="7 prochains jours" sousTitre="Paie, revenus et charges datés." />
             <ProchainsJours donnees={donnees} />
+            <Link to="/calendrier" className="mt-4 inline-block text-texte-sm font-semibold text-lien hover:underline">
+              Ouvrir le calendrier
+            </Link>
           </section>
 
           <Separateur className="my-7" />

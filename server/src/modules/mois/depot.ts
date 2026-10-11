@@ -1,5 +1,5 @@
-import { bilanDuMois, cumulDesMois, debutCumul, evenementsDuMois, lireCleMois, resumeCumul, rythmeDuMois, suiviDesSemaines, type CleMois, type DateCivile, type SuiviDesSemaines } from '@mysalary/moteur'
-import { CODES_ERREUR, formaterMois, type AnneeDto, type BilanDto, type CumulDto, type EvenementCloture, type SemainesDto } from '@mysalary/partage'
+import { bilanDuMois, calendrierDuMois, cumulDesMois, debutCumul, evenementsDuMois, lireCleMois, resumeCumul, rythmeDuMois, suiviDesSemaines, type CleMois, type DateCivile, type SuiviDesSemaines } from '@mysalary/moteur'
+import { CODES_ERREUR, formaterMois, type AnneeDto, type BilanDto, type CalendrierMoisDto, type CumulDto, type EvenementCloture, type SemainesDto } from '@mysalary/partage'
 import type { PrismaClient } from '@prisma/client'
 import { ErreurApi } from '../../lib/erreurs'
 import { chargerCalendrier } from '../salaire/depot'
@@ -67,6 +67,12 @@ export async function annee(prisma: PrismaClient, utilisateurId: string, aujourd
     resume: resumeCumul(mois),
     evenements: Object.fromEntries(mois.map((m) => [m.cle, evenementsDuMois(calendrier, m.cle)])),
   }
+}
+
+/** Calendrier d'un mois (lot 17) : ce qui tombe chaque jour, et le solde du mois jour par jour. */
+export async function calendrierMois(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile, cle: CleMois): Promise<CalendrierMoisDto> {
+  const { calendrier, debutSemaine } = await chargerCalendrier(prisma, utilisateurId, aujourdhui)
+  return { ...calendrierDuMois(calendrier, cle, aujourdhui), debutSemaine: debutSemaine === 7 ? 7 : 1 }
 }
 
 /** Semaines du mois (lot 9) : figées si le mois est clôturé (clôture faite depuis le lot 9), sinon calculées. */

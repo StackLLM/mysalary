@@ -46,6 +46,11 @@ export async function routesMois(app: FastifyInstance) {
     return depot.cumul(app.prisma, utilisateurDe(requete), app.aujourdhui(), du, au)
   })
 
+  // Calendrier du mois (lot 17).
+  app.get<{ Params: { cle: string } }>('/mois/:cle/calendrier', async (requete) =>
+    depot.calendrierMois(app.prisma, utilisateurDe(requete), app.aujourdhui(), valider(schemaCleMois, requete.params.cle)),
+  )
+
   // Calendrier de l'année (lot 14).
   app.get<{ Params: { annee: string } }>('/annee/:annee', async (requete) =>
     depot.annee(app.prisma, utilisateurDe(requete), app.aujourdhui(), valider(schemaAnnee, requete.params.annee)),

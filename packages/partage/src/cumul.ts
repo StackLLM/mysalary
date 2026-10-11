@@ -1,8 +1,8 @@
-import type { DateCivile, EvenementJour, MoisCumul, ResumeCumul } from '@mysalary/moteur'
+import type { CalendrierDuMois, DateCivile, EvenementJour, MoisCumul, ResumeCumul } from '@mysalary/moteur'
 import { z } from 'zod'
 import { schemaCleMois } from './salaire'
 
-export type { Depart, EvenementJour, MoisCumul, NatureCumul, ResumeCumul } from '@mysalary/moteur'
+export type { CalendrierDuMois, Depart, EvenementCalendrier, EvenementJour, JourCalendrier, MoisCumul, TypeEvenement, NatureCumul, ResumeCumul } from '@mysalary/moteur'
 
 /** Plage de mois du cumul : 36 mois au plus. */
 export const schemaPlageCumul = z
@@ -37,4 +37,10 @@ export interface AnneeDto extends CumulDto {
   debutSemaine: 1 | 7
   /** Revenus et charges datés, par mois budgétaire. */
   evenements: Record<string, EvenementJour[]>
+}
+
+/** Calendrier d'un mois budgétaire (lot 17) : événements typés, solde jour par jour. */
+export interface CalendrierMoisDto extends CalendrierDuMois {
+  /** 1 = lundi, 7 = dimanche (Réglages). */
+  debutSemaine: 1 | 7
 }
