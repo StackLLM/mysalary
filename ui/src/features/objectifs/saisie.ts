@@ -72,13 +72,14 @@ export function propositions(o: ObjectifAffiche): string[] {
 }
 
 /** Points du graphique de trajectoire : fin de chaque mois, et « Auj. » pour la jonction réel / projeté. */
+// « oct. », « déc. », et l'année en janvier : « janv. 27 ».
+const court = (cle: string) => {
+  const abrege = formaterDate(`${cle}-01`, 'court').replace(/^1 /, '')
+  return cle.endsWith('-01') ? `${abrege} ${cle.slice(2, 4)}` : abrege
+}
+
 export function pointsTrajectoire(points: PointTrajectoireObjectif[]): { points: PointTrajectoire[]; aujourdhui: string } {
   const AUJOURDHUI = 'Auj.'
-  // « oct. », « déc. », et l'année en janvier : « janv. 27 ».
-  const court = (cle: string) => {
-    const abrege = formaterDate(`${cle}-01`, 'court').replace(/^1 /, '')
-    return cle.endsWith('-01') ? `${abrege} ${cle.slice(2, 4)}` : abrege
-  }
   return {
     aujourdhui: AUJOURDHUI,
     points: points.map((p) => ({
@@ -89,13 +90,42 @@ export function pointsTrajectoire(points: PointTrajectoireObjectif[]): { points:
   }
 }
 
+/** Trajectoire de la page Objectif : le réel jusqu'à aujourd'hui, puis l'épargne simulée avec le cumul de chaque fin de mois. */
+export function pointsSimulation(trajectoire: PointTrajectoireObjectif[], mois: { cle: string; epargne: number }[]): { points: PointTrajectoire[]; aujourdhui: string } {
+  const base = pointsTrajectoire(trajectoire.filter((p) => p.aujourdhui || p.projete === null))
+  return { aujourdhui: base.aujourdhui, points: [...base.points, ...mois.map((m) => ({ periode: court(m.cle), projete: m.epargne }))] }
+}
+
 /** Mois proposés pour la date souhaitée : du mois en cours à 10 ans. */
 export const moisSouhaitables = (moisCourant: string): string[] => Array.from({ length: 120 }, (_, i) => decalerMois(lireCleMois(moisCourant), i))
+
+/** « oct. » : nom de mois abrégé, pour les puces de la simulation. */
+export const moisAbrege = (cle: string) => formaterDate(`${cle}-01`, 'court').replace(/^1 /, '')
+
+type Verdict = { ton: 'positif' | 'alerte' | 'neutre'; titre: string; detail: string }
+type SimulationAffichee = { dateAtteinte: string | null; ecart: number | null; moisSouhaite: { cle: string; manque: number; atteint: boolean } | null }
+
+/** La réponse en tête de la page Objectif : le mois souhaité est-il tenu, avec le cumul de fin de mois ? */
+export function verdictObjectif(o: { atteint: boolean; dateCible: string | null }, s: SimulationAffichee): Verdict {
+  const quand = s.dateAtteinte ? formaterMois(s.dateAtteinte) : 'au-delà de 10 ans'
+  if (o.atteint) return { ton: 'positif', titre: 'Cible atteinte', detail: 'Tu peux marquer l’achat comme réalisé.' }
+  if (!o.dateCible) return { ton: 'neutre', titre: `Atteint en ${quand}`, detail: 'Aucun mois souhaité : estimation avec ton cumul de fin de mois.' }
+  if (!s.moisSouhaite) return { ton: 'alerte', titre: `${formaterMois(o.dateCible, { majuscule: true })} est passé`, detail: `Avec ton cumul de fin de mois : ${quand}.` }
+  const n = Math.abs(s.ecart ?? 0)
+  if (s.moisSouhaite.atteint) {
+    return { ton: 'positif', titre: `Atteint en ${formaterMois(o.dateCible)}`, detail: n > 0 && s.dateAtteinte ? `Dès ${formaterMois(s.dateAtteinte)} : ${n} mois d’avance.` : 'Juste à temps.' }
+  }
+  return {
+    ton: 'alerte',
+    titre: `${formaterMois(o.dateCible, { majuscule: true })} ne suffit pas`,
+    detail: `Il manquera ${formaterMontant(s.moisSouhaite.manque)}. Date estimée : ${quand}${s.dateAtteinte && n > 0 ? `, ${n} mois de retard` : ''}.`,
+  }
+}
 
 /** Écart entre la date estimée et la date cible : « À temps », « 2 mois de retard », « 1 mois d’avance ». */
 export function texteEcart(ecart: number | null): { texte: string; ton: 'positif' | 'alerte' | 'neutre' } {
   if (ecart === null) return { texte: '—', ton: 'neutre' }
-  if (ecart === 0) return { texte: 'À temps', ton: 'positif' }
+  if (ecart === 0) return { texte: 'à temps', ton: 'positif' }
   const n = Math.abs(ecart)
   return ecart > 0 ? { texte: `${n} mois de retard`, ton: 'alerte' } : { texte: `${n} mois d’avance`, ton: 'positif' }
 }

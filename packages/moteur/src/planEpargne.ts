@@ -1,74 +1,95 @@
 import { centimes, type Centimes } from './argent'
-import { cumulDesMois, type Depart } from './cumul'
-import { ajouterJours, ecartMois, type CleMois, type DateCivile } from './dates'
+import { cumulDesMois, type Depart, type NatureCumul } from './cumul'
+import { decalerMois, ecartMois, type CleMois, type DateCivile } from './dates'
 import { epargneObjectif } from './epargne'
-import { HORIZON_MAX_MOIS, projeter, REGLES_SCENARIOS_DEFAUT, type DonneesObjectifs, type ReglesScenarios } from './objectifs'
+import { REGLES_SCENARIOS_DEFAUT, type DonneesObjectifs, type ReglesScenarios } from './objectifs'
 import type { Calendrier } from './periodes'
 
 /**
- * Plan d'épargne d'un objectif, avec ou sans le cumul ajouté à l'épargne actuelle.
- * Le cumul est ce qui reste sur le compte courant au début du mois en cours (report du mois précédent,
- * ou solde de départ déclaré) : la projection commence avec ce mois, il n'est donc jamais compté deux fois.
- * Tout est projeté : l'épargne réelle ne bouge pas tant que l'utilisateur ne verse pas.
+ * Simulation d'un objectif avec le cumul de fin de mois (page Objectif).
+ * Le cumul est calculé par MySalary (lot 13) : ce qui resterait sur le compte courant à la fin du mois,
+ * revenus − charges − épargne prévue, mois après mois. On suppose que ce cumul rejoint l'objectif à la fin du mois choisi :
+ * épargne simulée = épargne actuelle + versements prévus à l'objectif d'ici là + cumul de fin de mois (jamais négatif).
+ * Les versements prévus sont déjà retirés du cumul : rien n'est compté deux fois. Tout est projeté, rien n'est enregistré.
  */
 
-export interface EstimationObjectif {
-  /** Épargne actuelle de l'objectif (+ le cumul dans le scénario « avec »). */
-  depart: Centimes
-  /** Cible − départ, jamais négatif. */
-  restant: Centimes
-  /** À mettre de côté chaque mois pour tenir la date cible ; `null` sans date cible ou si la cible est déjà couverte. */
-  mensuel: Centimes | null
-  /** Mois de la date cible pris en compte (mois en cours inclus) ; `null` sans date cible. */
-  moisRestants: number | null
-  /** Date estimée, avec la capacité d'épargne du scénario réaliste ; `null` au-delà de 10 ans. */
-  date: CleMois | null
-  /** Date estimée − date cible, en mois : positif = retard, négatif = avance ; `null` sans date cible ou sans date estimée. */
-  ecart: number | null
-}
-
-export interface ScenariosCumul {
-  /** Cumul ajouté dans le scénario « avec ». */
+export interface MoisSimulation {
+  cle: CleMois
+  /** Mois en cours : réel à date + prévu restant (estimation) ; mois futurs : prévu. */
+  nature: Exclude<NatureCumul, 'avant' | 'reel'>
+  /** Cumul de fin de mois, tel que calculé (peut être négatif). */
   cumul: Centimes
-  sans: EstimationObjectif
-  avec: EstimationObjectif
+  /** Versements prévus à cet objectif, du mois en cours à ce mois inclus (hors ceux déjà faits). */
+  versements: Centimes
+  /** Épargne actuelle + versements prévus + cumul (positif). */
+  epargne: Centimes
+  /** Cible − épargne simulée, jamais négatif. */
+  manque: Centimes
+  atteint: boolean
 }
 
-/** Cumul disponible au début du mois en cours : ce qui reste sur le compte courant, jamais négatif. */
-export function cumulDisponible(calendrier: Calendrier, aujourdhui: DateCivile, { regles = REGLES_SCENARIOS_DEFAUT, depart = null }: { regles?: ReglesScenarios; depart?: Depart | null } = {}): { montant: Centimes; mois: CleMois } {
-  const courant = calendrier.moisContenant(aujourdhui).cle
-  const [ligne] = cumulDesMois(calendrier, courant, courant, { aujourdhui, regle: regles.realiste, depart })
-  return { montant: centimes(Math.max(0, ligne?.report ?? 0)), mois: courant }
+export interface SimulationObjectif {
+  /** Du mois en cours jusqu'à la date souhaitée ou la date d'atteinte (12 mois au moins, 60 au plus). */
+  mois: MoisSimulation[]
+  /** Premier mois où l'épargne simulée couvre la cible ; `null` au-delà de 10 ans. */
+  dateAtteinte: CleMois | null
+  /** Date d'atteinte − date souhaitée, en mois : positif = retard, négatif = avance ; `null` sans l'une des deux. */
+  ecart: number | null
+  /** Le mois souhaité dans la simulation ; `null` sans date souhaitée ou si elle est passée. */
+  moisSouhaite: MoisSimulation | null
+  /**
+   * Mois souhaité manqué : ce qu'il faudrait dégager de plus chaque mois (moins de dépenses, plus de revenus)
+   * pour l'atteindre quand même ; `null` s'il est tenu ou sans date souhaitée.
+   */
+  ajoutParMois: Centimes | null
 }
 
-/** Les deux scénarios d'un objectif actif ; `null` pour un objectif en pause, réalisé ou abandonné. */
-export function scenariosCumul(
-  calendrier: Calendrier,
-  donnees: DonneesObjectifs,
-  id: string,
-  aujourdhui: DateCivile,
-  cumul: Centimes,
-  regles: ReglesScenarios = REGLES_SCENARIOS_DEFAUT,
-): ScenariosCumul | null {
-  const trouve = donnees.objectifs.find((o) => o.id === id)
-  if (!trouve || trouve.statut !== 'actif') return null
-  const objectif = trouve
+const MOIS_MIN = 12
+const MOIS_MAX_AFFICHES = 60
+const HORIZON = 120
+
+export interface OptionsSimulationCumul {
+  regles?: ReglesScenarios
+  depart?: Depart | null
+}
+
+/** `null` pour un objectif en pause, réalisé, abandonné ou inconnu. */
+export function simulationCumul(calendrier: Calendrier, donnees: DonneesObjectifs, id: string, aujourdhui: DateCivile, { regles = REGLES_SCENARIOS_DEFAUT, depart = null }: OptionsSimulationCumul = {}): SimulationObjectif | null {
+  const objectif = donnees.objectifs.find((o) => o.id === id)
+  if (!objectif || objectif.statut !== 'actif') return null
   const courant = calendrier.moisContenant(aujourdhui).cle
-  const veille = ajouterJours(calendrier.mois(courant).debut, -1)
   const epargne = epargneObjectif(objectif, donnees.mouvementsEpargne)
-  // Comme l'effort mensuel de l'objectif : depuis le début du mois en cours, comparable au versement mensuel.
-  const epargneDebut = epargneObjectif(objectif, donnees.mouvementsEpargne, veille)
-  const moisRestants = objectif.dateCible ? Math.max(0, ecartMois(courant, objectif.dateCible) + 1) : null
+  const cumuls = cumulDesMois(calendrier, courant, decalerMois(courant, HORIZON - 1), { aujourdhui, regle: regles.realiste, depart }).filter((m) => m.cle >= courant)
 
-  function estimer(ajout: number): EstimationObjectif {
-    const objectifs = donnees.objectifs.map((o) => (o.id === id ? { ...o, montantInitial: centimes(o.montantInitial + ajout) } : o))
-    const date = projeter(calendrier, objectifs, donnees.mouvementsEpargne, { aujourdhui, regle: regles.realiste }, HORIZON_MAX_MOIS).dates.get(id) ?? null
-    const depart = centimes(epargne + ajout)
-    const restant = centimes(Math.max(0, objectif.montantCible - depart))
-    const aCouvrir = Math.max(0, objectif.montantCible - epargneDebut - ajout)
-    const mensuel = moisRestants === null || restant === 0 ? null : centimes(moisRestants === 0 ? restant : Math.ceil(aCouvrir / moisRestants))
-    return { depart, restant, mensuel, moisRestants, date, ecart: objectif.dateCible && date ? ecartMois(objectif.dateCible, date) : null }
+  let versements = 0
+  const tous: MoisSimulation[] = cumuls.map((m) => {
+    const ligne = calendrier.epargneDuMois(m.cle).lignes.find((l) => l.objectifId === id)
+    // Mois en cours : seul ce qui reste à verser ; le déjà versé est dans l'épargne actuelle.
+    versements += m.cle === courant ? Math.max(0, (ligne?.prevu ?? 0) - (ligne?.reel ?? 0)) : (ligne?.prevu ?? 0)
+    const cumul = m.cumul ?? centimes(0)
+    const simulee = epargne + versements + Math.max(0, cumul)
+    return {
+      cle: m.cle,
+      nature: m.cle === courant ? 'enCours' : 'prevu',
+      cumul,
+      versements: centimes(versements),
+      epargne: centimes(simulee),
+      manque: centimes(Math.max(0, objectif.montantCible - simulee)),
+      atteint: simulee >= objectif.montantCible,
+    }
+  })
+
+  const dateAtteinte = tous.find((m) => m.atteint)?.cle ?? null
+  const souhaite = objectif.dateCible && objectif.dateCible >= courant ? objectif.dateCible : null
+  const fin = [souhaite, dateAtteinte].filter((c): c is CleMois => c !== null).sort().at(-1) ?? courant
+  const nombre = Math.min(MOIS_MAX_AFFICHES, Math.max(MOIS_MIN, ecartMois(courant, fin) + 1))
+  const moisSouhaite = souhaite ? (tous.find((m) => m.cle === souhaite) ?? null) : null
+  return {
+    mois: tous.slice(0, nombre),
+    dateAtteinte,
+    ecart: objectif.dateCible && dateAtteinte ? ecartMois(objectif.dateCible, dateAtteinte) : null,
+    moisSouhaite,
+    // Chaque dirham de plus par mois s'ajoute au cumul de tous les mois suivants, jusqu'au mois souhaité inclus.
+    ajoutParMois: moisSouhaite && !moisSouhaite.atteint ? centimes(Math.ceil(moisSouhaite.manque / (ecartMois(courant, moisSouhaite.cle) + 1))) : null,
   }
-
-  return { cumul, sans: estimer(0), avec: estimer(cumul) }
 }

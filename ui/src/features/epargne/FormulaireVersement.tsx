@@ -7,20 +7,20 @@ import { Champ, ChampMontant } from '../../components/Champ'
 import { Choix, Selection } from '../../components/Selection'
 import { ErreurApi } from '../../lib/api'
 import { dateDuJour } from '../../lib/dates'
-import { lireMontant, versSaisie } from '../salaire/saisie'
+import { lireMontant } from '../salaire/saisie'
 import { useAjouterMouvement, useEpargne, useSupprimerMouvement } from './requetes'
 
 /**
  * Versement ou retrait d'épargne (R11 : jamais une dépense), vers un objectif ou en épargne libre.
  * Saisie rapide : montant d'abord, Entrée pour valider.
  */
-export function FormulaireVersement({ objectifId, montant: montantPropose, onTermine }: { objectifId?: string; montant?: number; onTermine: () => void }) {
+export function FormulaireVersement({ objectifId, onTermine }: { objectifId?: string; onTermine: () => void }) {
   const epargne = useEpargne()
   const ajouter = useAjouterMouvement()
   const supprimer = useSupprimerMouvement()
   const aujourdhui = dateDuJour()
   const [sens, setSens] = useState<'versement' | 'retrait'>('versement')
-  const [montant, setMontant] = useState(montantPropose ? versSaisie(montantPropose) : '')
+  const [montant, setMontant] = useState('')
   const [objectif, setObjectif] = useState(objectifId ?? '')
   const [compteId, setCompteId] = useState('')
   const [date, setDate] = useState(aujourdhui)

@@ -118,18 +118,16 @@ describe('objectifs', () => {
     expect(b.epargne).toEqual({ prevue: 100_000, reelle: 100_000 })
   })
 
-  it('détail : avec et sans le cumul ; le cumul choisi remplace le disponible ; l’épargne réelle ne bouge pas', async () => {
-    const { id, moto, permis } = await compte()
+  it('détail : simulation avec le cumul de fin de mois, calculée par MySalary ; l’épargne réelle ne bouge pas', async () => {
+    const { id, permis } = await compte()
     await ok(id, 'PUT', '/reglages', { depart: { mois: '2027-01', solde: 700_000 } })
     const d = await lire<ObjectifDetailDto>(id, `/objectifs/${permis}`)
-    expect(d.cumulDisponible).toEqual({ montant: 700_000, mois: '2027-01' })
-    expect(d.scenariosCumul).toMatchObject({ cumul: 700_000, sans: { depart: 0, restant: 300_000, moisRestants: 3, mensuel: 100_000 }, avec: { depart: 700_000, restant: 0, mensuel: null, date: '2027-01', ecart: -2 } })
-    const choisi = await lire<ObjectifDetailDto>(id, `/objectifs/${moto}?cumul=150000`)
-    expect(choisi.scenariosCumul).toMatchObject({ cumul: 150_000, sans: { depart: 300_000 }, avec: { depart: 450_000 } })
-    expect(choisi.objectif.epargne).toBe(300_000)
-    expect((await appeler(id, 'GET', `/objectifs/${moto}?cumul=-1`)).statusCode).toBe(400)
-    await ok(id, 'POST', `/objectifs/${moto}/statut`, { statut: 'pause' })
-    expect((await lire<ObjectifDetailDto>(id, `/objectifs/${moto}`)).scenariosCumul).toBeNull()
+    // Permis : 3 000 DH pour mars, 1 000 DH versés par mois ; le compte courant couvre déjà la cible en janvier.
+    expect(d.simulation).toMatchObject({ dateAtteinte: '2027-01', ecart: -2, moisSouhaite: { cle: '2027-03', atteint: true } })
+    expect(d.simulation!.mois[0]).toMatchObject({ cle: '2027-01', nature: 'enCours', versements: 100_000 })
+    expect(d.objectif.epargne).toBe(0)
+    await ok(id, 'POST', `/objectifs/${permis}/statut`, { statut: 'pause' })
+    expect((await lire<ObjectifDetailDto>(id, `/objectifs/${permis}`)).simulation).toBeNull()
   })
 
   it('isole les comptes', async () => {

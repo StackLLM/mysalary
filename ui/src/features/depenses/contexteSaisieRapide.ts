@@ -9,7 +9,7 @@ export interface ContexteSaisie {
   /** Ouvre la saisie : vide (à une date proposée, sinon aujourd'hui), ou pour modifier une dépense. */
   ouvrir: (depense?: DepenseDto, options?: { date?: string }) => void
   /** Ouvre la saisie d'un versement d'épargne (lot 10), éventuellement vers un objectif. */
-  ouvrirVersement: (options?: { objectifId?: string; montant?: number }) => void
+  ouvrirVersement: (options?: { objectifId?: string }) => void
 }
 
 export const ContexteSaisieRapide = createContext<ContexteSaisie | null>(null)

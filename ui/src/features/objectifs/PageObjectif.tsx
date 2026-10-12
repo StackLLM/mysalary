@@ -1,16 +1,17 @@
-import { formaterDate, formaterMois, formaterMontant, type ObjectifDetailDto } from '@mysalary/partage'
+import { formaterDate, formaterMois, formaterMontant, type MoisSimulation, type ObjectifDetailDto, type SimulationObjectif, type SuiviObjectif } from '@mysalary/partage'
 import { motion } from 'framer-motion'
-import { useState, type FormEvent } from 'react'
+import { AlertCircle, Check, CheckCircle2, Info } from 'lucide-react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { BadgeNature, BadgeRisque } from '../../components/Badges'
+import { BadgeNature } from '../../components/Badges'
 import { BarreProgression } from '../../components/BarreProgression'
 import { Bouton, styleBouton } from '../../components/Bouton'
 import { Carte, Separateur, TitreSection } from '../../components/Carte'
 import { CarteBandeau } from '../../components/CarteBandeau'
 import { Champ } from '../../components/Champ'
 import { Confirmation } from '../../components/Confirmation'
-import { BlocTotaux, Identite } from '../../components/Elements'
+import { Identite } from '../../components/Elements'
 import { FilAriane } from '../../components/FilAriane'
 import { GraphiqueTrajectoire } from '../../components/graphiques/GraphiqueTrajectoire'
 import { Montant } from '../../components/Montant'
@@ -18,20 +19,24 @@ import { Panneau } from '../../components/Panneau'
 import { Selection } from '../../components/Selection'
 import { ErreurApi } from '../../lib/api'
 import { conteneurCascade, elementApparition } from '../../lib/animations'
+import { cn } from '../../lib/cn'
 import { dateDuJour } from '../../lib/dates'
 import { useSaisieRapide } from '../depenses/SaisieRapide'
 import { LIBELLES_MOUVEMENT } from '../epargne/saisie'
 import { useObjectif, useRealiserObjectif, useStatutObjectif, useSupprimerObjectif } from '../epargne/requetes'
-import { PlanCumul } from './PlanCumul'
-import { phraseObjectif, pointsTrajectoire, propositions, RISQUES_PHRASES, SCENARIOS_LIBELLES, texteEstimation, texteRegle, TYPES } from './saisie'
+import { moisAbrege, pointsSimulation, texteEcart, TYPES, verdictObjectif } from './saisie'
 
 const GRILLE = 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_352px] xl:gap-12'
+const TONS_VERDICT = {
+  positif: { boite: 'bg-positif-fond ring-positif/15', texte: 'text-positif', Icone: CheckCircle2 },
+  alerte: { boite: 'bg-alerte-fond ring-alerte/15', texte: 'text-alerte', Icone: AlertCircle },
+  neutre: { boite: 'bg-teinte ring-filet', texte: 'text-encre', Icone: Info },
+} as const
 
-/** Objectif (UX.md § 5.8) : savoir quand et comment l'atteindre. */
+/** Objectif (UX.md § 5.8) : est-il atteint au mois souhaité, combien reste-t-il, et la simulation avec le cumul. */
 export function PageObjectif() {
   const { id } = useParams()
-  const [cumul, setCumul] = useState<number>()
-  const detail = useObjectif(id, cumul)
+  const detail = useObjectif(id)
   return (
     <motion.div variants={conteneurCascade} initial="cache" animate="visible">
       <motion.div variants={elementApparition}>
@@ -52,24 +57,22 @@ export function PageObjectif() {
           <div className="h-64 animate-pulse rounded-carte bg-white shadow-carte" />
         </div>
       ) : (
-        <Detail detail={detail.data} onCumul={setCumul} calcul={detail.isPlaceholderData || detail.isFetching} />
+        <Detail detail={detail.data} />
       )}
     </motion.div>
   )
 }
 
-function Detail({ detail, onCumul, calcul }: { detail: ObjectifDetailDto; onCumul: (centimes: number | undefined) => void; calcul: boolean }) {
-  const { objectif: o, aujourdhui } = detail
+function Detail({ detail }: { detail: ObjectifDetailDto }) {
+  const { objectif: o, simulation, aujourdhui } = detail
   const navigate = useNavigate()
   const { ouvrirVersement } = useSaisieRapide()
   const statut = useStatutObjectif()
   const supprimer = useSupprimerObjectif()
   const [demande, setDemande] = useState<'realiser' | 'abandonner' | 'supprimer' | null>(null)
-  const { libelle: nomType } = TYPES[o.type]
   const actif = o.statut === 'actif'
   const ouvert = o.statut === 'actif' || o.statut === 'pause'
-  const trajectoire = pointsTrajectoire(detail.trajectoire)
-  const leviers = propositions(o)
+  const pourcent = Math.round(o.progression * 100)
 
   const changer = (nouveau: 'actif' | 'pause' | 'abandonne', message: string) =>
     statut.mutate(
@@ -88,14 +91,8 @@ function Detail({ detail, onCumul, calcul }: { detail: ObjectifDetailDto; onCumu
       <motion.div variants={elementApparition} className="min-w-0">
         <Carte espacement="large">
           <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-            <Identite initiale={o.libelle.charAt(0).toUpperCase()} nom={o.libelle} detail={`${nomType} · priorité ${o.priorite}`} />
-            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-              {o.statut === 'pause' && <span className="rounded-pilule bg-teinte px-2.5 py-1 text-mention text-gris">En pause</span>}
-              {o.statut === 'realise' && <span className="rounded-pilule bg-positif-fond px-2.5 py-1 text-mention text-positif">Réalisé le {formaterDate(o.realiseLe!)}</span>}
-              {o.statut === 'abandonne' && <span className="rounded-pilule bg-teinte px-2.5 py-1 text-mention text-gris">Abandonné</span>}
-              {ouvert && o.atteint && <span className="rounded-pilule bg-positif-fond px-2.5 py-1 text-mention text-positif">Cible atteinte</span>}
-              {o.risque && !o.atteint && <BadgeRisque risque={o.risque} />}
-            </div>
+            <Identite initiale={o.libelle.charAt(0).toUpperCase()} nom={o.libelle} detail={`${TYPES[o.type].libelle} · priorité ${o.priorite}`} />
+            <EtatObjectif o={o} />
           </div>
 
           <CarteBandeau
@@ -103,106 +100,46 @@ function Detail({ detail, onCumul, calcul }: { detail: ObjectifDetailDto; onCumu
             gauche={{
               titre: 'Épargné',
               lignes: [
-                { valeur: <Montant valeur={o.epargne} /> },
+                { valeur: <Montant valeur={o.epargne} className="text-[28px] font-bold leading-9 tracking-tight" /> },
                 { libelle: 'Cible', valeur: <Montant valeur={o.montantCible} /> },
-                { libelle: 'Restant', valeur: <Montant valeur={o.restant} /> },
+                { libelle: 'Progression', valeur: `${pourcent} %` },
               ],
             }}
             droite={{
-              titre: 'Date estimée (projection)',
-              lignes: o.estimations
-                ? [
-                    { valeur: texteEstimation(o.estimations.realiste) },
-                    { libelle: 'Prudent', valeur: texteEstimation(o.estimations.prudent) },
-                    { libelle: 'Ambitieux', valeur: texteEstimation(o.estimations.ambitieux) },
-                  ]
-                : [{ valeur: o.statut === 'pause' ? 'En pause' : '—' }, { libelle: 'Souhaitée', valeur: o.dateCible ? formaterMois(o.dateCible) : 'sans date' }],
+              titre: 'Mois souhaité',
+              lignes: [
+                { valeur: <span className="text-[28px] font-bold leading-9 tracking-tight">{o.dateCible ? formaterMois(o.dateCible, { majuscule: true }) : 'Aucun'}</span> },
+                ...(simulation
+                  ? [
+                      { libelle: 'Atteint', valeur: o.atteint ? 'déjà' : simulation.dateAtteinte ? formaterMois(simulation.dateAtteinte) : 'au-delà de 10 ans' },
+                      ...(o.dateCible ? [{ libelle: 'Écart', valeur: texteEcart(o.atteint ? 0 : simulation.ecart).texte }] : []),
+                    ]
+                  : [{ libelle: 'Statut', valeur: o.statut === 'pause' ? 'en pause' : o.statut === 'realise' ? 'réalisé' : 'abandonné' }]),
+              ],
             }}
           />
 
-          <div className="mt-5">
-            <BarreProgression valeur={o.progression} libelle={`${Math.round(o.progression * 100)} % de la cible`} />
-            <p className="mt-2 text-texte-sm text-gris">
-              {Math.round(o.progression * 100)} % · {phraseObjectif(o)}
-            </p>
+          <BarreProgression className="mt-6" valeur={o.progression} libelle={`${pourcent} % de la cible épargnés`} />
+
+          {simulation && <Verdict o={o} simulation={simulation} />}
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <Tuile libelle="Reste à épargner" valeur={<Montant valeur={o.restant} />} detail={o.atteint ? 'Cible couverte' : `sur ${formaterMontant(o.montantCible)}`} />
+            <Tuile
+              libelle="Effort mensuel"
+              valeur={o.effortMensuel !== null ? <Montant valeur={o.effortMensuel} /> : '—'}
+              detail={o.effortMensuel !== null ? `pendant ${o.moisRestants} mois, jusqu’à ${formaterMois(o.dateCible!)}` : o.atteint ? 'Rien à mettre de côté' : 'Sans mois souhaité'}
+              fort
+            />
+            <Tuile libelle="Versement choisi" valeur={o.versementMensuel ? <Montant valeur={o.versementMensuel} /> : 'Aucun'} detail="par mois, dans ton plan" />
           </div>
 
-          {o.atteint && ouvert && (
-            <div className="mt-5 rounded-champ bg-positif-fond px-4 py-3 text-texte-sm text-positif">
-              <p className="font-semibold">Bravo, la cible est atteinte.</p>
-              <p className="mt-1 text-encre-2">Quand tu achètes, marque-le comme réalisé : l’épargne sert à l’achat, sans le compter comme une dépense.</p>
-            </div>
+          {simulation && (
+            <>
+              <Separateur className="my-8" />
+              <Simulation detail={detail} simulation={simulation} />
+            </>
           )}
-          {leviers.length > 0 && ouvert && (
-            <div className="mt-5 rounded-champ bg-teinte px-4 py-3 text-texte-sm text-encre-2">
-              <p className="font-semibold">Pour tenir {formaterMois(o.dateCible!)}, deux leviers :</p>
-              <ul className="mt-1 list-disc pl-4">
-                {leviers.map((l) => (
-                  <li key={l}>{l}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {detail.scenariosCumul && <PlanCumul detail={detail} onCumul={onCumul} calcul={calcul} onVerser={(montant) => ouvrirVersement({ objectifId: o.id, montant })} />}
-
-          <section className="mt-8">
-            <TitreSection
-              titre="Trajectoire"
-              sousTitre={
-                <>
-                  Le réel en plein, la projection <span className="font-semibold text-encre-2">réaliste</span> hachurée, la cible en pointillé.
-                </>
-              }
-              action={<BadgeNature nature="projete" />}
-            />
-            <div className="mt-5">
-              <GraphiqueTrajectoire points={trajectoire.points} cible={o.montantCible} aujourdhui={trajectoire.aujourdhui} libelle={`Trajectoire de ${o.libelle} : épargné réel et projeté`} />
-            </div>
-          </section>
-
-          <Separateur className="my-7" />
-
-          <div className="grid gap-8 md:grid-cols-2 md:gap-12">
-            <div className="min-w-0">
-              <h3 className="mb-4 text-titre text-encre">Versements</h3>
-              <div className="flex flex-col gap-3 rounded-bouton bg-interne p-5 shadow-bouton">
-                {detail.versements.length === 0 ? (
-                  <p className="text-texte-sm text-gris">Aucun versement noté. {o.montantInitial > 0 && `Déjà mis de côté à la création : ${formaterMontant(o.montantInitial)}.`}</p>
-                ) : (
-                  <ul className="flex flex-col gap-3" aria-label="Versements">
-                    {detail.versements.map((v) => (
-                      <li key={v.id} className="flex items-baseline justify-between gap-3 text-texte">
-                        <span className="min-w-0">
-                          <span className="block truncate font-medium text-encre">{LIBELLES_MOUVEMENT[v.type]}</span>
-                          <span className="block text-texte-sm text-gris">
-                            {formaterDate(v.date)} · {v.compte}
-                          </span>
-                        </span>
-                        <span className="shrink-0 font-semibold text-encre">
-                          {v.montant > 0 ? '+' : ''}
-                          <Montant valeur={v.montant} />
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-            <BlocTotaux
-              lignes={[
-                { libelle: 'Versement mensuel choisi', valeur: o.versementMensuel ? <Montant valeur={o.versementMensuel} /> : 'aucun', fort: true },
-                ...(o.effortMensuel !== null
-                  ? [
-                      { libelle: `Nécessaire par mois (${o.moisRestants} mois)`, valeur: <Montant valeur={o.effortMensuel} /> },
-                      { libelle: 'Nécessaire par semaine', valeur: <Montant valeur={o.effortHebdo ?? 0} /> },
-                    ]
-                  : []),
-                ...(o.versementPrevuCeMois !== null ? [{ libelle: 'Prévu ce mois (projection)', valeur: <Montant valeur={o.versementPrevuCeMois} /> }] : []),
-              ]}
-              total={{ libelle: 'Restant', valeur: <Montant valeur={o.restant} /> }}
-            />
-          </div>
         </Carte>
       </motion.div>
 
@@ -218,11 +155,6 @@ function Detail({ detail, onCumul, calcul }: { detail: ObjectifDetailDto; onCumu
               <Bouton variante="blanc" className="w-full" onClick={() => setDemande('realiser')}>
                 Marquer comme réalisé
               </Bouton>
-            )}
-            {actif && (
-              <Link to={`/simulateur?objectif=${o.id}`} className={styleBouton({ variante: 'blanc', className: 'w-full' })}>
-                Simuler
-              </Link>
             )}
             {o.statut !== 'realise' && (
               <Link to={`/objectifs/${o.id}/modifier`} className={styleBouton({ variante: 'blanc', className: 'w-full' })}>
@@ -254,21 +186,28 @@ function Detail({ detail, onCumul, calcul }: { detail: ObjectifDetailDto; onCumu
             </button>
           </div>
         </Carte>
-        {o.risque && (
-          <Carte titre="Risque de retard">
-            <BadgeRisque risque={o.risque} />
-            <p className="mt-3 text-texte-sm text-gris">{RISQUES_PHRASES[o.risque]}</p>
-          </Carte>
-        )}
-        <Carte titre="Sur quoi repose ce calcul ?">
-          <ul className="flex list-disc flex-col gap-2 pl-4 text-texte-sm text-gris">
-            {(['prudent', 'realiste', 'ambitieux'] as const).map((s) => (
-              <li key={s}>
-                {SCENARIOS_LIBELLES[s]} : {texteRegle(detail.regles[s])} Capacité ce mois : {formaterMontant(detail.capacite[s])}.
-              </li>
-            ))}
-            <li>Le versement choisi passe d’abord, puis ce qui reste va aux objectifs par priorité.</li>
-          </ul>
+
+        <Carte titre="Versements">
+          {detail.versements.length === 0 ? (
+            <p className="text-texte-sm text-gris">Aucun versement.{o.montantInitial > 0 && ` Épargne de départ : ${formaterMontant(o.montantInitial)}.`}</p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-filet" aria-label="Versements">
+              {detail.versements.map((v) => (
+                <li key={v.id} className="flex items-baseline justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                  <span className="min-w-0">
+                    <span className="block truncate text-texte font-medium text-encre">{LIBELLES_MOUVEMENT[v.type]}</span>
+                    <span className="block text-texte-sm text-gris">
+                      {formaterDate(v.date)} · {v.compte}
+                    </span>
+                  </span>
+                  <span className={cn('shrink-0 font-semibold tabular-nums', v.montant > 0 ? 'text-positif' : 'text-encre')}>
+                    {v.montant > 0 ? '+' : ''}
+                    <Montant valeur={v.montant} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Carte>
       </motion.div>
 
@@ -300,6 +239,176 @@ function Detail({ detail, onCumul, calcul }: { detail: ObjectifDetailDto; onCumu
           })
         }
       />
+    </div>
+  )
+}
+
+function EtatObjectif({ o }: { o: SuiviObjectif }) {
+  const pastille = (texte: string, positif = false) => <span className={cn('self-start rounded-pilule px-3 py-1 text-mention font-medium sm:self-auto', positif ? 'bg-positif-fond text-positif' : 'bg-teinte text-gris')}>{texte}</span>
+  if (o.statut === 'realise') return pastille(`Réalisé le ${formaterDate(o.realiseLe!)}`, true)
+  if (o.statut === 'abandonne') return pastille('Abandonné')
+  if (o.statut === 'pause') return pastille('En pause')
+  if (o.atteint) return pastille('Cible atteinte', true)
+  return pastille('En cours')
+}
+
+/** La réponse en une phrase, et les options si le mois souhaité n'est pas tenu. */
+function Verdict({ o, simulation }: { o: SuiviObjectif; simulation: SimulationObjectif }) {
+  const v = verdictObjectif(o, simulation)
+  const { boite, texte, Icone } = TONS_VERDICT[v.ton]
+  const options = !o.atteint && simulation.moisSouhaite && !simulation.moisSouhaite.atteint
+  return (
+    <div role="status" aria-label="Verdict" className={cn('mt-6 rounded-bouton p-5 ring-1', boite)}>
+      <div className="flex items-start gap-3">
+        <Icone className={cn('mt-0.5 h-5 w-5 shrink-0', texte)} aria-hidden />
+        <div className="min-w-0">
+          <p className={cn('text-titre-carte font-semibold', texte)}>{v.titre}</p>
+          <p className="mt-1 text-texte-sm text-encre-2">{v.detail}</p>
+        </div>
+      </div>
+      {options && (
+        <ul className="mt-4 grid gap-2 sm:grid-cols-2" aria-label="Options">
+          {simulation.ajoutParMois !== null && (
+            <li className="rounded-champ bg-white/80 px-4 py-3 text-texte-sm text-encre-2 shadow-bouton">
+              <span className="block text-mention text-gris">Pour tenir {formaterMois(o.dateCible!)}</span>
+              Dégager <Montant valeur={simulation.ajoutParMois} className="font-semibold text-encre" /> de plus par mois
+            </li>
+          )}
+          {simulation.dateAtteinte && (
+            <li className="rounded-champ bg-white/80 px-4 py-3 text-texte-sm text-encre-2 shadow-bouton">
+              <span className="block text-mention text-gris">Ou garder ton rythme</span>
+              Viser <span className="font-semibold text-encre">{formaterMois(simulation.dateAtteinte)}</span>
+            </li>
+          )}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function Tuile({ libelle, valeur, detail, fort = false }: { libelle: string; valeur: ReactNode; detail: string; fort?: boolean }) {
+  return (
+    <div className={cn('rounded-bouton p-4 shadow-bouton', fort ? 'bg-sauge-50 ring-1 ring-sauge-200' : 'bg-interne')}>
+      <span className="block text-mention text-gris">{libelle}</span>
+      <span className="mt-1 block text-titre font-semibold tabular-nums text-encre">{valeur}</span>
+      <span className="mt-0.5 block text-mention text-gris">{detail}</span>
+    </div>
+  )
+}
+
+/** Simulation : on choisit un mois, son cumul de fin de mois (calculé par MySalary) rejoint l'objectif. */
+function Simulation({ detail, simulation }: { detail: ObjectifDetailDto; simulation: SimulationObjectif }) {
+  const o = detail.objectif
+  const parDefaut = simulation.moisSouhaite?.cle ?? (simulation.mois.some((m) => m.cle === simulation.dateAtteinte) ? simulation.dateAtteinte! : simulation.mois[0]!.cle)
+  const [choisi, setChoisi] = useState(parDefaut)
+  const m = simulation.mois.find((x) => x.cle === choisi) ?? simulation.mois[0]!
+  const trajectoire = pointsSimulation(detail.trajectoire, simulation.mois)
+  const bande = useRef<HTMLDivElement>(null)
+  // Le mois choisi d'office (souvent loin) est amené au centre de la bande, sans faire défiler la page.
+  useEffect(() => {
+    const conteneur = bande.current
+    const puce = conteneur?.querySelector<HTMLElement>('[aria-checked="true"]')
+    if (conteneur && puce) conteneur.scrollLeft = puce.offsetLeft - conteneur.clientWidth / 2 + puce.clientWidth / 2
+  }, [])
+
+  return (
+    <section aria-label="Simulation avec le cumul">
+      <TitreSection titre="Simuler avec ton cumul" sousTitre="Choisis un mois : son cumul de fin de mois rejoint l’objectif." action={<BadgeNature nature="projete" />} />
+
+      <div ref={bande} role="radiogroup" aria-label="Mois du cumul" className="relative -mx-1 mt-5 flex gap-2 overflow-x-auto px-1 pb-3 pt-1">
+        {simulation.mois.map((x) => {
+          const actif = x.cle === m.cle
+          const souhaite = x.cle === o.dateCible
+          return (
+            <button
+              key={x.cle}
+              type="button"
+              role="radio"
+              aria-checked={actif}
+              aria-label={`${formaterMois(x.cle)}${souhaite ? ', mois souhaité' : ''}${x.atteint ? ', cible atteinte' : ''}`}
+              onClick={() => setChoisi(x.cle)}
+              className={cn(
+                'flex min-w-[64px] shrink-0 flex-col items-center rounded-bouton px-3 py-2 text-center shadow-bouton transition-all duration-200',
+                actif ? 'bg-lien text-white shadow-carte' : 'bg-white text-encre hover:-translate-y-0.5 hover:shadow-carte',
+                souhaite && !actif && 'ring-1 ring-primaire',
+              )}
+            >
+              <span className="text-texte-sm font-semibold">{moisAbrege(x.cle)}</span>
+              <span className={cn('inline-flex items-center gap-0.5 text-mention', actif ? 'text-white/75' : x.atteint ? 'text-positif' : 'text-gris')}>
+                {x.atteint && <Check className="h-3 w-3" aria-hidden />}
+                {x.cle.slice(0, 4)}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <p className="flex flex-wrap gap-x-4 gap-y-1 text-mention text-gris">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-3 w-3 rounded-[4px] ring-1 ring-primaire" aria-hidden /> Mois souhaité
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Check className="h-3.5 w-3.5 text-positif" aria-hidden /> Cible atteinte
+        </span>
+      </p>
+
+      <ResultatMois m={m} o={o} />
+
+      <div className="mt-7">
+        <GraphiqueTrajectoire points={trajectoire.points} cible={o.montantCible} aujourdhui={trajectoire.aujourdhui} libelle={`Épargne de ${o.libelle} : réelle, puis simulée avec le cumul`} />
+        <p className="mt-2 text-mention text-gris">
+          Réel en plein, simulé hachuré. Cumul de fin de mois = revenus − charges − épargne prévue, mois après mois (scénario réaliste). Il suppose que tout ce cumul va à cet objectif.
+        </p>
+      </div>
+    </section>
+  )
+}
+
+function ResultatMois({ m, o }: { m: MoisSimulation; o: SuiviObjectif }) {
+  const ajout = m.epargne - o.epargne
+  const ligne = (libelle: ReactNode, valeur: ReactNode, signe = '') => (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="text-gris">{libelle}</dt>
+      <dd className="font-medium tabular-nums text-encre">
+        {signe}
+        {valeur}
+      </dd>
+    </div>
+  )
+  return (
+    <div className="mt-5 grid gap-5 rounded-bouton bg-interne p-5 shadow-bouton md:grid-cols-2 md:gap-8 md:p-6" aria-live="polite" aria-label={`Résultat pour ${formaterMois(m.cle)}`}>
+      <div className="min-w-0">
+        <span className="block text-mention text-gris">Épargne simulée fin {formaterMois(m.cle)}</span>
+        <Montant valeur={m.epargne} className="mt-1 block text-[30px] font-bold leading-9 tracking-tight text-encre" />
+        <BarreProgression
+          className="mt-4"
+          valeur={o.montantCible > 0 ? o.epargne / o.montantCible : 1}
+          projection={o.montantCible > 0 ? ajout / o.montantCible : 0}
+          libelle={`${Math.min(100, Math.round((m.epargne / Math.max(1, o.montantCible)) * 100))} % de la cible`}
+        />
+        <p className={cn('mt-3 inline-flex items-center gap-1.5 rounded-pilule px-3 py-1 text-texte-sm font-semibold', m.atteint ? 'bg-positif-fond text-positif' : 'bg-alerte-fond text-alerte')}>
+          {m.atteint ? <CheckCircle2 className="h-4 w-4" aria-hidden /> : <AlertCircle className="h-4 w-4" aria-hidden />}
+          {m.atteint ? 'Cible atteinte' : <>Il manque <Montant valeur={m.manque} /></>}
+        </p>
+      </div>
+      <dl className="flex flex-col gap-2.5 text-texte-sm md:border-l md:border-filet md:pl-8">
+        {ligne('Épargne actuelle', <Montant valeur={o.epargne} />)}
+        {m.versements > 0 && ligne('Versements prévus', <Montant valeur={m.versements} />, '+ ')}
+        {ligne(
+          <>
+            Cumul fin {moisAbrege(m.cle)} <span className="text-mention">({m.nature === 'enCours' ? 'estimation' : 'prévu'})</span>
+          </>,
+          m.cumul < 0 ? '0 DH' : <Montant valeur={m.cumul} />,
+          '+ ',
+        )}
+        {m.cumul < 0 && <p className="text-mention text-alerte">Cumul négatif ({formaterMontant(m.cumul)}) : rien à ajouter.</p>}
+        <div className="mt-1 flex items-baseline justify-between gap-3 border-t border-filet pt-3">
+          <dt className="font-semibold text-encre">Épargne simulée</dt>
+          <dd className="font-semibold tabular-nums text-encre">
+            <Montant valeur={m.epargne} />
+          </dd>
+        </div>
+        {ligne('Cible', <Montant valeur={o.montantCible} />)}
+      </dl>
     </div>
   )
 }

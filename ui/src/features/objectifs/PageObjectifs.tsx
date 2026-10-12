@@ -324,14 +324,15 @@ function CarteObjectif({
   const { Icone } = TYPES[o.type]
   const estimation = o.estimations?.realiste
   return (
-    <li className="rounded-bouton border border-filet bg-white p-4 sm:p-5">
+    <li className="group relative rounded-bouton border border-filet bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-filet-fort hover:shadow-carte has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-sauge sm:p-5">
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sauge-100 text-sauge-700" aria-hidden>
           <Icone className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <Link to={`/objectifs/${o.id}`} className="truncate text-texte font-semibold text-encre hover:text-lien">
+            {/* Toute la carte ouvre l'objectif (lien étiré) ; les boutons de priorité et le menu restent au-dessus. */}
+            <Link to={`/objectifs/${o.id}`} className="truncate text-texte font-semibold text-encre after:absolute after:inset-0 after:rounded-bouton group-hover:text-lien focus-visible:outline-none">
               {o.libelle}
             </Link>
             {o.statut === 'pause' && <span className="rounded-pilule bg-teinte px-2 py-0.5 text-mention text-gris">En pause</span>}
@@ -342,7 +343,7 @@ function CarteObjectif({
             <Montant valeur={o.epargne} className="font-semibold text-encre" /> sur <Montant valeur={o.montantCible} />
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-0.5">
+        <div className="relative z-10 flex shrink-0 items-center gap-0.5">
           <button type="button" onClick={onMonter} disabled={premier} aria-label={`Monter ${o.libelle} en priorité`} className="rounded-pilule p-1 text-gris-icone hover:text-encre disabled:opacity-30">
             <ChevronUp className="h-5 w-5" />
           </button>

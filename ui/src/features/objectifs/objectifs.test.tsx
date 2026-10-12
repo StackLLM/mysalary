@@ -81,11 +81,17 @@ const detail = (modif: Record<string, unknown> = {}) =>
     capacite: { prudent: 160_000, realiste: 160_000, ambitieux: 160_000 },
     comptes: [{ id: 'cih', libelle: 'CIH' }],
     regles: REGLES_SCENARIOS_DEFAUT,
-    cumulDisponible: { montant: 300_000, mois: '2026-10' },
-    scenariosCumul: {
-      cumul: 300_000,
-      sans: { depart: 1_200_000, restant: 7_400_000, mensuel: 740_000, moisRestants: 10, date: '2027-11', ecart: 4 },
-      avec: { depart: 1_500_000, restant: 7_100_000, mensuel: 710_000, moisRestants: 10, date: '2027-09', ecart: 2 },
+    // Juillet 2027 souhaité : 8 000 DH manquent ; atteint en novembre 2027.
+    simulation: {
+      mois: [
+        { cle: '2026-10', nature: 'enCours', cumul: 300_000, versements: 0, epargne: 1_500_000, manque: 7_000_000, atteint: false },
+        { cle: '2027-07', nature: 'prevu', cumul: 6_500_000, versements: 0, epargne: 7_700_000, manque: 800_000, atteint: false },
+        { cle: '2027-11', nature: 'prevu', cumul: 7_400_000, versements: 0, epargne: 8_600_000, manque: 0, atteint: true },
+      ],
+      dateAtteinte: '2027-11',
+      ecart: 4,
+      moisSouhaite: { cle: '2027-07', nature: 'prevu', cumul: 6_500_000, versements: 0, epargne: 7_700_000, manque: 800_000, atteint: false },
+      ajoutParMois: 80_000,
     },
   }) as unknown as ObjectifDetailDto
 let detailCourant = detail()
@@ -96,8 +102,6 @@ function serveur() {
     if (chemin === '/utilisateurs') return [compte]
     if (chemin === '/objectifs') return objectifs
     if (chemin === '/objectifs/moto') return detailCourant
-    if (chemin === '/objectifs/moto?cumul=0')
-      return { ...detailCourant, scenariosCumul: { ...detailCourant.scenariosCumul!, cumul: 0, avec: detailCourant.scenariosCumul!.sans } }
     if (chemin === '/epargne') return epargne
     throw new Error(`Route non simulée : ${chemin}`)
   })
@@ -199,47 +203,53 @@ describe('Nouvel objectif', () => {
 })
 
 describe('Objectif (détail)', () => {
-  it('dates par scénario, leviers, versements, puis achat réalisé sans dépense', async () => {
+  it('verdict en tête : mois souhaité manqué, ce qui manque, date réelle, options ; reste et effort mensuel', async () => {
     rendre(<FournisseurSaisieRapide><PageObjectif /></FournisseurSaisieRapide>, { route: '/objectifs/moto', chemin: '/objectifs/:id', compte: 'u1' })
-    expect(await screen.findByText('Pour tenir juillet 2027, deux leviers :')).toBeInTheDocument()
-    expect(screen.getAllByText('novembre 2027').length).toBeGreaterThan(0)
+    const verdict = await screen.findByRole('status', { name: 'Verdict' })
+    expect(within(verdict).getByText('Juillet 2027 ne suffit pas')).toBeInTheDocument()
+    expect(espaces(verdict.textContent)).toContain('Il manquera 8 000 DH. Date estimée : novembre 2027, 4 mois de retard.')
+    const options = within(verdict).getByRole('list', { name: 'Options' })
+    expect(espaces(options.textContent)).toMatch(/Dégager 800 ?DH.*de plus par mois/)
+    expect(espaces(options.textContent)).toContain('Viser novembre 2027')
+    expect(espaces(screen.getByText('Reste à épargner').parentElement!.textContent)).toMatch(/73 000 ?DH/)
+    expect(espaces(screen.getByText('Effort mensuel').parentElement!.textContent)).toMatch(/7 500 ?DH/)
+    expect(espaces(screen.getByText('Effort mensuel').parentElement!.textContent)).toContain('pendant 10 mois, jusqu’à juillet 2027')
+    // Plus de scénarios ni de risque en double : une seule estimation, celle du cumul.
+    expect(screen.queryByText('Prudent')).not.toBeInTheDocument()
+    expect(screen.queryByText('Sur quoi repose ce calcul ?')).not.toBeInTheDocument()
     expect(within(screen.getByRole('list', { name: 'Versements' })).getByText('Versement')).toBeInTheDocument()
+  })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Marquer comme réalisé' }))
+  it('simulation : le mois souhaité est choisi d’office ; choisir un mois montre son cumul, sans aucun champ à saisir', async () => {
+    rendre(<FournisseurSaisieRapide><PageObjectif /></FournisseurSaisieRapide>, { route: '/objectifs/moto', chemin: '/objectifs/:id', compte: 'u1' })
+    const bloc = await screen.findByRole('region', { name: 'Simulation avec le cumul' })
+    expect(within(bloc).queryByRole('textbox')).not.toBeInTheDocument()
+    const choisi = within(bloc).getByRole('radio', { checked: true })
+    expect(choisi).toHaveAccessibleName('juillet 2027, mois souhaité')
+    const resultat = within(bloc).getByLabelText('Résultat pour juillet 2027')
+    expect(espaces(resultat.textContent)).toMatch(/Il manque 8 000 ?DH/)
+    expect(espaces(resultat.textContent)).toMatch(/\+ 65 000 ?DH/)
+
+    fireEvent.click(within(bloc).getByRole('radio', { name: 'novembre 2027, cible atteinte' }))
+    const novembre = within(bloc).getByLabelText('Résultat pour novembre 2027')
+    expect(espaces(novembre.textContent)).toContain('Cible atteinte')
+    expect(espaces(novembre.textContent)).toMatch(/86 000 ?DH/)
+  })
+
+  it('achat réalisé sans dépense', async () => {
+    rendre(<FournisseurSaisieRapide><PageObjectif /></FournisseurSaisieRapide>, { route: '/objectifs/moto', chemin: '/objectifs/:id', compte: 'u1' })
+    fireEvent.click(await screen.findByRole('button', { name: 'Marquer comme réalisé' }))
     const panneau = await screen.findByRole('dialog')
     fireEvent.click(within(panneau).getByRole('button', { name: 'Marquer comme réalisé' }))
     await waitFor(() => expect(api.creer).toHaveBeenCalledWith('/objectifs/moto/realiser', { date: '2026-10-09', compteId: 'cih' }))
   })
 
-  it('avec et sans le cumul : par mois, date estimée, écart ; un autre cumul recalcule ; verser le cumul le propose au versement', async () => {
+  it('cible atteinte : verdict positif, plus rien à mettre de côté', async () => {
+    detailCourant = detail({ atteint: true, restant: 0, progression: 1, risque: 'sur', effortMensuel: null })
     rendre(<FournisseurSaisieRapide><PageObjectif /></FournisseurSaisieRapide>, { route: '/objectifs/moto', chemin: '/objectifs/:id', compte: 'u1' })
-    const bloc = await screen.findByRole('region', { name: 'Avec ou sans le cumul' })
-    const sans = within(bloc).getByRole('group', { name: 'Sans cumul' })
-    const avec = within(bloc).getByRole('group', { name: 'Avec cumul' })
-    expect(espaces(sans.textContent)).toContain('Par mois pour juillet 2027')
-    expect(espaces(sans.textContent)).toContain('7 400 DH')
-    expect(espaces(sans.textContent)).toContain('novembre 2027')
-    expect(within(sans).getByText('4 mois de retard')).toHaveClass('text-alerte')
-    expect(espaces(avec.textContent)).toContain('7 100 DH')
-    expect(within(avec).getByText('2 mois de retard')).toBeInTheDocument()
-
-    const champ = within(bloc).getByLabelText('Cumul ajouté')
-    expect(champ).toHaveValue('3000')
-    fireEvent.change(champ, { target: { value: '0' } })
-    fireEvent.blur(champ)
-    await waitFor(() => expect(api.lire).toHaveBeenCalledWith('/objectifs/moto?cumul=0'))
-    await waitFor(() => expect(within(bloc).getAllByText('4 mois de retard')).toHaveLength(2))
-
-    fireEvent.change(champ, { target: { value: '3000' } })
-    fireEvent.blur(champ)
-    fireEvent.click(await within(bloc).findByRole('button', { name: 'Verser ce cumul' }))
-    expect(await screen.findByLabelText('Montant')).toHaveValue('3000')
-  })
-
-  it('cible atteinte : bravo et achat proposé', async () => {
-    detailCourant = detail({ atteint: true, restant: 0, progression: 1, risque: 'sur' })
-    rendre(<FournisseurSaisieRapide><PageObjectif /></FournisseurSaisieRapide>, { route: '/objectifs/moto', chemin: '/objectifs/:id', compte: 'u1' })
-    expect(await screen.findByText('Bravo, la cible est atteinte.')).toBeInTheDocument()
+    const verdict = await screen.findByRole('status', { name: 'Verdict' })
+    expect(within(verdict).getByText('Cible atteinte')).toBeInTheDocument()
+    expect(screen.getByText('Rien à mettre de côté')).toBeInTheDocument()
   })
 })
 

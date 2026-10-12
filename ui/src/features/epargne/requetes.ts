@@ -35,16 +35,9 @@ export function useObjectifs() {
   return useQuery({ queryKey: [...objectifs, 'liste'], queryFn: () => api.lire<ObjectifsDto>('/objectifs'), enabled: actif })
 }
 
-/** `cumul` : montant ajouté dans le scénario « avec cumul » (centimes) ; absent = le cumul disponible. */
-export function useObjectif(id: string | undefined, cumul?: number) {
+export function useObjectif(id: string | undefined) {
   const { objectifs, actif } = useCles()
-  return useQuery({
-    queryKey: [...objectifs, 'detail', id, cumul ?? null],
-    queryFn: () => api.lire<ObjectifDetailDto>(`/objectifs/${id}${cumul === undefined ? '' : `?cumul=${cumul}`}`),
-    enabled: actif && Boolean(id),
-    // Changer le cumul garde la page affichée pendant le nouveau calcul.
-    placeholderData: keepPreviousData,
-  })
+  return useQuery({ queryKey: [...objectifs, 'detail', id], queryFn: () => api.lire<ObjectifDetailDto>(`/objectifs/${id}`), enabled: actif && Boolean(id) })
 }
 
 /** Aperçu en direct d'un objectif pas encore enregistré ; `null` tant que la saisie n'est pas complète. */

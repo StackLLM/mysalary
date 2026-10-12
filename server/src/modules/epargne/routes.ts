@@ -5,7 +5,6 @@ import {
   schemaOrdreObjectifs,
   schemaRealisation,
   schemaStatutObjectif,
-  schemaCumulObjectif,
 } from '@mysalary/partage'
 import type { FastifyInstance } from 'fastify'
 import { valider } from '../../lib/valider'
@@ -49,10 +48,7 @@ export async function routesEpargne(app: FastifyInstance) {
     await depot.ordonner(p, utilisateurDe(requete), valider(schemaOrdreObjectifs, requete.body))
     return reponse.status(204).send()
   })
-  app.get<AvecId & { Querystring: { cumul?: string } }>('/objectifs/:id', async (requete) => {
-    const { cumul } = valider(schemaCumulObjectif, requete.query)
-    return depot.detail(p, utilisateurDe(requete), requete.params.id, app.aujourdhui(), cumul)
-  })
+  app.get<AvecId>('/objectifs/:id', async (requete) => depot.detail(p, utilisateurDe(requete), requete.params.id, app.aujourdhui()))
   app.put<AvecId>('/objectifs/:id', async (requete, reponse) => {
     await depot.modifier(p, utilisateurDe(requete), requete.params.id, valider(schemaObjectif, requete.body))
     return reponse.status(204).send()
