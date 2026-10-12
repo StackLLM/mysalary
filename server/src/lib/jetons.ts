@@ -18,3 +18,20 @@ export async function creerJetonMotDePasse(prisma: PrismaClient, utilisateurId: 
 
 /** Lien vers la page « nouveau mot de passe » de l'interface. */
 export const lienMotDePasse = (urlApplication: string, jeton: string) => `${urlApplication.replace(/\/$/, '')}/mot-de-passe/nouveau?jeton=${encodeURIComponent(jeton)}`
+
+/** Durée d'un lien de vérification ou de changement d'e-mail. */
+export const DUREE_LIEN_EMAIL_MS = 24 * 60 * 60 * 1000
+export type TypeLienEmail = 'verification' | 'changement'
+
+/** Nouveau lien pour `email` : les anciens liens du même type n'ouvrent plus rien. Seule l'empreinte est gardée. */
+export async function creerJetonEmail(prisma: PrismaClient, utilisateurId: string, type: TypeLienEmail, email: string, maintenant: Date): Promise<string> {
+  const jeton = nouveauJeton()
+  await prisma.$transaction([
+    prisma.jetonEmail.deleteMany({ where: { utilisateurId, type } }),
+    prisma.jetonEmail.create({ data: { id: empreinteJeton(jeton), utilisateurId, type, email, expireLe: new Date(maintenant.getTime() + DUREE_LIEN_EMAIL_MS) } }),
+  ])
+  return jeton
+}
+
+/** Lien vers la page de confirmation de l'interface. */
+export const lienEmail = (urlApplication: string, jeton: string) => `${urlApplication.replace(/\/$/, '')}/email/verification?jeton=${encodeURIComponent(jeton)}`

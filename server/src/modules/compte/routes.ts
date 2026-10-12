@@ -1,6 +1,7 @@
-import { CODES_ERREUR, schemaChangementMotDePasse, schemaConfirmationMotDePasse, schemaExportCompte, schemaModificationUtilisateur } from '@mysalary/partage'
+import { CODES_ERREUR, type DemandeChangementEmail, schemaChangementEmail, schemaChangementMotDePasse, schemaConfirmationMotDePasse, schemaExportCompte, schemaModificationUtilisateur } from '@mysalary/partage'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { ErreurApi, introuvable } from '../../lib/erreurs'
+import { contexteEnvoi, envoyerLienEmail } from '../../lib/envois'
 import { Limiteur } from '../../lib/limiteur'
 import { hacher, verifier } from '../../lib/motDePasse'
 import { valider } from '../../lib/valider'
@@ -9,10 +10,22 @@ import { utilisateurDe } from '../../plugins/utilisateurCourant'
 import * as sauvegarde from '../sauvegarde/depot'
 import * as comptes from '../utilisateurs/depot'
 
-/** Le compte connecté (lot 23) : prénom, mot de passe, export, restauration, réinitialisation, suppression. */
+/** Le compte connecté (lot 23) : prénom, e-mail (changement confirmé par un lien), mot de passe, export, restauration, réinitialisation, suppression. */
 export async function routesCompte(app: FastifyInstance) {
   const essais = new Limiteur(5, 15 * 60 * 1000)
   const securise = app.auth.cookieSecurise
+  // Envois de liens e-mail : 3 par heure et par compte, pour ne pas faire de l'app un moyen d'inonder une boîte.
+  const envois = new Limiteur(3, 60 * 60 * 1000)
+  const envoiImpossible = () => new ErreurApi(502, CODES_ERREUR.INTERNE, 'Le message n’a pas pu partir. Réessaie dans quelques minutes.')
+
+  async function envoyer(compte: { id: string; prenom: string }, type: 'verification' | 'changement', email: string) {
+    if (envois.bloque(compte.id)) throw new ErreurApi(429, CODES_ERREUR.TROP_DE_TENTATIVES, 'Trop d’envois. Réessaie dans une heure.')
+    envois.compter(compte.id)
+    await envoyerLienEmail(contexteEnvoi(app), compte, type, email).catch((e) => {
+      app.log.error(e, 'Envoi du lien e-mail impossible')
+      throw envoiImpossible()
+    })
+  }
 
   /** Les actions lourdes redemandent le mot de passe ; 5 erreurs bloquent un quart d'heure. */
   async function confirmer(requete: FastifyRequest, motDePasse: string) {
@@ -31,6 +44,28 @@ export async function routesCompte(app: FastifyInstance) {
   app.put('/compte', async (requete) => {
     const { prenom } = valider(schemaModificationUtilisateur, requete.body)
     return comptes.renommer(app.prisma, utilisateurDe(requete), prenom)
+  })
+
+  // Changer d'e-mail : mot de passe exigé, adresse libre. L'adresse ne change qu'à l'ouverture du lien envoyé à la nouvelle.
+  app.put('/compte/email', async (requete, reponse) => {
+    const { email, motDePasse } = valider(schemaChangementEmail, requete.body)
+    const compte = await confirmer(requete, motDePasse)
+    if (email === compte.email) throw new ErreurApi(422, CODES_ERREUR.REGLE_METIER, 'C’est déjà ton e-mail.', { email: 'C’est déjà ton e-mail.' })
+    if (await app.prisma.utilisateur.findUnique({ where: { email } })) {
+      throw new ErreurApi(409, CODES_ERREUR.CONFLIT, 'Un compte existe déjà avec cet e-mail.', { email: 'Un compte existe déjà avec cet e-mail.' })
+    }
+    await envoyer(compte, 'changement', email)
+    const reponseDemande: DemandeChangementEmail = { email }
+    return reponse.status(202).send(reponseDemande)
+  })
+
+  // Renvoie le lien de confirmation de l'adresse actuelle.
+  app.post('/compte/email/renvoi', async (requete, reponse) => {
+    const compte = await app.prisma.utilisateur.findUnique({ where: { id: utilisateurDe(requete) } })
+    if (!compte?.email) throw introuvable('Adresse e-mail')
+    if (compte.emailVerifieLe) throw new ErreurApi(409, CODES_ERREUR.CONFLIT, 'Ton e-mail est déjà confirmé.')
+    await envoyer(compte, 'verification', compte.email)
+    return reponse.status(204).send()
   })
 
   // Changer de mot de passe ferme toutes les autres sessions ; celle-ci est renouvelée.

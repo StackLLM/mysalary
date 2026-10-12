@@ -14,7 +14,7 @@ vi.mock('../../lib/api', async (original) => ({
   api: { lire: vi.fn(), creer: vi.fn(), modifier: vi.fn(), supprimer: vi.fn() },
 }))
 
-const u1: Utilisateur = { id: 'u1', prenom: 'Léa', devise: 'MAD', onboardingEtape: 10, onboardingTermine: true, email: 'test@exemple.test', creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
+const u1: Utilisateur = { id: 'u1', prenom: 'Léa', devise: 'MAD', onboardingEtape: 10, onboardingTermine: true, email: 'test@exemple.test', emailVerifie: true, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
 const reglages: Reglages = { modePeriode: 'cyclePaie', debutSemaine: 1, reportHebdo: false, animations: true, reglesScenarios: REGLES_SCENARIOS_DEFAUT, depart: null }
 const EXPORT = { format: 'mysalary-export', version: 1, compte: { prenom: 'Léa', devise: 'MAD' }, donnees: {} }
 
@@ -69,6 +69,26 @@ describe('export, réinitialisation, import', () => {
     fireEvent.click(confirmer)
     expect(await screen.findByText('Connexion')).toBeInTheDocument()
     expect(api.creer).toHaveBeenLastCalledWith('/compte/suppression', { motDePasse: 'le-bon' })
+  })
+
+  it('réglages : changer l’e-mail demande le mot de passe, envoie un lien et garde l’adresse actuelle', async () => {
+    vi.mocked(api.modifier).mockRejectedValueOnce(new ErreurApi(401, 'IDENTIFIANTS_REFUSES', 'Mot de passe incorrect.', { motDePasse: 'Mot de passe incorrect.' })).mockResolvedValueOnce({ email: 'neuf@exemple.test' })
+    rendre(<PageReglages />, { route: '/reglages', compte: 'u1' })
+    expect(await screen.findByText('Confirmé')).toBeInTheDocument()
+    fireEvent.click(await screen.findByRole('button', { name: 'Changer l’e-mail' }))
+    fireEvent.change(screen.getByLabelText('Nouvel e-mail'), { target: { value: 'pas un mail' } })
+    fireEvent.change(screen.getByLabelText('Ton mot de passe'), { target: { value: 'faux' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    expect(await screen.findByText('Cet e-mail n’est pas valide.')).toBeInTheDocument()
+    expect(api.modifier).not.toHaveBeenCalled()
+    fireEvent.change(screen.getByLabelText('Nouvel e-mail'), { target: { value: 'neuf@exemple.test' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    expect(await screen.findByText('Mot de passe incorrect.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
+    await waitFor(() => expect(toast).toHaveBeenCalledWith('Lien envoyé à neuf@exemple.test. Ton e-mail change quand tu l’ouvres.'))
+    expect(api.modifier).toHaveBeenLastCalledWith('/compte/email', { email: 'neuf@exemple.test', motDePasse: 'faux' })
+    expect(screen.getAllByText('test@exemple.test').length).toBeGreaterThan(0)
+    expect(screen.queryByText('neuf@exemple.test')).not.toBeInTheDocument()
   })
 
   it('réglages : réinitialiser demande le mot de passe, propose l’export, puis ramène à la mise en route', async () => {

@@ -1,0 +1,698 @@
+<title>MySalary, étude de marché 2026</title>
+<meta name="description" content="Benchmark concurrentiel, marché marocain, audit de MySalary et plan de finalisation du SaaS.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* Mise en page : la charte de l'app (template, sauge #7D8C82, thème clair uniquement). Bandeau héro dégradé, cartes blanches sur fond #F9FAFB, colonne de lecture de 1120 px. */
+:root {
+  --page: #F9FAFB;
+  --carte: #FFFFFF;
+  --encre: #121413;
+  --encre-2: #3D4140;
+  --gris: #6F7276;
+  --filet: #EEEEEE;
+  --filet-fort: #E2E4E7;
+  --primaire: #7D8C82;
+  --lien: #4F6D5C;
+  --teinte: #F3F5F3;
+  --teinte-fort: #E7ECE8;
+  --bandeau-debut: #56635A;
+  --bandeau-fin: #647369;
+  --bandeau-cercle: #8D9B92;
+  --positif: #2F7A5A; --positif-fond: #E7F2EC;
+  --attention: #8F6218; --attention-fond: #F7EFDF;
+  --alerte: #BF4040; --alerte-fond: #FCEFEF;
+  --info: #4F6B8A; --info-fond: #EAEFF5;
+  --police: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --rayon: 20px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--encre); font-family: var(--police); font-size: 15px; line-height: 1.6; }
+a { color: var(--lien); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--primaire); outline-offset: 2px; border-radius: 6px; }
+.enveloppe { max-width: 1120px; margin: 0 auto; padding-inline: 20px; }
+header.barre { background: var(--carte); border-bottom: 1px solid var(--filet); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; }
+header.barre .enveloppe { display: flex; align-items: center; gap: 24px; height: 60px; overflow-x: auto; }
+.logo { font-weight: 800; font-size: 20px; letter-spacing: -0.01em; color: var(--lien); white-space: nowrap; text-decoration: none; }
+.logo span { color: var(--primaire); }
+nav.sommaire { display: flex; gap: 18px; font-size: 14px; font-weight: 500; white-space: nowrap; }
+nav.sommaire a { color: var(--encre-2); text-decoration: none; }
+nav.sommaire a:hover { color: var(--lien); }
+
+.heros { margin-top: 28px; border-radius: 28px; padding: 40px 36px; color: #fff; background: linear-gradient(135deg, var(--bandeau-debut), var(--bandeau-fin)); position: relative; overflow: hidden; }
+.heros::before, .heros::after { content: ""; position: absolute; border-radius: 50%; border: 36px solid var(--bandeau-cercle); opacity: .22; }
+.heros::before { width: 340px; height: 340px; right: -90px; top: -120px; }
+.heros::after { width: 220px; height: 220px; right: 140px; bottom: -150px; }
+.heros > * { position: relative; }
+.surtitre { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
+.heros h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.15; margin: 10px 0 14px; font-weight: 800; letter-spacing: -0.02em; text-wrap: balance; max-width: 22ch; }
+.heros p { max-width: 64ch; margin: 0; opacity: .95; }
+.heros .meta { margin-top: 18px; font-size: 13px; opacity: .8; }
+
+section { margin-top: 48px; scroll-margin-top: 80px; }
+h2 { font-size: 24px; line-height: 1.25; margin: 0 0 6px; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+h3 { font-size: 17px; margin: 0 0 8px; font-weight: 600; }
+h4 { font-size: 13px; margin: 14px 0 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gris); }
+.chapo { color: var(--gris); max-width: 72ch; margin: 0 0 20px; }
+p { margin: 0 0 10px; }
+ul { margin: 0 0 10px; padding-left: 20px; }
+li { margin: 3px 0; }
+.carte { background: var(--carte); border-radius: var(--rayon); padding: 24px; box-shadow: 0 1px 2px rgba(18,20,19,.04); min-width: 0; }
+.grille { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.g3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.g4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+.chiffre { font-size: 30px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.chiffre-libelle { font-size: 13px; color: var(--gris); margin-top: 6px; }
+.source-mini { font-size: 12px; color: var(--gris); margin-top: 8px; }
+
+.pastille { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.p-ok { background: var(--positif-fond); color: var(--positif); }
+.p-partiel { background: var(--attention-fond); color: var(--attention); }
+.p-manque { background: var(--alerte-fond); color: var(--alerte); }
+.p-info { background: var(--info-fond); color: var(--info); }
+.p-neutre { background: var(--teinte-fort); color: var(--lien); }
+
+.reponses { display: grid; gap: 12px; }
+.reponse { display: grid; grid-template-columns: 200px 1fr; gap: 16px; padding: 18px 20px; background: var(--carte); border-radius: 16px; }
+.reponse strong { color: var(--lien); }
+@media (max-width: 640px) { .reponse { grid-template-columns: 1fr; gap: 6px; } }
+
+.tableau { overflow-x: auto; background: var(--carte); border-radius: var(--rayon); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 860px; }
+th, td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid var(--filet); }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--gris); font-weight: 600; background: var(--interne, #FBFCFC); position: sticky; top: 0; }
+tbody tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.fiche { display: flex; flex-direction: column; gap: 4px; }
+.fiche-tete { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.fiche-tete h3 { margin: 0; }
+.fiche .prix { font-size: 13px; color: var(--encre-2); font-weight: 600; }
+.fiche p, .fiche li { font-size: 14px; }
+.fiche .opp { margin-top: 8px; padding: 10px 12px; background: var(--teinte); border-radius: 12px; font-size: 14px; }
+
+details.fonction { background: var(--carte); border-radius: 16px; padding: 0; }
+details.fonction + details.fonction { margin-top: 10px; }
+details.fonction summary { cursor: pointer; list-style: none; padding: 16px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-weight: 600; }
+details.fonction summary::-webkit-details-marker { display: none; }
+details.fonction summary::after { content: "+"; margin-left: auto; color: var(--gris); font-weight: 500; font-size: 18px; }
+details.fonction[open] summary::after { content: "−"; }
+.corps { padding: 0 20px 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 6px 24px; font-size: 14px; }
+.corps div { min-width: 0; }
+.corps b { display: block; font-size: 12px; color: var(--gris); text-transform: uppercase; letter-spacing: .05em; margin-top: 8px; }
+
+.niveau { margin-top: 26px; }
+.niveau-tete { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+
+.lots { display: grid; gap: 12px; }
+.lot { display: grid; grid-template-columns: 76px 1fr; gap: 18px; background: var(--carte); border-radius: 16px; padding: 18px 20px; }
+.lot .no { font-size: 13px; font-weight: 700; color: var(--lien); background: var(--teinte-fort); border-radius: 12px; display: grid; place-items: center; height: 56px; text-align: center; line-height: 1.2; }
+.lot h3 { margin-bottom: 4px; }
+.lot .phase { font-size: 12px; color: var(--gris); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+@media (max-width: 560px) { .lot { grid-template-columns: 1fr; } .lot .no { height: auto; padding: 6px 10px; justify-self: start; } }
+
+.citation { border-left: 3px solid var(--primaire); padding: 4px 0 4px 14px; color: var(--encre-2); }
+.note { font-size: 13px; color: var(--gris); }
+ol.sources { font-size: 13px; padding-left: 22px; columns: 2 360px; column-gap: 32px; }
+ol.sources li { break-inside: avoid; margin-bottom: 6px; overflow-wrap: anywhere; }
+footer { margin: 56px 0 40px; font-size: 13px; color: var(--gris); }
+@media (prefers-reduced-motion: no-preference) { details.fonction summary { transition: color .15s; } }
+</style>
+
+<header class="barre">
+  <div class="enveloppe">
+    <a class="logo" href="#haut">MySalary<span>.</span></a>
+    <nav class="sommaire" aria-label="Sommaire">
+      <a href="#resume">Résumé</a>
+      <a href="#maroc">Maroc</a>
+      <a href="#benchmark">Benchmark</a>
+      <a href="#comparatif">Comparatif</a>
+      <a href="#positionnement">Positionnement</a>
+      <a href="#audit">Audit</a>
+      <a href="#manques">Manques</a>
+      <a href="#plan">Plan</a>
+      <a href="#sources">Sources</a>
+    </nav>
+  </div>
+</header>
+
+<main class="enveloppe" id="haut">
+
+<div class="heros">
+  <div class="surtitre">Étude de marché · 12 octobre 2026</div>
+  <h1>Finir MySalary pour le vendre aux salariés</h1>
+  <p>Benchmark de 16 applications de budget, de prévision et d’épargne, au Maroc et à l’international. Audit du code de MySalary. Fonctionnalités à ajouter avant le lancement, et plan des derniers lots.</p>
+  <div class="meta">Sources consultées le 12/10/2026. Les prix viennent des pages officielles quand c’est indiqué ; sinon de revues récentes, à revérifier avant toute décision.</div>
+</div>
+
+<!-- ============ RÉSUMÉ ============ -->
+<section id="resume">
+  <h2>Résumé exécutif</h2>
+  <p class="chapo">MySalary couvre déjà le cœur du besoin. Ce qui manque surtout, c’est la préparation à la production : comptes vérifiés, e-mails réels, base PostgreSQL, hébergement, cadre légal. Une seule fonctionnalité vraiment nouvelle se justifie avant le lancement : la projection sur plusieurs années, parce qu’elle répond à la cinquième question du produit.</p>
+
+  <div class="reponses">
+    <div class="reponse"><strong>Ce qui différencie MySalary</strong><div>Le budget part de la <b>paie réelle</b> : mois de paie à paie, date de versement confirmée, primes classées garanties, probables ou incertaines. Le réel, le prévu et le projeté ne sont jamais mélangés. Le reste de chaque fin de mois est cumulé et alimente des objectifs datés. Aucun concurrent étudié ne combine ces trois points. Au Maroc, Flouss et Budget Maroc suivent les dépenses du mois, mais ni les revenus variables ni l’avenir.</div></div>
+    <div class="reponse"><strong>Ce qui lui manque vraiment</strong><div>La vérification de l’adresse e-mail, l’envoi réel des e-mails, PostgreSQL, un build de production servi en HTTPS, des sauvegardes automatiques, la surveillance, les pages légales et la déclaration CNDP. Côté produit : une projection à 3, 5 et 10 ans, le taux d’endettement, et une version installable sur téléphone.</div></div>
+    <div class="reponse"><strong>À faire avant le lancement</strong><div>Lots 24 à 28 : comptes fiables et e-mails, projection pluriannuelle et endettement, validation des calculs et tests de bout en bout, préparation de la production (PostgreSQL, sécurité, PWA, pages légales), puis déploiement en bêta fermée.</div></div>
+    <div class="reponse"><strong>Ce qui peut attendre</strong><div>La facturation (nécessaire pour vendre, mais pas pour une bêta gratuite), l’arabe et la darija, l’import de relevés, les rappels par e-mail, le budget partagé du foyer, l’assistant IA, le calcul du net depuis le brut.</div></div>
+    <div class="reponse"><strong>Prochain lot</strong><div><b>Lot 24, Comptes fiables et e-mails</b> : vérification de l’adresse à l’inscription et au changement d’e-mail, envoi par un fournisseur transactionnel, purge des sessions et des liens expirés.</div></div>
+  </div>
+</section>
+
+<!-- ============ MAROC ============ -->
+<section id="maroc">
+  <h2>Le marché marocain</h2>
+  <p class="chapo">Des salariés connectés, de plus en plus endettés, avec des dépenses saisonnières fortes. Ils n’ont pas d’accès ouvert aux données bancaires, donc la saisie reste manuelle.</p>
+
+  <div class="grille g4">
+    <div class="carte"><div class="chiffre">62 %</div><div class="chiffre-libelle">des adultes ont un compte bancaire en 2025 (58 % en 2024).</div><div class="source-mini">Bank Al-Maghrib, via Le360 [19]</div></div>
+    <div class="carte"><div class="chiffre">88,3 %</div><div class="chiffre-libelle">des ménages ont un smartphone ; 91,2 % des individus utilisent internet.</div><div class="source-mini">ANRT, enquête TIC 2024-2025 [20]</div></div>
+    <div class="carte"><div class="chiffre">36 %</div><div class="chiffre-libelle">taux d’endettement moyen des nouveaux crédits ; plus de 40 % du revenu dans près de 4 dossiers sur 10.</div><div class="source-mini">Enquête BAM 2025, via Le360 [17]</div></div>
+    <div class="carte"><div class="chiffre">183 Md DH</div><div class="chiffre-libelle">d’encours de crédit à la consommation, en hausse de 13,2 % ; dette des ménages : 456 Md DH.</div><div class="source-mini">Rapport de stabilité financière 2025, via Le360 [18]</div></div>
+  </div>
+
+  <div class="grille g2" style="margin-top:16px">
+    <div class="carte">
+      <h3>Ce que vivent les salariés</h3>
+      <ul>
+        <li><b>Primes irrégulières</b> : le 13<sup>e</sup> mois n’est pas obligatoire et dépend du contrat ou de l’usage. La prime de rentrée scolaire dépend de l’employeur, souvent 300 à 500 DH par enfant [21][22].</li>
+        <li><b>Pics de dépenses connus à l’avance</b> : Ramadan (+18,2 % de dépense moyenne par ménage, HCP), Aïd al-Adha (plus de 18 Md DH au total ; jusqu’à 42 % du budget mensuel des 10 % les plus modestes, HCP), rentrée scolaire [23][24][25].</li>
+        <li><b>Crédits</b> : consommation, logement, crédits « rentrée ». Le taux d’endettement est le chiffre que regardent les banques.</li>
+        <li><b>Impôt 2025</b> : salaires mensuels sous 6 000 DH exonérés d’IR ; la déduction par personne à charge passe à 500 DH [26].</li>
+      </ul>
+      <p class="note">Les chiffres HCP sur Ramadan et la rentrée datent de 2019 à 2022 ; ils donnent une tendance, pas une mesure actuelle.</p>
+    </div>
+    <div class="carte">
+      <h3>Ce que cela implique pour le produit</h3>
+      <ul>
+        <li><b>Pas de connexion bancaire</b> : aucun agrégateur fiable n’est documenté pour les banques marocaines, et Flouss en fait un argument (« aucune banque à connecter ») [13]. La saisie manuelle de MySalary est la norme locale.</li>
+        <li><b>Prévoir l’année</b> : les grosses dépenses sont prévisibles. Des modèles d’événements (Ramadan, Aïd, rentrée, été) dans les ponctuels ont une vraie valeur locale.</li>
+        <li><b>Endettement</b> : afficher la part du revenu prise par les crédits, avec le repère de 40 %, est simple à faire et parle à tout salarié qui demande un prêt.</li>
+        <li><b>Langue</b> : le français suffit pour lancer auprès des cadres et employés. L’arabe et la darija élargissent le public (Flouss les propose), mais imposent l’écriture de droite à gauche : c’est un lot à part.</li>
+        <li><b>Mobile d’abord</b> : avec 88 % des ménages équipés, une version installable sur l’écran d’accueil est attendue.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="grille g2" style="margin-top:16px">
+    <div class="carte">
+      <h3>Cadre légal à prévoir</h3>
+      <p>La loi 09-08 impose une <b>déclaration préalable à la CNDP</b> avant de traiter des données personnelles. Un <b>hébergement hors du Maroc</b> est un transfert, soumis à une <b>autorisation préalable</b>, sauf pays jugé adéquat [27][28]. À trancher avec un conseil avant d’ouvrir au public. Héberger au Maroc simplifie ce point : OVHcloud a annoncé des VPS dans sa zone locale de Casablanca avec Maroc Datacenter [29], prix non confirmé.</p>
+    </div>
+    <div class="carte">
+      <h3>Encaisser des abonnements</h3>
+      <p>Le <b>CMI</b>, ouvert par la banque, est la voie locale. Le paiement récurrent est un module à demander explicitement [30]. Stripe n’ouvre pas de compte à une société marocaine selon des intégrateurs locaux, source intéressée à vérifier. Les « merchant of record » (Lemon Squeezy, Paddle) restent à confirmer pour un vendeur marocain [31]. Le délai bancaire justifie de lancer d’abord en bêta gratuite.</p>
+    </div>
+  </div>
+
+  <div class="carte" style="margin-top:16px">
+    <h3>Universel ou configurable</h3>
+    <div class="grille g2">
+      <div><h4>Universel (identique partout)</h4><ul><li>Cycle de paie, revenus avec certitude, enveloppes, objectifs datés, prévu et réel, projection.</li><li>Comptes, sécurité, export des données.</li></ul></div>
+      <div><h4>Configurable par marché</h4><ul><li>Devise et format des montants (déjà : MAD, EUR, USD).</li><li>Langue, modèles d’événements saisonniers, jours fériés pour la date de paie.</li><li>Seuil d’endettement affiché, moyen de paiement de l’abonnement.</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BENCHMARK ============ -->
+<section id="benchmark">
+  <h2>Benchmark : fiches concurrentielles</h2>
+  <p class="chapo">« Confirmé » : lu sur le site officiel le 12/10/2026. « Revue » : source secondaire récente. Les prix sont en devise d’origine, sans conversion.</p>
+
+  <h3 style="margin-top:8px">Au Maroc</h3>
+  <div class="grille g2">
+    <article class="carte fiche">
+      <div class="fiche-tete"><h3>Flouss / Flowss</h3><span class="pastille p-info">Confirmé</span></div>
+      <div class="prix">Gratuit · Pro 249 MAD/an</div>
+      <p>« Finances personnelles pour le Maroc ». iOS et Android. Français, anglais, arabe, darija. Environ 2 400 utilisateurs selon son fondateur (Médias24, 12/10/2026).</p>
+      <ul>
+        <li>Plafonds par catégorie, rythme du mois, verdict avant achat (vert, orange, rouge).</li>
+        <li>Enveloppes d’épargne et objectifs ; mode voyage (Omra, week-ends).</li>
+        <li>Coach IA « Flou », dictée vocale, import de relevé PDF ou photo, scan de tickets (Pro).</li>
+        <li>Aucune banque à connecter.</li>
+      </ul>
+      <p><b>Limites</b> : ni revenus, ni salaire, ni dettes, ni projection au-delà du mois en cours (absents de la page).</p>
+      <div class="opp">Concurrent local le plus proche, positionné sur la dépense du jour. MySalary prend l’angle opposé : la paie, l’année et l’avenir.</div>
+    </article>
+    <article class="carte fiche">
+      <div class="fiche-tete"><h3>Budget Maroc</h3><span class="pastille p-info">Confirmé</span></div>
+      <div class="prix">Gratuit · Pro 39 MAD/mois (bientôt)</div>
+      <p>Application web installable (PWA), en français. Catégories marocaines (Crédit, Recharge, Café, Scolarité).</p>
+      <ul>
+        <li>Budgets mensuels, vues mois et semaine, export PDF et CSV.</li>
+        <li>Import des SMS bancaires collés à la main.</li>
+        <li>Pro annoncé : sauvegarde quotidienne, support WhatsApp, partage familial à 3.</li>
+      </ul>
+      <p><b>Limites</b> : pas d’objectifs, de dettes ni de projection mentionnés.</p>
+      <div class="opp">Montre que l’import de SMS et la PWA sont les attentes locales. Prix repère : 39 MAD/mois.</div>
+    </article>
+  </div>
+
+  <h3 style="margin-top:28px">Budget par enveloppes</h3>
+  <div class="grille g2">
+    <article class="carte fiche">
+      <div class="fiche-tete"><h3>YNAB</h3><span class="pastille p-info">Confirmé</span></div>
+      <div class="prix">14,99 $/mois ou 109 $/an · essai 34 jours</div>
+      <p>Budget à base zéro : chaque dirham reçoit un rôle. Grand public anglophone.</p>
+      <ul>
+        <li>Objectifs d’épargne, gestion des dettes avec calculateur de prêt, partage à 6 personnes.</li>
+        <li>Synchro bancaire US, Canada, UK, UE ; import de fichiers sinon.</li>
+        <li>Une seule devise par budget.</li>
+      </ul>
+      <p><b>Limites</b> : pas de prévision au-delà du mois budgété ; méthode exigeante ; prix en hausse.</p>
+      <div class="opp">Référence de la méthode des enveloppes. MySalary y ajoute la paie réelle et l’avenir.</div>
+    </article>
+    <article class="carte fiche">
+      <div class="fiche-tete"><h3>Actual Budget</h3><span class="pastille p-neutre">Revue · open source</span></div>
+      <div class="prix">Gratuit, auto-hébergé (MIT)</div>
+      <p>Clone libre de YNAB, données locales, chiffrement de bout en bout possible.</p>
+      <ul>
+        <li>Import YNAB, QIF, OFX, CSV ; règles ; PWA.</li>
+        <li>Un fichier SQLite par budget ; multi-utilisateur limité.</li>
+      </ul>
+      <p><b>Limites</b> : mobile moins abouti, aucune projection.</p>
+      <div class="opp">Montre qu’une PWA suffit à beaucoup d’utilisateurs.</div>
+    </article>
+  </div>
+
+  <h3 style="margin-top:28px">Agrégateurs et tableaux de bord</h3>
+  <div class="grille g2">
+    <article class="carte fiche">
+      <div class="fiche-tete"><h3>Monarch Money</h3><span class="pastille p-info">Confirmé (prix)</span></div>
+      <div class="prix">14,99 $/mois ou 99,99 $/an · Plus 199 $/an (revue)</div>
+      <p>Tableau de bord du foyer : comptes, budget, patrimoine, investissements.</p>
+      <ul>
+        <li>Plus : outils de prévision, plusieurs sources de revenus, analyse des placements.</li>
+        <li>Assistant IA, accès partagé du foyer (revues).</li>
+      </ul>
+      <p><b>Limites</b> : centré sur les États-Unis et la synchro bancaire ; la prévision est réservée au plan le plus cher.</p>
+      <div class="opp">La prévision est vendue comme option premium : elle peut justifier un prix.</div>
+    </article>
+    <article class="carte fiche">
+      <div class="fiche-tete"><h3>Copilot Money</h3><span class="pastille p-neutre">Revue</span></div>
+      <div class="prix">13 $/mois ou 95 $/an</div>
+      <p>Application Apple soignée, catégorisation par un modèle propre à chaque utilisateur.</p>
+      <ul>
+        <li>Budgets adaptatifs, abonnements oubliés, flux de trésorerie, patrimoine.</li>
+        <li>Assistant proactif en bêta (revue).</li>
+      </ul>
+      <p><b>Limites</b> : pas d’Android ; banques US.</p>
+      <div class="opp">Le niveau de finition attendu d’une app payante.</div>
+    </article>
+    <article class="carte fiche">
+      <div class="fiche-tete"><h3>Wallet (BudgetBakers)</h3><span class="pastille p-neutre">Revue</span></div>
+      <div class="prix">Gratuit limité · Premium ≈ 4,49 €/mois</div>
+      <p>Multi-plateforme, multi-devises, familles.</p>
+      <ul><li>Paiements planifiés et rappels ; synchro bancaire en Premium ; aucune banque marocaine confirmée.</li></ul>
+      <div class="opp">Disponible au Maroc, mais sans valeur ajoutée locale.</div>
+    </article>
+    <article class="carte fiche">
+      <div class="fiche-tete"><h3>Bankin’, Linxo, Finary</h3><span class="pastille p-neutre">Revue · France</span></div>
+      <div class="prix">Gratuit + Premium 3 à 12 €/mois</div>
+      <p>Agrégateurs régulés en France. Linxo prévoit le solde en Premium ; Finary vise le patrimoine (projections Monte Carlo).</p>
+      <div class="opp">Modèle freemium avec prévision payante. Hors Maroc faute d’agrément et de connecteurs.</div>
+    </article>
+  </div>
+
+  <h3 style="margin-top:28px">Prévision et projection</h3>
+  <div class="grille g2">
+    <article class="carte fiche">
+      <div class="fiche-tete"><h3>PocketSmith</h3><span class="pastille p-info">Confirmé</span></div>
+      <div class="prix">Gratuit (6 mois) · 9,99 / 16,66 / 26,66 $/mois en annuel</div>
+      <p>Calendrier des revenus et des factures, solde projeté au jour près.</p>
+      <ul>
+        <li>Horizon de prévision selon le plan : 6 mois, 10, 30 ou 60 ans.</li>
+        <li>Scénarios comparés (voyage, remboursement de prêt).</li>
+      </ul>
+      <div class="opp">Preuve directe : l’horizon de projection est l’axe de prix. MySalary s’arrête à 36 mois dans le simulateur.</div>
+    </article>
+    <article class="carte fiche">
+      <div class="fiche-tete"><h3>Quicken Simplifi</h3><span class="pastille p-neutre">Revue</span></div>
+      <div class="prix">≈ 2,99 à 6,99 $/mois en annuel</div>
+      <p>Solde projeté jusqu’à 12 mois, alertes si le solde prévu passe sous un seuil.</p>
+      <div class="opp">L’alerte « solde prévu trop bas » existe déjà dans MySalary (alertes du moteur).</div>
+    </article>
+  </div>
+
+  <h3 style="margin-top:28px">Assistants et services</h3>
+  <div class="grille g2">
+    <article class="carte fiche">
+      <div class="fiche-tete"><h3>Cleo</h3><span class="pastille p-neutre">Revue</span></div>
+      <div class="prix">Gratuit · 5,99 à 14,99 $/mois</div>
+      <p>Coach IA en conversation ; les plans payants vendent surtout des avances de salaire et du crédit.</p>
+      <div class="opp">Le modèle repose sur des services financiers régulés : non transposable.</div>
+    </article>
+    <article class="carte fiche">
+      <div class="fiche-tete"><h3>Rocket Money</h3><span class="pastille p-neutre">Revue</span></div>
+      <div class="prix">Gratuit · Premium 7 à 14 $/mois (prix libre)</div>
+      <p>Détection des abonnements, résiliation, négociation de factures (35 à 60 % de l’économie).</p>
+      <div class="opp">Dépend de la synchro bancaire US. Hors sujet au Maroc.</div>
+    </article>
+    <article class="carte fiche">
+      <div class="fiche-tete"><h3>Spendee · Money Manager</h3><span class="pastille p-neutre">Revue</span></div>
+      <div class="prix">≈ 3 à 5 $/mois · 19,99 $/an (synchro)</div>
+      <p>Saisie rapide, budgets semaine/mois/année, multi-devises ; portefeuilles partagés chez Spendee.</p>
+      <div class="opp">Très utilisés pour la saisie manuelle ; aucune projection.</div>
+    </article>
+  </div>
+</section>
+
+<!-- ============ COMPARATIF ============ -->
+<section id="comparatif">
+  <h2>Tableau comparatif</h2>
+  <p class="chapo">État de MySalary vérifié dans le code, pas dans la documentation. <span class="pastille p-ok">Fait</span> <span class="pastille p-partiel">Partiel</span> <span class="pastille p-manque">Absent</span></p>
+  <div class="tableau">
+    <table>
+      <thead><tr><th>Fonctionnalité</th><th>Concurrents pertinents</th><th>MySalary actuellement</th><th>Importance</th><th>Recommandation</th></tr></thead>
+      <tbody>
+        <tr><td>Mois de paie à paie, paie confirmée</td><td>Aucun ne l’a ; PocketSmith (calendrier)</td><td><span class="pastille p-ok">Fait</span> contrat versionné, date et montant réels</td><td>Différenciant</td><td>Mettre en avant dans le discours</td></tr>
+        <tr><td>Primes et revenus avec certitude</td><td>Monarch Plus (plusieurs revenus)</td><td><span class="pastille p-ok">Fait</span> garanti, probable, incertain</td><td>Différenciant</td><td>Garder</td></tr>
+        <tr><td>Enveloppes mois / semaine / jour</td><td>YNAB, Actual, Flouss, Money Manager</td><td><span class="pastille p-ok">Fait</span></td><td>Indispensable</td><td>—</td></tr>
+        <tr><td>Saisie rapide d’une dépense</td><td>Tous</td><td><span class="pastille p-ok">Fait</span> touche N, bouton +</td><td>Indispensable</td><td>—</td></tr>
+        <tr><td>Charges récurrentes et abonnements</td><td>Wallet, Copilot, Rocket</td><td><span class="pastille p-ok">Fait</span> mensuel, trimestriel, annuel, mois choisis</td><td>Indispensable</td><td>—</td></tr>
+        <tr><td>Solde projeté (trésorerie)</td><td>Simplifi 12 mois, PocketSmith, Linxo</td><td><span class="pastille p-ok">Fait</span> calendrier, cumul de fin de mois</td><td>Différenciant</td><td>—</td></tr>
+        <tr><td>Projection 3, 5, 10 ans</td><td>PocketSmith (10 à 60 ans), Monarch Plus, Finary</td><td><span class="pastille p-partiel">Partiel</span> simulateur 6 à 36 mois ; objectifs jusqu’à 120 mois</td><td>Différenciant, question 5</td><td><b>Lot 25</b></td></tr>
+        <tr><td>Scénarios « et si »</td><td>Monarch Plus, PocketSmith</td><td><span class="pastille p-ok">Fait</span> prudent, réaliste, ambitieux + leviers</td><td>Différenciant</td><td>—</td></tr>
+        <tr><td>Objectifs datés, effort mensuel</td><td>YNAB, Monarch, Flouss</td><td><span class="pastille p-ok">Fait</span> avec et sans cumul</td><td>Indispensable</td><td>—</td></tr>
+        <tr><td>Prévu contre réel, clôture du mois</td><td>Rare (YNAB indirectement)</td><td><span class="pastille p-ok">Fait</span></td><td>Différenciant</td><td>—</td></tr>
+        <tr><td>Dettes et taux d’endettement</td><td>YNAB (calculateur de prêt)</td><td><span class="pastille p-partiel">Partiel</span> échéancier sans taux d’intérêt ni ratio</td><td>Importante au Maroc</td><td><b>Lot 25</b> : ratio et repère 40 %</td></tr>
+        <tr><td>Événements de l’année (Ramadan, Aïd, rentrée)</td><td>Flouss (mode voyage, Omra)</td><td><span class="pastille p-partiel">Partiel</span> ponctuels saisis à la main</td><td>Importante au Maroc</td><td><b>Lot 25</b> : modèles</td></tr>
+        <tr><td>Alertes et recommandations</td><td>Copilot, Simplifi, Cleo</td><td><span class="pastille p-ok">Fait</span> règles du moteur</td><td>Indispensable</td><td>—</td></tr>
+        <tr><td>Version installable sur téléphone</td><td>Tous ; Budget Maroc et Actual en PWA</td><td><span class="pastille p-partiel">Partiel</span> responsive 375 px, non installable</td><td>Indispensable</td><td><b>Lot 27</b> : PWA</td></tr>
+        <tr><td>Vérification e-mail, sécurité du compte</td><td>Standard</td><td><span class="pastille p-partiel">Partiel</span> sessions, scrypt, essais limités ; e-mail non vérifié</td><td>Indispensable</td><td><b>Lot 24</b></td></tr>
+        <tr><td>Export et suppression des données</td><td>Actual, Money Manager</td><td><span class="pastille p-ok">Fait</span> export JSON, restauration, suppression</td><td>Indispensable (loi 09-08)</td><td>—</td></tr>
+        <tr><td>Abonnement payant</td><td>Tous</td><td><span class="pastille p-manque">Absent</span></td><td>Indispensable pour vendre</td><td><b>Lot 29</b>, après la bêta</td></tr>
+        <tr><td>Arabe, darija</td><td>Flouss</td><td><span class="pastille p-manque">Absent</span> français seulement</td><td>Importante, plus tard</td><td>Lot 30</td></tr>
+        <tr><td>Import de relevé, SMS, CSV</td><td>Flouss, Budget Maroc, Actual</td><td><span class="pastille p-manque">Absent</span> (import JSON de l’ancienne app seulement)</td><td>Utile, plus tard</td><td>Lot 31</td></tr>
+        <tr><td>Budget partagé du foyer</td><td>YNAB, Monarch, Spendee</td><td><span class="pastille p-manque">Absent</span> comptes isolés</td><td>Plus tard</td><td>Après retours de la bêta</td></tr>
+        <tr><td>Assistant IA conversationnel</td><td>Monarch, Cleo, Flouss</td><td><span class="pastille p-manque">Absent</span></td><td>Plus tard</td><td>Après retours de la bêta</td></tr>
+        <tr><td>Synchro bancaire</td><td>YNAB, Monarch, Copilot, Wallet</td><td><span class="pastille p-manque">Absent</span></td><td>Indisponible au Maroc</td><td>Ne pas faire</td></tr>
+        <tr><td>Placements et patrimoine</td><td>Monarch, Finary, Copilot</td><td><span class="pastille p-manque">Absent</span></td><td>Hors cible</td><td>Ne pas faire</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ POSITIONNEMENT ============ -->
+<section id="positionnement">
+  <h2>Positionnement recommandé</h2>
+  <p class="chapo">« Le plan financier du salarié, construit sur sa paie. » MySalary ne lutte ni sur la synchro bancaire ni sur les placements. Il répond aux cinq questions à partir de ce que le salarié sait déjà : son salaire, ses primes, ses charges et ses projets.</p>
+  <div class="tableau">
+    <table style="min-width:720px">
+      <thead><tr><th>Question</th><th>Réponse de MySalary aujourd’hui</th><th>État</th><th>À compléter</th></tr></thead>
+      <tbody>
+        <tr><td>1. Combien vais-je réellement recevoir ?</td><td>Paie prévue puis confirmée ; primes et revenus par certitude ; calendrier</td><td><span class="pastille p-ok">Oui</span></td><td>—</td></tr>
+        <tr><td>2. Où va mon argent ?</td><td>Dépenses par enveloppe, semaine, mois, année ; prévu contre réel</td><td><span class="pastille p-ok">Oui</span></td><td>—</td></tr>
+        <tr><td>3. Combien puis-je épargner sans déséquilibrer mon budget ?</td><td>Capacité par scénario, cumul de fin de mois, recommandations</td><td><span class="pastille p-ok">Oui</span></td><td>Taux d’endettement (lot 25)</td></tr>
+        <tr><td>4. Quand pourrai-je financer mes projets ?</td><td>Date estimée par objectif, avec et sans cumul, risque de retard</td><td><span class="pastille p-ok">Oui</span></td><td>—</td></tr>
+        <tr><td>5. Ma situation dans 1, 3, 5 ou 10 ans ?</td><td>Épargne projetée sur 36 mois au plus</td><td><span class="pastille p-partiel">Partiel</span></td><td>Projection pluriannuelle (lot 25)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="grille g3" style="margin-top:16px">
+    <div class="carte"><h3>Cible de lancement</h3><p>Salariés marocains francophones, salaire fixe et primes, au moins un crédit ou un projet d’achat. Ensuite : francophones d’Europe et d’Afrique, puis l’arabe.</p></div>
+    <div class="carte"><h3>Promesse</h3><p>Savoir chaque jour ce qu’on peut dépenser, chaque mois ce qu’on peut épargner, et à quelle date chaque projet sera payé, sans connecter sa banque.</p></div>
+    <div class="carte"><h3>Prix, à tester en bêta</h3><p>Repères : Flouss 249 MAD/an, Budget Maroc 39 MAD/mois, concurrents internationaux 95 à 109 $/an. Hypothèse : essai gratuit, puis 199 à 299 MAD/an, projection pluriannuelle incluse.</p></div>
+  </div>
+</section>
+
+<!-- ============ AUDIT ============ -->
+<section id="audit">
+  <h2>Audit de MySalary</h2>
+  <p class="chapo">Code inspecté le 12/10/2026 : 4 paquets (moteur, partage, serveur, interface), 23 modèles de données, 19 migrations, 453 tests automatiques qui passent.</p>
+  <div class="grille g2">
+    <div class="carte">
+      <h3>Fonctionnalités vérifiées</h3>
+      <ul>
+        <li>Salaire versionné, paie prévue puis confirmée, jour non ouvré (<code>moteur/salaire.ts</code>).</li>
+        <li>Autres revenus avec fréquence et certitude (<code>revenus.ts</code>).</li>
+        <li>Charges fixes, enveloppes mois / semaine / jour, ponctuels, dettes avec échéancier (<code>charges.ts</code>).</li>
+        <li>Dépenses, suivi semaine et mois, clôture, cumul de fin de mois (<code>cumul.ts</code>, <code>bilan.ts</code>).</li>
+        <li>Épargne, objectifs, trois scénarios, simulateur 6 à 36 mois (<code>objectifs.ts</code>, <code>simulation.ts</code>).</li>
+        <li>Alertes, recommandations, pages Aujourd’hui, Calendrier, Année, onboarding, import de l’ancienne app.</li>
+        <li>Comptes : inscription, connexion, sessions, mot de passe oublié, changement d’e-mail et de mot de passe, isolation par compte testée.</li>
+        <li>Export JSON, restauration, réinitialisation, suppression ; sauvegarde de la base en ligne de commande.</li>
+      </ul>
+    </div>
+    <div class="carte">
+      <h3>Écarts constatés</h3>
+      <ul>
+        <li><b>E-mail</b> : envoi SMTP codé (nodemailer), mais aucun fournisseur configuré ; adresse jamais vérifiée.</li>
+        <li><b>Base</b> : SQLite ; migrations écrites pour SQLite.</li>
+        <li><b>Production</b> : pas de build servi (le serveur démarre avec <code>tsx</code>, l’interface passe par Vite), pas de configuration de déploiement, pas de purge des sessions et liens expirés.</li>
+        <li><b>Limiteur d’essais</b> en mémoire : valable pour un seul processus.</li>
+        <li><b>Surveillance</b> : aucune (ni suivi d’erreurs ni disponibilité).</li>
+        <li><b>Mobile</b> : pas de manifeste ni d’icônes, l’app ne s’installe pas.</li>
+        <li><b>Légal</b> : pas de conditions d’utilisation ni de politique de confidentialité.</li>
+        <li><b>Tests</b> : pas de parcours de bout en bout dans un navigateur (Playwright prévu au lot 21, non fait).</li>
+        <li><b>Projection</b> limitée à 36 mois ; <b>dettes</b> sans taux d’endettement.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="carte" style="margin-top:16px">
+    <h3>Les trois points à vérifier, demandés dans le brief</h3>
+    <div class="grille g3">
+      <div><span class="pastille p-manque">À faire</span><p style="margin-top:8px"><b>Vérification de l’adresse e-mail</b> : absente. Aucune colonne ni route. Lot 24.</p></div>
+      <div><span class="pastille p-partiel">Codé, non configuré</span><p style="margin-top:8px"><b>Envoi d’e-mails</b> : le code existe (<code>lib/messagerie.ts</code>). Sans <code>SMTP_URL</code>, les liens vont dans le journal du serveur. Reste à choisir un fournisseur, configurer SPF et DKIM, et soigner les messages. Lot 24.</p></div>
+      <div><span class="pastille p-manque">À faire</span><p style="margin-top:8px"><b>PostgreSQL</b> : pas commencé. Recommandé avant le lancement : sauvegardes à un instant donné, écritures concurrentes, et une migration plus coûteuse une fois des clients inscrits. Lot 27.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MANQUES ============ -->
+<section id="manques">
+  <h2>Fonctionnalités manquantes, classées</h2>
+  <p class="chapo">Chaque ajout est retenu parce qu’il sert une des cinq questions ou le lancement, pas pour égaler un concurrent. Effort en jours de développement, estimation.</p>
+
+  <div class="niveau">
+    <div class="niveau-tete"><span class="pastille p-manque">1</span><h3 style="margin:0">Indispensables pour lancer</h3></div>
+
+    <details class="fonction" open>
+      <summary>Vérification de l’adresse e-mail <span class="pastille p-neutre">2 j</span></summary>
+      <div class="corps">
+        <div><b>Besoin</b>Récupérer son compte avec certitude ; éviter les comptes créés au nom d’un autre.</div>
+        <div><b>Valeur commerciale</b>Délivrabilité, confiance, condition pour envoyer rappels et factures.</div>
+        <div><b>Preuves</b>Standard de toute app payante ; brief du projet.</div>
+        <div><b>Modifications</b>Colonne <code>emailVerifieLe</code>, jeton de vérification (réutilise <code>JetonMotDePasse</code>), page « vérifie ton e-mail », renvoi du lien, confirmation du nouvel e-mail avant de l’appliquer.</div>
+        <div><b>Dépendances</b>Envoi réel des e-mails.</div>
+        <div><b>Risques</b>Bloquer un compte si l’e-mail n’arrive pas : accès en lecture autorisé, bandeau tant que non vérifié.</div>
+        <div><b>Validation</b>Inscription → lien → compte vérifié ; lien expiré ou réutilisé refusé ; nouvel e-mail appliqué seulement après le clic.</div>
+      </div>
+    </details>
+    <details class="fonction">
+      <summary>Envoi réel des e-mails <span class="pastille p-neutre">1 j</span></summary>
+      <div class="corps">
+        <div><b>Besoin</b>Recevoir les liens de mot de passe et de vérification.</div>
+        <div><b>Valeur commerciale</b>Sans cela, un client qui oublie son mot de passe est perdu.</div>
+        <div><b>Preuves</b>Brevo gratuit jusqu’à 300 e-mails par jour ; Resend gratuit 3 000 par mois, 100 par jour [32].</div>
+        <div><b>Modifications</b>Fournisseur via <code>SMTP_URL</code> (déjà prévu), gabarits HTML et texte, domaine d’envoi avec SPF, DKIM, DMARC.</div>
+        <div><b>Dépendances</b>Nom de domaine.</div>
+        <div><b>Risques</b>Messages classés en spam : tester sur Gmail et Outlook.</div>
+        <div><b>Validation</b>Réception en moins d’une minute sur deux boîtes ; DKIM valide.</div>
+      </div>
+    </details>
+    <details class="fonction">
+      <summary>PostgreSQL en production <span class="pastille p-neutre">2 à 3 j</span></summary>
+      <div class="corps">
+        <div><b>Besoin</b>Données de clients en sécurité, sauvegardes fiables.</div>
+        <div><b>Valeur commerciale</b>Restauration à un instant donné, base gérée, montée en charge.</div>
+        <div><b>Preuves</b>SQLite convient à un seul processus (Actual l’utilise en auto-hébergé), pas à un SaaS avec sauvegardes continues.</div>
+        <div><b>Modifications</b>Fournisseur Prisma <code>postgresql</code>, migration de base régénérée, tests serveur sur PostgreSQL (conteneur), script de reprise des données SQLite existantes.</div>
+        <div><b>Dépendances</b>Aucune fonctionnelle.</div>
+        <div><b>Risques</b>Différences de tri et de casse ; reprise de ton compte à vérifier ligne à ligne.</div>
+        <div><b>Validation</b>453 tests verts sur PostgreSQL ; compte <code>oussama</code> repris à l’identique (comptage par table).</div>
+      </div>
+    </details>
+    <details class="fonction">
+      <summary>Production : build, sécurité, PWA, pages légales <span class="pastille p-neutre">4 à 5 j</span></summary>
+      <div class="corps">
+        <div><b>Besoin</b>Une app rapide, sûre, installable, avec des règles claires.</div>
+        <div><b>Valeur commerciale</b>Confiance ; obligations de la loi 09-08.</div>
+        <div><b>Preuves</b>88 % des ménages équipés de smartphone ; Budget Maroc et Actual en PWA ; CNDP.</div>
+        <div><b>Modifications</b>Build compilé, interface servie derrière un proxy HTTPS, CSP vérifiée, purge des sessions expirées, journaux sans données financières ; manifeste et icônes ; pages Conditions et Confidentialité, case à cocher à l’inscription.</div>
+        <div><b>Dépendances</b>PostgreSQL, nom de domaine, textes juridiques relus.</div>
+        <div><b>Risques</b>Textes légaux sans relecture : faire relire.</div>
+        <div><b>Validation</b>Installation sur Android et iPhone ; en-têtes de sécurité contrôlés ; Lighthouse PWA.</div>
+      </div>
+    </details>
+    <details class="fonction">
+      <summary>Validation des calculs et parcours de bout en bout <span class="pastille p-neutre">3 à 4 j</span></summary>
+      <div class="corps">
+        <div><b>Besoin</b>Des chiffres justes : c’est le produit.</div>
+        <div><b>Valeur commerciale</b>Une erreur de calcul visible coûte la confiance d’un client payant.</div>
+        <div><b>Preuves</b>Plan.md § 13 prévoyait Playwright et des cas de référence ; non faits.</div>
+        <div><b>Modifications</b>Cas de référence chiffrés à la main (reste à dépenser, semaine, cumul, objectif, scénario) ; propriétés étendues ; 6 parcours Playwright ; contrôle d’accessibilité.</div>
+        <div><b>Dépendances</b>Aucune.</div>
+        <div><b>Risques</b>Découvrir des écarts : les corriger dans ce même lot.</div>
+        <div><b>Validation</b>Tous les cas de référence égaux au centime ; parcours verts à 375 et 1342 px.</div>
+      </div>
+    </details>
+  </div>
+
+  <div class="niveau">
+    <div class="niveau-tete"><span class="pastille p-partiel">2</span><h3 style="margin:0">Importantes pour se différencier</h3></div>
+    <details class="fonction">
+      <summary>Projection sur 1, 3, 5 et 10 ans <span class="pastille p-neutre">3 j</span></summary>
+      <div class="corps">
+        <div><b>Besoin</b>Question 5 : « où en serai-je dans 5 ans ? »</div>
+        <div><b>Valeur commerciale</b>Argument de vente premium ; PocketSmith fait payer l’horizon, Monarch réserve la prévision au plan Plus.</div>
+        <div><b>Preuves</b>PocketSmith 6 mois → 60 ans selon le plan [8] ; Monarch Plus [6] ; Finary Monte Carlo [12].</div>
+        <div><b>Modifications</b>Horizons 60 et 120 mois dans le moteur (déjà borné à 120 pour les objectifs), épargne cumulée par scénario, fin des dettes, hausse de salaire annuelle facultative, graphique par année ; incertitude affichée au-delà de 24 mois (déjà dans le moteur).</div>
+        <div><b>Dépendances</b>Simulateur existant.</div>
+        <div><b>Risques</b>Faux sentiment de précision : afficher une fourchette, jamais un chiffre unique au-delà de 2 ans.</div>
+        <div><b>Validation</b>Projection à 12 mois identique à l’actuelle ; propriété : le réel n’est jamais modifié.</div>
+      </div>
+    </details>
+    <details class="fonction">
+      <summary>Taux d’endettement <span class="pastille p-neutre">1 j</span></summary>
+      <div class="corps">
+        <div><b>Besoin</b>Savoir si un nouveau crédit passe ; 4 dossiers sur 10 dépassent 40 %.</div>
+        <div><b>Valeur commerciale</b>Chiffre parlant au Maroc, absent des concurrents locaux.</div>
+        <div><b>Preuves</b>Enquête BAM 2025 [17].</div>
+        <div><b>Modifications</b>Mensualités des dettes ÷ revenus garantis du mois, dans le moteur ; KPI dans Mon plan › Dettes, alerte au-delà du seuil réglable.</div>
+        <div><b>Dépendances</b>Aucune.</div>
+        <div><b>Risques</b>Ne pas le présenter comme un avis de crédit.</div>
+        <div><b>Validation</b>Cas chiffrés ; seuil réglable.</div>
+      </div>
+    </details>
+    <details class="fonction">
+      <summary>Modèles d’événements de l’année <span class="pastille p-neutre">1 j</span></summary>
+      <div class="corps">
+        <div><b>Besoin</b>Prévoir Ramadan, Aïd al-Adha, rentrée, vacances, 13<sup>e</sup> mois.</div>
+        <div><b>Valeur commerciale</b>Ancrage local fort pour un effort minime.</div>
+        <div><b>Preuves</b>HCP : +18,2 % pendant Ramadan ; Aïd jusqu’à 42 % du budget mensuel des plus modestes [23][24].</div>
+        <div><b>Modifications</b>Liste de modèles dans l’ajout d’un ponctuel et dans l’onboarding ; montant toujours saisi par l’utilisateur.</div>
+        <div><b>Dépendances</b>Ponctuels existants.</div>
+        <div><b>Risques</b>Dates lunaires : l’utilisateur choisit le mois.</div>
+        <div><b>Validation</b>Un modèle crée un ponctuel normal, modifiable.</div>
+      </div>
+    </details>
+  </div>
+
+  <div class="niveau">
+    <div class="niveau-tete"><span class="pastille p-info">3</span><h3 style="margin:0">Pour une version ultérieure</h3></div>
+    <div class="tableau">
+      <table style="min-width:720px">
+        <thead><tr><th>Fonctionnalité</th><th>Pourquoi attendre</th><th>Effort</th></tr></thead>
+        <tbody>
+          <tr><td>Abonnement payant (CMI récurrent ou revendeur)</td><td>Indispensable pour vendre, pas pour une bêta gratuite ; délai bancaire</td><td class="num">5 à 8 j</td></tr>
+          <tr><td>Arabe et darija, écriture de droite à gauche</td><td>Toutes les chaînes à extraire ; à décider selon les retours</td><td class="num">8 à 10 j</td></tr>
+          <tr><td>Import de relevé CSV, SMS bancaires</td><td>Formats différents selon la banque ; à cadrer avec de vrais relevés</td><td class="num">4 à 6 j</td></tr>
+          <tr><td>Rappels par e-mail (paie à confirmer, échéance)</td><td>Dépend de l’envoi d’e-mails et du consentement</td><td class="num">2 j</td></tr>
+          <tr><td>Budget partagé du foyer</td><td>Change le modèle d’isolation ; attendre la demande</td><td class="num">8 j et plus</td></tr>
+          <tr><td>Assistant IA</td><td>Coût par message, risque de conseil financier ; les règles actuelles couvrent l’essentiel</td><td class="num">5 j et plus</td></tr>
+          <tr><td>Net depuis le brut (CNSS, AMO, IR)</td><td>Risque d’erreur réglementaire ; le salarié connaît son net</td><td class="num">3 j</td></tr>
+          <tr><td>Double authentification</td><td>Utile après le lancement</td><td class="num">2 j</td></tr>
+          <tr><td>Jours fériés pour la date de paie</td><td>Déjà noté au plan ; faible impact</td><td class="num">1 j</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="niveau">
+    <div class="niveau-tete"><span class="pastille p-neutre">4</span><h3 style="margin:0">Inutiles ou disproportionnées</h3></div>
+    <div class="carte">
+      <ul>
+        <li><b>Synchronisation bancaire</b> : pas d’accès ouvert documenté aux banques marocaines ; agrément nécessaire. Le choix « sans banque » est un argument de confidentialité.</li>
+        <li><b>Placements et patrimoine</b> : autre métier (Finary, Monarch).</li>
+        <li><b>Avances de salaire, crédit, carte</b> : services financiers régulés (modèle de Cleo).</li>
+        <li><b>Négociation de factures, résiliation d’abonnements</b> : dépend de la synchro bancaire américaine.</li>
+        <li><b>Application native</b> avant d’avoir mesuré la PWA.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PLAN ============ -->
+<section id="plan">
+  <h2>Plan de finalisation</h2>
+  <p class="chapo">Cinq phases. Les lots 24 à 28 sont les prérequis du lancement en bêta fermée ; les lots 29 et suivants viennent après. Le lot 23 est commité mais pas encore validé explicitement.</p>
+
+  <div class="lots">
+    <div class="lot"><div class="no">Lot 24</div><div><div class="phase">1 · Finalisation fonctionnelle</div><h3>Comptes fiables et e-mails</h3><p>Vérification de l’e-mail (inscription, changement), envoi par un fournisseur, gabarits, purge des sessions et liens expirés.</p><p class="note">Dépend de : lot 23. Validation : parcours complets avec une vraie boîte de réception.</p></div></div>
+    <div class="lot"><div class="no">Lot 25</div><div><div class="phase">1 · Finalisation fonctionnelle</div><h3>Projection pluriannuelle et endettement</h3><p>Horizons 1, 3, 5 et 10 ans avec fourchettes ; taux d’endettement avec seuil ; modèles d’événements de l’année. <b>Périmètre fonctionnel clos à la fin de ce lot.</b></p><p class="note">Dépend de : moteur existant. Validation : cas chiffrés, projection à 12 mois inchangée.</p></div></div>
+    <div class="lot"><div class="no">Lot 26</div><div><div class="phase">2 · Validation et tests</div><h3>Exactitude des calculs et parcours</h3><p>Cas de référence au centime, propriétés, 6 parcours Playwright, accessibilité, responsive 375 et 1342 px, messages d’erreur relus.</p><p class="note">Dépend de : lot 25.</p></div></div>
+    <div class="lot"><div class="no">Lot 27</div><div><div class="phase">3 · Préparation de la production</div><h3>PostgreSQL, sécurité, PWA, légal</h3><p>Passage à PostgreSQL avec reprise des données, build compilé, variables d’environnement documentées, CSP et en-têtes, journaux sans données financières, manifeste et icônes, pages Conditions et Confidentialité, dossier CNDP.</p><p class="note">Dépend de : lot 26 (les tests tournent ensuite sur PostgreSQL).</p></div></div>
+    <div class="lot"><div class="no">Lot 28</div><div><div class="phase">4 · Déploiement et hébergement</div><h3>Mise en ligne en bêta fermée</h3><p>Serveur et base, HTTPS, nom de domaine, sauvegardes quotidiennes avec restauration testée, surveillance de disponibilité et des erreurs, procédure de déploiement et de retour arrière, 10 à 20 testeurs.</p><p class="note">Dépend de : lot 27 ; décision d’hébergement (Maroc ou étranger avec autorisation CNDP).</p></div></div>
+    <div class="lot"><div class="no">Lot 29+</div><div><div class="phase">5 · Après le lancement</div><h3>Vendre et élargir</h3><p>29 Abonnement payant · 30 Arabe et darija · 31 Import de relevés · puis rappels par e-mail, double authentification, foyer partagé, assistant, selon les retours de la bêta.</p></div></div>
+  </div>
+
+  <div class="grille g2" style="margin-top:20px">
+    <div class="carte">
+      <h3>Coûts d’hébergement de départ (estimation)</h3>
+      <div class="tableau" style="box-shadow:none">
+        <table style="min-width:0">
+          <tbody>
+            <tr><td>Serveur (2 vCPU, 4 Go)</td><td class="num">≈ 6 €/mois (Hetzner CX23, revue [33]) ; offre au Maroc à chiffrer</td></tr>
+            <tr><td>PostgreSQL</td><td class="num">0 € sur le même serveur, ou ≈ 2 $/mois géré (Neon Launch, usage faible [34])</td></tr>
+            <tr><td>E-mails</td><td class="num">0 € jusqu’à 300/jour (Brevo) ou 3 000/mois (Resend) [32]</td></tr>
+            <tr><td>Domaine, surveillance, stockage des sauvegardes</td><td class="num">quelques euros par mois, à chiffrer</td></tr>
+            <tr><td><b>Total bêta</b></td><td class="num"><b>≈ 10 à 20 €/mois</b></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Les prix des hébergeurs ont changé plusieurs fois en 2026 : à revérifier au moment de souscrire.</p>
+    </div>
+    <div class="carte">
+      <h3>Prêt à être commercialisé quand</h3>
+      <ul>
+        <li>Les lots 24 à 28 sont validés et la bêta a tourné 4 semaines sans perte de données.</li>
+        <li>Chaque calcul clé a un cas de référence exact au centime.</li>
+        <li>Aucun compte ne peut lire les données d’un autre (tests d’isolation et test manuel).</li>
+        <li>Une restauration depuis la sauvegarde de la veille a été faite pour de vrai.</li>
+        <li>Les e-mails arrivent en boîte de réception, pas en spam.</li>
+        <li>Conditions, confidentialité et déclaration CNDP sont en place.</li>
+        <li>L’abonnement payant fonctionne avec une carte marocaine (lot 29).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SOURCES ============ -->
+<section id="sources">
+  <h2>Sources</h2>
+  <p class="chapo">Consultées le 12/10/2026. [O] = site officiel de l’éditeur ou de l’organisme ; les autres sont des revues ou la presse.</p>
+  <ol class="sources">
+    <li>[O] YNAB, tarifs : <a href="https://www.ynab.com/pricing">ynab.com/pricing</a></li>
+    <li>The Penny Hoarder, revue YNAB 2026 : <a href="https://www.thepennyhoarder.com/budgeting/ynab-review/">thepennyhoarder.com</a></li>
+    <li>Freenance, YNAB en Europe : <a href="https://freenance.io/products/ynab-review-2026-budgeting-app-worth-it-european-investors/">freenance.io</a></li>
+    <li>Beancount, Actual Budget et Firefly III : <a href="https://beancount.io/blog/2026/07/26/firefly-iii-vs-actual-budget-self-hosted-open-source-budgeting-guide">beancount.io</a></li>
+    <li>The Frontkit, alternatives à YNAB 2026 : <a href="https://thefrontkit.com/blogs/ynab-alternatives-2026">thefrontkit.com</a></li>
+    <li>[O] Monarch, tarifs : <a href="https://www.monarch.com/pricing">monarch.com/pricing</a> ; revue : <a href="https://www.thepennyhoarder.com/budgeting/monarch-money-review/">thepennyhoarder.com</a></li>
+    <li>Finny, prix de Copilot Money 2026 : <a href="https://getfinny.app/blog/copilot-money-pricing-2026">getfinny.app</a> ; [O] <a href="https://copilot.money/intelligence">copilot.money/intelligence</a></li>
+    <li>[O] PocketSmith, plans : <a href="https://my.pocketsmith.com/plans">my.pocketsmith.com/plans</a> ; <a href="https://www.pocketsmith.com/tour/cash-flow-forecasts/">prévisions</a></li>
+    <li>[O] Quicken Simplifi, trésorerie projetée : <a href="https://quicken.com/features/projected-cashflow">quicken.com</a> ; revue : <a href="https://www.moneycrashers.com/simplifi-quicken-review/">moneycrashers.com</a></li>
+    <li>[O] BudgetBakers Wallet : <a href="https://budgetbakers.com/en/products/wallet/">budgetbakers.com</a> ; revue : <a href="https://getfinny.app/blog/wallet-budgetbakers-review-2026">getfinny.app</a></li>
+    <li>Spendee et Money Manager : <a href="https://www.capterra.com/p/238829/Spendee/">capterra.com</a> ; [O] <a href="https://apps.apple.com/app/id560481810">App Store, Money Manager</a></li>
+    <li>Finary, Bankin’, Linxo : <a href="https://www.lafabriquedunet.fr/logiciels/gestion/budget-personnel/">lafabriquedunet.fr</a> ; <a href="https://finactuel.fr/meilleures-applications-budget-epargne-2026/">finactuel.fr</a></li>
+    <li>[O] Flouss / Flowss : <a href="https://www.flouss.app/?lang=en">flouss.app</a></li>
+    <li>Médias24, Flowss et son fondateur (12/10/2026) : <a href="https://medias24.com/2026/10/12/a-19-ans-ihab-el-bani-developpe-son-application-de-finances-personnelles-au-maroc-1777299">medias24.com</a></li>
+    <li>[O] Budget Maroc : <a href="https://suivie-dep.vercel.app/">suivie-dep.vercel.app</a></li>
+    <li>Cleo et Rocket Money : <a href="https://www.thepennyhoarder.com/budgeting/cleo-app-review/">thepennyhoarder.com</a> ; <a href="https://getfinny.app/blog/rocket-money-pricing-2026">getfinny.app</a></li>
+    <li>Le360, surendettement et crédit à la consommation : <a href="https://fr.le360.ma/economie/sendetter-pour-tenir-comment-le-credit-a-la-consommation-soutient-et-fragilise-les-menages_VMMAOMPXHRAX7EWPKI75WYCDPI/">fr.le360.ma</a></li>
+    <li>Le360, dette des ménages 456 Md DH : <a href="https://fr.le360.ma/economie/menages-la-dette-grimpe-a-456-milliards-de-dirhams-la-plus-forte-hausse-depuis-2012_7PA26X5P7REC7CFDCD633PW2YY/">fr.le360.ma</a></li>
+    <li>Le360, bancarisation 62 % en 2025 : <a href="https://fr.le360.ma/economie/banques-398-millions-de-comptes-ouverts-et-le-taux-de-bancarisation-grimpe-a-62-en-2025_45JYSMLPBJE3LKMBDFTNP4TOOA/">fr.le360.ma</a></li>
+    <li>[O] ANRT, enquête TIC 2025 : <a href="https://www.anrt.ma/sites/default/files/2025-10/Synth%C3%A8se-Brochure_Fr.pdf">anrt.ma</a></li>
+    <li>Challenge, le 13<sup>e</sup> mois : <a href="https://www.challenge.ma/13e-mois-une-prime-en-voie-de-disparition-au-maroc-293169/">challenge.ma</a></li>
+    <li>MintHR, prime de rentrée scolaire : <a href="https://minthr.com/ma/blog/prime-de-allocation-de-rentree-scolaire-au-maroc/">minthr.com</a></li>
+    <li>Le Matin, Ramadan et budget des ménages (HCP) : <a href="https://lematin.ma/economie/ramadan-le-budget-de-consommation-des-marocains-augmente-de-182/220288">lematin.ma</a></li>
+    <li>FNH, dépenses de l’Aïd al-Adha (HCP) : <a href="https://fnh.ma/article/actualite-economique/depenses-menages-aid-adha">fnh.ma</a></li>
+    <li>Consonews, budget de rentrée scolaire : <a href="https://consonews.ma/news/service_public/rentree-scolaire-le-budget-atteint-environ-7-000-dh-au-prive-contre-2-000-dh-au-public">consonews.ma</a></li>
+    <li>Upsilon Consulting, loi de finances 2025 (IR) : <a href="https://upsilon-consulting.com/loi-de-finances-2025-au-maroc/">upsilon-consulting.com</a></li>
+    <li>Upsilon Consulting, CNDP et loi 09-08 : <a href="https://upsilon-consulting.com/cndp-loi-09-08-protection-donnees-personnelles-maroc/">upsilon-consulting.com</a></li>
+    <li>[O] CNDP, délibérations 2025 : <a href="https://www.cndp.ma/wp-content/uploads/2025/12/Deliberation-N%C2%B0-D-939-2025-du-28112025-relative-au-modele-de-declaration-simplifiee-relative-au-traitement-des-donnees-a-caractere-personnel-de-cookies-sur-un-terminal.pdf">cndp.ma</a></li>
+    <li>Le Matin, VPS OVHcloud au Maroc : <a href="https://lematin.ma/economie/ovhcloud-lance-ses-serveurs-prives-virtuels-au-maroc-des-lete-2025/273697">lematin.ma</a></li>
+    <li>Kolonell, CMI ou Stripe au Maroc : <a href="https://kolonell.com/fr/blog/choisir-passerelle-paiement-cmi-ou-stripe-pme-casablanca-2026">kolonell.com</a></li>
+    <li>[O] Lemon Squeezy, pays pris en charge : <a href="https://docs.lemonsqueezy.com/help/getting-started/supported-countries">docs.lemonsqueezy.com</a></li>
+    <li>Resend et Brevo, offres gratuites : <a href="https://automationatlas.io/answers/resend-free-tier-explained-2026/">automationatlas.io</a> ; <a href="https://www.techradar.com/pro/software-services/brevo-review">techradar.com</a></li>
+    <li>Comparatif des prix cloud, août 2026 (Hetzner) : <a href="https://kimmo.suominen.com/stuff/cpc-2026-08.txt">kimmo.suominen.com</a></li>
+    <li>[O] Neon, tarifs : <a href="https://neon.com/pricing">neon.com/pricing</a></li>
+  </ol>
+</section>
+
+<footer>MySalary · étude interne, 12 octobre 2026. Aucun chiffre de cette page ne vient des données d’un utilisateur.</footer>
+</main>

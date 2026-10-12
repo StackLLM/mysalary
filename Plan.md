@@ -19,6 +19,8 @@
 | 9 | Week-end (07/10/2026) | Une paie qui tombe un samedi ou un dimanche arrive le **lundi suivant** (le virement passe par la banque). Réglable dans le contrat. |
 | 10 | Mois d'une prime (07/10/2026) | Le mois d'une prime ou d'un revenu est le **mois civil où l'argent arrive**. |
 | 11 | Dépôt de code (08/10/2026) | Dépôt **privé** `github.com/oussamaalmouallim/mysalary`. Commits en anglais, au nom de l'auteur. `Salaire/`, la base, `.env` et `.claude/` ne sont jamais versionnés. |
+| 12 | Comptes (12/10/2026) | La décision 5 est remplacée : **comptes par e-mail et mot de passe**, sessions par cookie (lot 23). |
+| 13 | Produit (12/10/2026) | MySalary devient un **SaaS** commercialisé auprès des salariés, d'abord au Maroc. Positionnement, périmètre de lancement et lots restants : § 15 et `docs/etude/Etude-marche-2026-10.html`. |
 
 ---
 
@@ -139,7 +141,7 @@ Non-objectifs v1 : connexion bancaire, multi-devises, investissement boursier, b
 
 | Domaine | Fonctionnalités v1 |
 |---|---|
-| Comptes | Plusieurs profils utilisateurs en base, données séparées, sans mot de passe en v1. |
+| Comptes | Inscription par e-mail et mot de passe, sessions, mot de passe oublié, changement d'e-mail et de mot de passe, suppression ; données isolées par compte (lot 23). Vérification de l'e-mail : lot 24. |
 | Onboarding | Import V0 (optionnel), profil, salaire et cycle de paie, primes, charges, dettes, épargne actuelle, premier objectif. |
 | Salaire | Contrat versionné, paie mensuelle prévue puis confirmée (date et montant réels), primes sur la paie, mois budgétaire de paie à paie. |
 | Autres revenus | Primes versées à part (ponctuelles, mensuelles, trimestrielles, annuelles), revenus variables, certitude (garanti / probable / incertain), confirmation de réception. |
@@ -270,7 +272,7 @@ Base technique reprise de la skill (versions testées ensemble).
 - **Montants stockés en centimes entiers** (`Int`). Jamais de nombre à virgule pour l'argent.
 - Dates stockées en `YYYY-MM-DD` (date civile). Pas de fuseau sur une date de paie.
 
-### 5.7 Comptes utilisateurs (sans authentification)
+### 5.7 Comptes utilisateurs (historique : remplacé au lot 23)
 
 Décision : des comptes existent en base, mais personne ne se connecte avec un mot de passe pour l'instant.
 
@@ -283,6 +285,8 @@ Décision : des comptes existent en base, mais personne ne se connecte avec un m
 Limite assumée : sans mot de passe, n'importe qui qui accède à l'app peut changer de profil. Le serveur écoute donc **uniquement en local** (127.0.0.1).
 
 Plus tard (lot sécurité) : mot de passe argon2id + cookie de session httpOnly. L'en-tête est alors remplacé par la session, sans toucher au reste du code.
+
+**Fait au lot 23 (12/10/2026)** : comptes par e-mail et mot de passe (`scrypt`), cookie de session `HttpOnly`, `SameSite=Strict`, `Secure` en HTTPS ; l'en-tête `X-Utilisateur` et l'écran Profils sont supprimés ; le compte courant vient uniquement de la session. Détail : `README.md` et `docs/lots/Lot-23-multi-utilisateur.md`.
 
 ### 5.8 API (REST, préfixe `/api/v1`)
 
@@ -587,6 +591,7 @@ workspaces `npm`, `vitest`, `jsdom`, `@testing-library/react`, `playwright`, `fa
 
 ## 12. Sécurité et confidentialité
 
+- *État au 12/10/2026 : les points ci-dessous datent de la v1 locale. Pour le SaaS, ils sont complétés par le § 15.4.*
 - Données locales. Aucun service tiers, aucun tracking, aucune police distante.
 - Données isolées par utilisateur (filtre `utilisateurId` obligatoire, testé).
 - Pas de mot de passe en v1 : serveur limité à 127.0.0.1.
@@ -616,4 +621,62 @@ workspaces `npm`, `vitest`, `jsdom`, `@testing-library/react`, `playwright`, `fa
 
 ## 14. Questions ouvertes
 
-Aucune sur le plan global. Les décisions sont au § 0. Les questions sur l'ordre des lots sont dans `docs/plan.md`.
+1. **Hébergement** : au Maroc (pas de transfert de données hors du pays) ou à l'étranger (autorisation préalable de la CNDP) ? À trancher avant le lot 28.
+2. **Encaissement** : CMI avec module récurrent via la banque, ou revendeur « merchant of record » ? À trancher avant le lot 29.
+3. **Prix** : hypothèse 199 à 299 MAD/an après essai gratuit, à tester pendant la bêta.
+
+Les questions sur l'ordre des lots sont dans `docs/plan.md`.
+
+---
+
+## 15. SaaS : positionnement et périmètre de lancement (12/10/2026)
+
+Source : `docs/etude/Etude-marche-2026-10.html` (benchmark de 16 applications, marché marocain, audit du code).
+
+### 15.1 Positionnement
+
+**« Le plan financier du salarié, construit sur sa paie. »** MySalary répond à cinq questions à partir de ce que le salarié sait déjà, sans connecter sa banque :
+
+1. Combien vais-je réellement recevoir ? (paie confirmée, primes par certitude)
+2. Où va mon argent ? (enveloppes, semaine, mois, année, prévu contre réel)
+3. Combien puis-je épargner sans déséquilibrer mon budget ? (capacité par scénario, cumul de fin de mois)
+4. Quand pourrai-je financer mes projets ? (objectifs datés, avec et sans cumul)
+5. Quelle sera ma situation dans 1, 3, 5 ou 10 ans ? (**partiel : 36 mois au plus aujourd'hui → lot 25**)
+
+Différences avec le marché : budget calé sur la paie réelle, revenus classés par certitude, réel / prévu / projeté jamais mélangés, cumul de fin de mois qui alimente des objectifs datés. Les applications marocaines (Flouss, Budget Maroc) suivent la dépense du mois ; les internationales s'appuient sur la synchro bancaire, indisponible au Maroc.
+
+Cible de lancement : salariés marocains francophones, salaire fixe et primes, avec au moins un crédit ou un projet.
+
+### 15.2 Retenu avant le lancement
+
+| Ajout | Raison | Lot |
+|---|---|---|
+| Vérification de l'e-mail, envoi réel des e-mails | Récupération de compte, confiance | 24 |
+| Projection 1, 3, 5, 10 ans avec fourchettes | Question 5 ; argument premium (PocketSmith, Monarch Plus) | 25 |
+| Taux d'endettement avec seuil | 36 % en moyenne, plus de 40 % dans 4 dossiers sur 10 (BAM 2025) | 25 |
+| Modèles d'événements (Ramadan, Aïd, rentrée, vacances, 13e mois) | Dépenses saisonnières fortes (HCP) | 25 |
+| Cas de référence des calculs, parcours Playwright | Exactitude, prévu au § 13 et jamais fait | 26 |
+| PostgreSQL, build de production, PWA, pages légales, CNDP | Prérequis d'un SaaS | 27 |
+| Hébergement HTTPS, sauvegardes, surveillance, bêta fermée | Mise en ligne | 28 |
+
+### 15.3 Écarté ou reporté (historique conservé)
+
+- **Reporté** (après la bêta) : abonnement payant (lot 29), arabe et darija (lot 30), import de relevés et SMS (lot 31), rappels par e-mail, double authentification, budget partagé du foyer, assistant IA, net depuis le brut, jours fériés.
+- **Écarté** : synchro bancaire (pas d'accès ouvert au Maroc), placements et patrimoine, avances de salaire et crédit (services régulés), négociation de factures, application native avant d'avoir mesuré la PWA.
+
+### 15.4 Sécurité et données pour le SaaS
+
+- Comptes : e-mail vérifié, mot de passe `scrypt`, sessions `HttpOnly` / `SameSite=Strict` / `Secure`, essais limités, actions lourdes confirmées par mot de passe.
+- Isolation : compte courant tiré de la session seulement, filtre `utilisateurId` partout, testé.
+- Données : PostgreSQL, sauvegardes quotidiennes avec restauration testée, journaux sans données financières.
+- Loi 09-08 : déclaration CNDP avant ouverture ; autorisation préalable si hébergement hors du Maroc ; conditions et politique de confidentialité ; export et suppression du compte (déjà faits).
+
+### 15.5 Prêt à commercialiser quand
+
+- Lots 24 à 28 validés ; bêta de 4 semaines sans perte de données.
+- Chaque calcul clé a un cas de référence exact au centime.
+- Aucun compte ne lit les données d'un autre (tests et essai manuel).
+- Une restauration depuis la sauvegarde de la veille a été faite pour de vrai.
+- Les e-mails arrivent en boîte de réception.
+- Conditions, confidentialité et déclaration CNDP en place.
+- Abonnement payant fonctionnel avec une carte marocaine (lot 29).

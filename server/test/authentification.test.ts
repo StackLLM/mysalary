@@ -93,6 +93,7 @@ describe('connexion, session, déconnexion', () => {
 describe('mot de passe oublié', () => {
   it('envoie un lien à usage unique ; le nouveau mot de passe ferme toutes les sessions', async () => {
     const compte = await creerCompte(ctx.app, 'A', 'oubli@exemple.test')
+    ctx.messages.length = 0 // le message de confirmation de l'inscription
     const r = await appeler('POST', '/auth/mot-de-passe/oubli', { payload: { email: 'Oubli@exemple.test' } })
     expect(r.statusCode).toBe(204)
     expect(ctx.messages).toHaveLength(1)

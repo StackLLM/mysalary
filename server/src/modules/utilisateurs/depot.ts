@@ -8,6 +8,7 @@ export function versDto(ligne: LigneUtilisateur): Utilisateur {
     id: ligne.id,
     prenom: ligne.prenom,
     email: ligne.email,
+    emailVerifie: ligne.email !== null && ligne.emailVerifieLe !== null,
     devise: ligne.devise as Devise,
     onboardingEtape: ligne.onboardingEtape,
     onboardingTermine: ligne.onboardingTermine,

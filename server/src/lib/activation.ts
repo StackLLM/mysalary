@@ -15,7 +15,8 @@ export async function activerCompte(prisma: PrismaClient, { compte, email }: { c
   const cible = trouves[0]!
   const pris = await prisma.utilisateur.findUnique({ where: { email: lu.data } })
   if (pris && pris.id !== cible.id) throw new Error('Cet e-mail est déjà utilisé par un autre compte.')
-  await prisma.utilisateur.update({ where: { id: cible.id }, data: { email: lu.data } })
+  // L'opérateur du serveur répond de l'adresse : pas de lien de confirmation à envoyer.
+  await prisma.utilisateur.update({ where: { id: cible.id }, data: { email: lu.data, emailVerifieLe: maintenant } })
   const jeton = await creerJetonMotDePasse(prisma, cible.id, maintenant, DUREE_ACTIVATION_MS)
   return { id: cible.id, prenom: cible.prenom, lien: lienMotDePasse(urlApplication, jeton) }
 }

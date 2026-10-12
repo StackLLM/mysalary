@@ -16,6 +16,7 @@ import { dateCourte } from '../../lib/dates'
 import { useDeconnexion, useRenommerUtilisateur, useUtilisateurCourant } from '../compte/requetes'
 import { lireMontant, versSaisie } from '../salaire/saisie'
 import { useMoisCourant } from '../salaire/requetes'
+import { EmailCompte } from '../compte/EmailCompte'
 import { MotDePasseCompte } from '../compte/MotDePasseCompte'
 import { SuppressionCompte } from '../compte/SuppressionCompte'
 import { RestaurationCompte } from '../sauvegarde/RestaurationCompte'
@@ -258,6 +259,8 @@ function CarteCompte() {
           Se déconnecter
         </Bouton>
       </Carte>
+
+      <EmailCompte />
 
       <MotDePasseCompte />
 

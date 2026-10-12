@@ -31,6 +31,7 @@ const PageReglages = lazy(() => import('./features/reglages/PageReglages').then(
 const PageConnexion = lazy(() => import('./features/connexion/PageConnexion').then((m) => ({ default: m.PageConnexion })))
 const PageInscription = lazy(() => import('./features/connexion/PageInscription').then((m) => ({ default: m.PageInscription })))
 const PageMotDePasseOublie = lazy(() => import('./features/connexion/PageMotDePasseOublie').then((m) => ({ default: m.PageMotDePasseOublie })))
+const PageVerificationEmail = lazy(() => import('./features/connexion/PageVerificationEmail').then((m) => ({ default: m.PageVerificationEmail })))
 const PageNouveauMotDePasse = lazy(() => import('./features/connexion/PageNouveauMotDePasse').then((m) => ({ default: m.PageNouveauMotDePasse })))
 // La vitrine du design system n'existe qu'en développement.
 const PageVitrine = lazy(() => import('./features/vitrine/PageVitrine').then((m) => ({ default: m.PageVitrine })))
@@ -74,15 +75,15 @@ function Public({ children, vers }: { children: ReactNode; vers?: string }) {
   return children
 }
 
-const CHEMINS_PUBLICS = ['/connexion', '/inscription', '/mot-de-passe/oubli', '/mot-de-passe/nouveau']
+const CHEMINS_PUBLICS = ['/connexion', '/inscription', '/mot-de-passe/oubli', '/mot-de-passe/nouveau', '/email/verification']
 
 /** Les écrans publics ont leur propre mise en page ; le reste est l'app, derrière la garde. */
 function Racine() {
   const emplacement = useLocation()
   if (!CHEMINS_PUBLICS.includes(emplacement.pathname)) return <Vues />
-  // Le lien « mot de passe » d'un e-mail s'ouvre même connecté : on choisit un mot de passe pour le compte du lien.
-  const page = { '/connexion': <PageConnexion />, '/inscription': <PageInscription />, '/mot-de-passe/oubli': <PageMotDePasseOublie />, '/mot-de-passe/nouveau': <PageNouveauMotDePasse /> }[emplacement.pathname]
-  if (emplacement.pathname === '/mot-de-passe/nouveau') return <Suspense fallback={null}>{page}</Suspense>
+  const page = { '/connexion': <PageConnexion />, '/inscription': <PageInscription />, '/mot-de-passe/oubli': <PageMotDePasseOublie />, '/mot-de-passe/nouveau': <PageNouveauMotDePasse />, '/email/verification': <PageVerificationEmail /> }[emplacement.pathname]
+  // Les liens d'un e-mail (mot de passe, confirmation d'adresse) s'ouvrent aussi connecté.
+  if (emplacement.pathname === '/mot-de-passe/nouveau' || emplacement.pathname === '/email/verification') return <Suspense fallback={null}>{page}</Suspense>
   return (
     <Suspense fallback={null}>
       <Public vers={emplacement.pathname === '/inscription' ? '/onboarding' : undefined}>{page}</Public>

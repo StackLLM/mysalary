@@ -1,7 +1,7 @@
 # MySalary — Progression
 
 > Suivi de la construction de MySalary, lot par lot. Mis à jour à chaque lot.
-> État au 12/10/2026 : **lots 0 à 21 clôturés**, **lot 22 clôturé puis remplacé par le lot 23**, **lot 23 (nettoyage, authentification, multi-utilisateur) livré, en attente de validation**. Depuis le 11/10/2026, c'est toi qui commites : je donne seulement les messages de commit. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
+> État au 12/10/2026 : **lots 0 à 21 clôturés**, **lot 22 clôturé puis remplacé par le lot 23**, **lot 23 (nettoyage, authentification, multi-utilisateur) livré et commité, en attente de validation explicite**. Le 12/10/2026, l'étude de marché (`docs/etude/Etude-marche-2026-10.html`) a fixé les lots 24 à 31 : MySalary devient un SaaS ; **lot 24 (comptes fiables et e-mails) livré, à valider ; prochain lot : 25**. Depuis le 11/10/2026, c'est toi qui commites : je donne seulement les messages de commit. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
 >
 > - Plan global de l'application (vision, architecture, données, règles métier) : [`Plan.md`](../Plan.md), à la racine.
 > - Bilan détaillé de chaque lot livré (périmètre, règles, tests, bugs corrigés) : [`docs/lots/`](lots/).
@@ -33,7 +33,15 @@
 | 20 | [Export & sauvegarde](#lot-20--export--sauvegarde) | 4 — Entrée et finitions | ✅ Clôturé | 12/10/2026 | 426 | [Lot-20-export-sauvegarde.md](lots/Lot-20-export-sauvegarde.md) |
 | 21 | [Finitions (polish)](#lot-21--finitions-polish) | 4 — Entrée et finitions | ✅ Clôturé (en partie) | 12/10/2026 | 429 | [Lot-21-finitions.md](lots/Lot-21-finitions.md) |
 | 22 | [Authentification (locale)](#lot-22--authentification-locale) | 4 — Entrée et finitions | ✅ Clôturé, remplacé par le lot 23 | 13/10/2026 | 441 | [Lot-22-authentification.md](lots/Lot-22-authentification.md) |
-| 23 | [Nettoyage, authentification et multi-utilisateur](#lot-23--nettoyage-authentification-et-multi-utilisateur) | 5 — Multi-utilisateur | 🟡 Livré, à valider | — | 451 | [Lot-23-multi-utilisateur.md](lots/Lot-23-multi-utilisateur.md) |
+| 23 | [Nettoyage, authentification et multi-utilisateur](#lot-23--nettoyage-authentification-et-multi-utilisateur) | 5 — Multi-utilisateur | 🟡 Livré, à valider | — | 453 | [Lot-23-multi-utilisateur.md](lots/Lot-23-multi-utilisateur.md) |
+| 24 | [Comptes fiables et e-mails](#lot-24--comptes-fiables-et-e-mails) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 467 | [Lot-24-comptes-emails.md](lots/Lot-24-comptes-emails.md) |
+| 25 | [Projection pluriannuelle et endettement](#lot-25--projection-pluriannuelle-et-endettement) | 6 — Finalisation fonctionnelle | ⏭️ Prochain | — | — | — |
+| 26 | [Exactitude des calculs et parcours](#lot-26--exactitude-des-calculs-et-parcours) | 7 — Validation et tests | ⬜ Prévu | — | — | — |
+| 27 | [PostgreSQL, sécurité, PWA, légal](#lot-27--postgresql-sécurité-pwa-légal) | 8 — Préparation de la production | ⬜ Prévu | — | — | — |
+| 28 | [Mise en ligne en bêta fermée](#lot-28--mise-en-ligne-en-bêta-fermée) | 9 — Déploiement et hébergement | ⬜ Prévu | — | — | — |
+| 29 | [Abonnement payant](#lots-29-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
+| 30 | [Arabe et darija](#lots-29-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
+| 31 | [Import de relevés](#lots-29-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
 
 « Tests » = nombre total de tests automatiques du projet à la clôture du lot (partage + moteur + serveur + interface).
 
@@ -43,6 +51,7 @@ Autres sections :
 - [2. Lots clôturés](#2-lots-clôturés-0-à-15)
 - [3. Lots livrés, en attente de validation](#3-lots-livrés-en-attente-de-validation)
 - [4. Lots 20 à 23](#4-lots-20-à-23)
+- [4 bis. Lots 24 à 31 : finaliser le SaaS](#4-bis-lots-24-à-31--finaliser-le-saas)
 - [5. Points reportés, rangés par lot](#5-points-reportés-rangés-par-lot)
 - [6. Historique des commits](#6-historique-des-commits)
 - [7. Questions ouvertes](#7-questions-ouvertes)
@@ -299,7 +308,7 @@ Règles appliquées à chaque lot :
 
 ### Lot 23 — Nettoyage, authentification et multi-utilisateur
 
-- **Statut** : 🟡 livré le 12/10/2026, en attente de validation · 451 tests · `docs/lots/Lot-23-multi-utilisateur.md`.
+- **Statut** : 🟡 livré le 12/10/2026, commité (`f629ca1`, `2bf9195`), en attente de validation explicite · 453 tests · `docs/lots/Lot-23-multi-utilisateur.md`.
 - **Livré** :
   - audit et nettoyage : code mort supprimé (composant `Tableau`, fonctions et constantes jamais utilisées, doublon `moisAbrege`), routes et écrans remplacés retirés (Profils, `/utilisateurs/*`, en-tête `X-Utilisateur`) ;
   - inscription (prénom, e-mail, mot de passe, devise), connexion, déconnexion, mot de passe oublié par lien à usage unique (1 h), changement de mot de passe ; pages de connexion au design de l'app ;
@@ -309,7 +318,50 @@ Règles appliquées à chaque lot :
   - migration `comptes_email` : les comptes existants gardent leurs données ; `npm run compte:activer -- <prénom> <e-mail>` leur donne un e-mail et un lien pour choisir le mot de passe ;
   - restauration d'un export dans un compte vide (Réglages › Sauvegarde) à la place de « importer en nouveau compte ».
 - **Blocage à lever par toi** : ton compte `oussama` doit être activé une fois (commande ci-dessus) pour être accessible.
-- **Prochaines étapes** : SMTP réel pour les e-mails (variable `SMTP_URL`), vérification de l'adresse e-mail à l'inscription, HTTPS devant le serveur avant toute mise en ligne, base PostgreSQL si plusieurs instances.
+- **Ajout du 12/10/2026** : changement de l'e-mail de connexion dans Réglages (mot de passe exigé, adresse unique) ; 453 tests.
+- **Prochaines étapes** : reprises dans les lots 24 (e-mails, vérification), 27 (PostgreSQL) et 28 (HTTPS).
+
+## 4 bis. Lots 24 à 31 : finaliser le SaaS
+
+Décidés le 12/10/2026 après l'étude de marché (`docs/etude/Etude-marche-2026-10.html`, positionnement dans `Plan.md` § 15). Les lots 24 à 28 sont les prérequis du lancement en bêta fermée. Le périmètre fonctionnel est clos à la fin du lot 25 : rien d'autre n'entre avant le lancement sans nouvelle décision.
+
+### Lot 24 — Comptes fiables et e-mails
+
+- **Statut** : 🟡 livré le 12/10/2026, en attente de validation · 467 tests · `docs/lots/Lot-24-comptes-emails.md`. Reste à faire par toi : test d'envoi dans une vraie boîte (fournisseur et domaine à choisir), repris au lot 28.
+- **Contenu** : vérification de l'adresse e-mail à l'inscription (lien à usage unique, renvoi, bandeau tant que non vérifiée) ; changement d'e-mail appliqué seulement après le clic dans le lien envoyé à la nouvelle adresse ; envoi par un fournisseur transactionnel via `SMTP_URL` (gabarits HTML et texte, SPF, DKIM, DMARC) ; purge des sessions et liens expirés.
+- **Dépend de** : lot 23. **Effort** : 3 à 4 jours.
+- **Validation** : parcours complets avec une vraie boîte de réception ; lien expiré ou réutilisé refusé ; e-mails hors spam sur Gmail et Outlook.
+
+### Lot 25 — Projection pluriannuelle et endettement
+
+- **Contenu** : projection de l'épargne à 1, 3, 5 et 10 ans par scénario, avec fourchette au-delà de 24 mois, fin des dettes, hausse de salaire annuelle facultative ; taux d'endettement (mensualités ÷ revenus garantis) avec seuil réglable, 40 % par défaut ; modèles d'événements de l'année pour les ponctuels (Ramadan, Aïd al-Adha, rentrée, vacances, 13e mois), montant toujours saisi par l'utilisateur.
+- **Dépend de** : moteur existant. **Effort** : 4 à 5 jours.
+- **Validation** : projection à 12 mois identique à l'actuelle ; cas chiffrés ; le réel n'est jamais modifié.
+
+### Lot 26 — Exactitude des calculs et parcours
+
+- **Contenu** : cas de référence chiffrés à la main (reste à dépenser, semaine, cumul, objectif, scénario, endettement) ; propriétés étendues ; 6 parcours Playwright (inscription → onboarding, dépense, paie confirmée, objectif, simulation, clôture) ; accessibilité ; responsive 375 et 1342 px.
+- **Dépend de** : lot 25. **Effort** : 3 à 4 jours. Reprend le reste du lot 21 (Playwright).
+- **Validation** : tous les cas au centime ; parcours verts.
+
+### Lot 27 — PostgreSQL, sécurité, PWA, légal
+
+- **Contenu** : passage à PostgreSQL (migration de base, tests serveur sur PostgreSQL, reprise des données SQLite dont le compte `oussama`) ; build compilé et interface servie derrière un proxy ; variables d'environnement documentées ; CSP et en-têtes vérifiés ; journaux sans données financières ; manifeste et icônes (PWA) ; pages Conditions et Confidentialité, acceptation à l'inscription ; dossier de déclaration CNDP.
+- **Dépend de** : lot 26. **Effort** : 4 à 6 jours.
+- **Validation** : tous les tests sur PostgreSQL ; comptage par table identique après reprise ; installation sur Android et iPhone.
+
+### Lot 28 — Mise en ligne en bêta fermée
+
+- **Contenu** : serveur et base, nom de domaine, HTTPS, sauvegardes quotidiennes avec restauration testée, surveillance de disponibilité et des erreurs, procédure de déploiement et de retour arrière ; 10 à 20 testeurs.
+- **Dépend de** : lot 27 ; décision d'hébergement (Plan.md § 14). **Effort** : 2 à 3 jours, plus les démarches.
+- **Validation** : critères « prêt à commercialiser » (Plan.md § 15.5) sauf l'abonnement.
+
+### Lots 29 et suivants — après le lancement
+
+- **29 Abonnement payant** : CMI récurrent ou revendeur, essai gratuit, prix testé en bêta.
+- **30 Arabe et darija** : extraction des textes, écriture de droite à gauche.
+- **31 Import de relevés** : CSV, puis SMS bancaires collés.
+- **Selon les retours** : rappels par e-mail, double authentification, budget partagé du foyer, assistant, net depuis le brut, jours fériés.
 
 ## 5. Points reportés, rangés par lot
 
@@ -330,13 +382,16 @@ Tout ce qu'un lot livré a laissé de côté, et le lot qui doit le reprendre.
 | Export avant suppression d'un compte ; réinitialisation d'un compte | lot 3 | ✅ fait au lot 20 |
 | Toast « Ajoutée à novembre » pour une dépense datée hors du mois affiché | lot 7 | ✅ fait au lot 21 |
 | Paquet JS à alléger | lot 2 | ✅ fait au lot 21 |
-| Glisser-déposer pour l'ordre des objectifs (aujourd'hui : monter / descendre) | lot 10 | 21 |
+| Glisser-déposer pour l'ordre des objectifs (aujourd'hui : monter / descendre) | lot 10 | après le lancement |
 | Scénario « perso » avec ses propres règles | lot 11 | non planifié |
 | Réglages › Catégories (renommer, fusionner) | lot 6 | 21 (proposé, à confirmer) |
 | Modifier une charge « à partir de maintenant » ou « depuis le début » (UX.md § 5.11) ; aujourd'hui une modification s'applique à tous les mois non clôturés | lot 6 | 21 (proposé, à confirmer) |
 | Suspendre ou archiver un élément de Mon plan (aujourd'hui : choisir un dernier mois, ou supprimer) | lot 6 | 21 (proposé, à confirmer) |
 | Aperçu de l'effet avant de changer de mode de période (UX.md § 5.12) | lot 3 | 21 (proposé, à confirmer) |
-| Jours fériés (seul le week-end décale la paie) | lot 4 | non planifié |
+| Jours fériés (seul le week-end décale la paie) | lot 4 | après le lancement (selon les retours) |
+| Parcours de bout en bout avec Playwright | lot 21 | 26 |
+| Vérification de l'e-mail, envoi réel des e-mails | lot 23 | ✅ fait au lot 24 (test en vraie boîte reporté au lot 28) |
+| PostgreSQL, HTTPS | lot 23 | 27, 28 |
 
 ## 6. Historique des commits
 
@@ -387,7 +442,8 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `2592f49` | Lot 21 : pages à la demande, raccourcis de période |
 | `3715fc6` | Lot 22 : mot de passe par profil local |
 | `336fb65`, `f159872` | Page Objectif : simulation avec le cumul de fin de mois |
-| — (à commiter) | Lot 23 : nettoyage, authentification et multi-utilisateur |
+| `f629ca1`, `2bf9195` | Lot 23 : nettoyage, authentification et multi-utilisateur |
+| — (à commiter) | Changement d'e-mail dans Réglages ; étude de marché et plan des lots 24 à 31 ; lot 24 : confirmation de l'adresse et e-mails |
 
 ## 7. Questions ouvertes
 
@@ -395,4 +451,7 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 2. Où placer le choix **« à partir de maintenant » / « depuis le début »** quand on modifie une charge ? Proposition : lot 21.
 3. Où placer **suspendre / archiver** un élément de Mon plan ? Proposition : lot 21.
 4. Où placer l'**aperçu de l'effet** d'un changement de mode de période ? Proposition : lot 21.
-5. Faut-il gérer les **jours fériés** pour la date de paie ? Aujourd'hui, seul le week-end la décale.
+5. Faut-il gérer les **jours fériés** pour la date de paie ? Aujourd'hui, seul le week-end la décale. → reporté après le lancement.
+6. Questions 1 à 4 : hors du périmètre de lancement fixé le 12/10/2026 ; reprises après la bêta selon les retours.
+7. **Hébergement** au Maroc ou à l'étranger (autorisation CNDP) : à trancher avant le lot 28.
+8. **Encaissement** CMI ou revendeur : à trancher avant le lot 29.

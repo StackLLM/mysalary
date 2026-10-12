@@ -51,6 +51,14 @@ export const schemaChangementMotDePasse = z.strictObject({ actuel: motDePasseSai
 /** Confirmation d'une action lourde (supprimer, réinitialiser) par le mot de passe. */
 export const schemaConfirmationMotDePasse = z.strictObject({ motDePasse: motDePasseSaisi })
 
+/** Nouvel e-mail de connexion, confirmé par le mot de passe. */
+export const schemaChangementEmail = z.strictObject({ email, motDePasse: motDePasseSaisi })
+
+/** Lien de vérification reçu par e-mail (confirmation de l'adresse ou changement d'adresse). */
+export const schemaVerificationEmail = z.strictObject({
+  jeton: z.string({ error: 'Lien invalide.' }).min(20, 'Lien invalide.').max(200, 'Lien invalide.'),
+})
+
 export const schemaModificationUtilisateur = z.strictObject({ prenom })
 
 export interface Utilisateur {
@@ -58,10 +66,17 @@ export interface Utilisateur {
   prenom: string
   /** `null` pour un compte d'avant le lot 23 qui n'a pas encore été activé. */
   email: string | null
+  /** L'adresse a été confirmée par un lien reçu à cette adresse. */
+  emailVerifie: boolean
   devise: Devise
   onboardingEtape: number
   onboardingTermine: boolean
   creeLe: string
   /** Dernière connexion. */
   derniereOuverture: string | null
+}
+
+/** Réponse à une demande de changement d'e-mail : l'adresse change quand le lien envoyé à la nouvelle est ouvert. */
+export interface DemandeChangementEmail {
+  email: string
 }

@@ -15,6 +15,8 @@ model Utilisateur {
   prenom            String
   /// Identifiant de connexion (lot 23), en minuscules. Vide pour un compte d'avant le lot 23, jusqu'à son activation.
   email             String?   @unique
+  /// Date où le propriétaire a ouvert le lien reçu à cette adresse (lot 24). Vide = adresse non vérifiée.
+  emailVerifieLe    DateTime?
   devise            String    @default("MAD")
   onboardingEtape   Int       @default(0)
   onboardingTermine Boolean   @default(false)
@@ -42,6 +44,7 @@ model Utilisateur {
   importSource      ImportSource?
   sessions          Session[]
   jetons            JetonMotDePasse[]
+  jetonsEmail       JetonEmail[]
 }
 
 model Reglages {
@@ -409,6 +412,20 @@ model JetonMotDePasse {
   id            String      @id
   utilisateurId String
   utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  creeLe        DateTime    @default(now())
+  expireLe      DateTime
+
+  @@index([utilisateurId])
+}
+
+/// Lien envoyé à une adresse e-mail (lot 24) : `verification` confirme l'adresse du compte, `changement` la remplace par `email` une fois ouvert.
+/// `id` = empreinte SHA-256 du jeton envoyé : usage unique, durée limitée.
+model JetonEmail {
+  id            String      @id
+  utilisateurId String
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  type          String
+  email         String
   creeLe        DateTime    @default(now())
   expireLe      DateTime
 

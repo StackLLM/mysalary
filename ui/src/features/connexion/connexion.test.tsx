@@ -11,6 +11,8 @@ import { PageConnexion } from './PageConnexion'
 import { PageInscription } from './PageInscription'
 import { PageMotDePasseOublie } from './PageMotDePasseOublie'
 import { PageNouveauMotDePasse } from './PageNouveauMotDePasse'
+import { PageVerificationEmail } from './PageVerificationEmail'
+import { BandeauEmail } from '../compte/BandeauEmail'
 import { suiteSure } from './saisie'
 
 vi.mock('sonner', () => ({ toast: vi.fn() }))
@@ -19,7 +21,7 @@ vi.mock('../../lib/api', async (original) => ({
   api: { lire: vi.fn(), creer: vi.fn(), modifier: vi.fn(), supprimer: vi.fn() },
 }))
 
-const lea: Utilisateur = { id: 'u1', prenom: 'Léa', email: 'lea@exemple.test', devise: 'MAD', onboardingEtape: 10, onboardingTermine: true, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
+const lea: Utilisateur = { id: 'u1', prenom: 'Léa', email: 'lea@exemple.test', emailVerifie: true, devise: 'MAD', onboardingEtape: 10, onboardingTermine: true, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
 const sansSession = () => vi.mocked(api.lire).mockImplementation(async () => Promise.reject(new ErreurApi(401, 'SESSION_REQUISE', 'Connecte-toi pour continuer.')))
 
 beforeEach(() => {
@@ -154,3 +156,49 @@ function Lieu() {
   const l = useLocation()
   return <p>{`${l.pathname}${l.search}`}</p>
 }
+
+describe('confirmation de l’adresse', () => {
+  const jeton = 'e'.repeat(43)
+
+  it('le lien est envoyé une seule fois au serveur, puis « Adresse confirmée »', async () => {
+    vi.mocked(api.creer).mockResolvedValueOnce(undefined)
+    rendre(<PageVerificationEmail />, { route: `/email/verification?jeton=${jeton}`, chemin: '/email/verification' })
+    expect(await screen.findByRole('heading', { name: 'Adresse confirmée' })).toBeInTheDocument()
+    expect(api.creer).toHaveBeenCalledTimes(1)
+    expect(api.creer).toHaveBeenCalledWith('/auth/email/verification', { jeton })
+    expect(screen.getByRole('link', { name: 'Continuer' })).toHaveAttribute('href', '/')
+  })
+
+  it('lien refusé, adresse prise ou lien absent : message dédié, sans appel inutile', async () => {
+    vi.mocked(api.creer).mockRejectedValueOnce(new ErreurApi(400, 'LIEN_INVALIDE', 'Ce lien n’est plus valable.'))
+    const { unmount } = rendre(<PageVerificationEmail />, { route: `/email/verification?jeton=${jeton}`, chemin: '/email/verification' })
+    expect(await screen.findByRole('heading', { name: 'Lien expiré' })).toBeInTheDocument()
+    unmount()
+
+    vi.mocked(api.creer).mockRejectedValueOnce(new ErreurApi(409, 'CONFLIT', 'Cette adresse est déjà utilisée par un autre compte.'))
+    const second = rendre(<PageVerificationEmail />, { route: `/email/verification?jeton=${jeton}`, chemin: '/email/verification' })
+    expect(await screen.findByRole('heading', { name: 'Adresse déjà utilisée' })).toBeInTheDocument()
+    second.unmount()
+
+    vi.mocked(api.creer).mockReset()
+    rendre(<PageVerificationEmail />, { route: '/email/verification', chemin: '/email/verification' })
+    expect(screen.getByRole('heading', { name: 'Lien expiré' })).toBeInTheDocument()
+    expect(api.creer).not.toHaveBeenCalled()
+  })
+
+  it('bandeau : visible tant que l’adresse n’est pas confirmée, renvoie le lien ; absent une fois confirmée', async () => {
+    vi.mocked(api.lire).mockResolvedValue({ ...lea, emailVerifie: false })
+    vi.mocked(api.creer).mockResolvedValueOnce(undefined)
+    const { unmount } = rendre(<BandeauEmail />, { compte: 'u1' })
+    expect(await screen.findByText('lea@exemple.test')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Renvoyer le lien' }))
+    await waitFor(() => expect(api.creer).toHaveBeenCalledWith('/compte/email/renvoi', {}))
+    await waitFor(() => expect(toast).toHaveBeenCalledWith('Lien envoyé à lea@exemple.test.'))
+    unmount()
+
+    vi.mocked(api.lire).mockResolvedValue(lea)
+    rendre(<BandeauEmail />, { compte: 'u1' })
+    await waitFor(() => expect(api.lire).toHaveBeenCalled())
+    expect(screen.queryByRole('button', { name: 'Renvoyer le lien' })).not.toBeInTheDocument()
+  })
+})

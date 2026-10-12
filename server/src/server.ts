@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { construireApp } from './app'
 import { creerMessagerie } from './lib/messagerie'
+import { purgerExpires } from './lib/purge'
 
 try {
   process.loadEnvFile()
@@ -27,6 +28,11 @@ const app = await construireApp({
     ...(smtp ? { messagerie: creerMessagerie({ smtp, expediteur: process.env.MAIL_FROM ?? 'MySalary <no-reply@mysalary.local>', journal: (t) => console.info(t) }) } : {}),
   },
 })
+
+// Sessions et liens expirés : purge au démarrage, puis toutes les heures.
+const purger = () => purgerExpires(prisma, new Date()).then((n) => app.log.info(n, 'Sessions et liens expirés supprimés'), (e) => app.log.error(e, 'Purge impossible'))
+await purger()
+setInterval(purger, 60 * 60 * 1000).unref()
 
 // Par défaut, écoute locale uniquement. Pour un accès réseau : HOTE=0.0.0.0, derrière HTTPS (voir README).
 await app.listen({ host: hote, port })

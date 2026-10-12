@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { BandeauEmail } from '../features/compte/BandeauEmail'
 import { BarreOngletsMobile } from './BarreOngletsMobile'
 import { Entete } from './Entete'
 
@@ -13,6 +14,7 @@ export function MiseEnPage({ children, onSaisie, simple = false }: { children: R
         Aller au contenu
       </a>
       <Entete simple={simple} onSaisie={onSaisie} />
+      <BandeauEmail />
       <main id="contenu" tabIndex={-1} className="mx-auto outline-none w-full max-w-[1440px] px-5 pb-28 pt-6 lg:px-14 lg:pb-14 lg:pt-8">{children}</main>
       {!simple && <BarreOngletsMobile onSaisie={onSaisie} />}
     </div>

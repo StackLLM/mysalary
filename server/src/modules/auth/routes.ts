@@ -1,8 +1,9 @@
-import { CODES_ERREUR, schemaConnexion, schemaInscription, schemaOubliMotDePasse, schemaReinitialisationMotDePasse } from '@mysalary/partage'
+import { CODES_ERREUR, schemaConnexion, schemaInscription, schemaOubliMotDePasse, schemaReinitialisationMotDePasse, schemaVerificationEmail } from '@mysalary/partage'
 import { Prisma } from '@prisma/client'
 import type { FastifyInstance } from 'fastify'
 import { ErreurApi } from '../../lib/erreurs'
-import { creerJetonMotDePasse, lienMotDePasse } from '../../lib/jetons'
+import { contexteEnvoi, envoyerLienEmail, envoyerLienMotDePasse } from '../../lib/envois'
+import { creerJetonMotDePasse } from '../../lib/jetons'
 import { Limiteur } from '../../lib/limiteur'
 import { empreinteJeton, hacher, verifier } from '../../lib/motDePasse'
 import { valider } from '../../lib/valider'
@@ -16,7 +17,7 @@ const trop = () => new ErreurApi(429, CODES_ERREUR.TROP_DE_TENTATIVES, 'Trop d�
 const refuse = () => new ErreurApi(401, CODES_ERREUR.IDENTIFIANTS_REFUSES, 'E-mail ou mot de passe incorrect.')
 const lienInvalide = () => new ErreurApi(400, CODES_ERREUR.LIEN_INVALIDE, 'Ce lien n’est plus valable. Demande-en un nouveau.')
 
-/** Inscription, connexion, déconnexion, session, mot de passe oublié (lot 23). Routes publiques. */
+/** Inscription, connexion, déconnexion, session, mot de passe oublié (lot 23), confirmation de l'e-mail (lot 24). Routes publiques. */
 export async function routesAuth(app: FastifyInstance) {
   // Échecs de connexion : 5 par e-mail et 20 par adresse IP en 15 minutes. Mot de passe oublié : 5 par heure et par IP.
   const parEmail = new Limiteur(5, QUINZE_MINUTES)
@@ -31,6 +32,8 @@ export async function routesAuth(app: FastifyInstance) {
     try {
       const compte = await comptes.creer(app.prisma, donnees, app.maintenant())
       await ouvrirSession(app.prisma, requete, reponse, compte.id, securise)
+      // Le compte existe déjà : un envoi raté ne bloque pas l'inscription, le lien se redemande depuis l'app.
+      await envoyerLienEmail(contexteEnvoi(app), compte, 'verification', donnees.email).catch((e) => app.log.error(e, 'Envoi du lien de vérification impossible'))
       return reponse.status(201).send(compte)
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
@@ -79,11 +82,7 @@ export async function routesAuth(app: FastifyInstance) {
     const compte = await app.prisma.utilisateur.findUnique({ where: { email } })
     if (compte) {
       const jeton = await creerJetonMotDePasse(app.prisma, compte.id, app.maintenant())
-      await app.auth.messagerie({
-        a: email,
-        sujet: 'MySalary : choisis un nouveau mot de passe',
-        texte: `Bonjour ${compte.prenom},\n\nPour choisir un nouveau mot de passe, ouvre ce lien (valable 1 heure) :\n${lienMotDePasse(app.auth.urlApplication, jeton)}\n\nSi tu n'as rien demandé, ignore ce message : ton mot de passe ne change pas.`,
-      })
+      await envoyerLienMotDePasse(contexteEnvoi(app), { prenom: compte.prenom, email }, jeton).catch((e) => app.log.error(e, 'Envoi du lien de mot de passe impossible'))
     }
     return reponse.status(204).send()
   })
@@ -99,9 +98,37 @@ export async function routesAuth(app: FastifyInstance) {
     }
     await app.prisma.$transaction([
       app.prisma.utilisateur.update({ where: { id: lien.utilisateurId }, data: { motDePasse: await hacher(motDePasse) } }),
+      // Le lien est arrivé à l'adresse du compte : c'est aussi une preuve qu'elle est la bonne.
+      app.prisma.utilisateur.updateMany({ where: { id: lien.utilisateurId, emailVerifieLe: null }, data: { emailVerifieLe: app.maintenant() } }),
       app.prisma.jetonMotDePasse.deleteMany({ where: { utilisateurId: lien.utilisateurId } }),
       app.prisma.session.deleteMany({ where: { utilisateurId: lien.utilisateurId } }),
     ])
+    return reponse.status(204).send()
+  })
+
+  // Ouvrir le lien reçu confirme l'adresse, ou la remplace (changement). Public : le lien s'ouvre aussi depuis un autre appareil.
+  app.post('/auth/email/verification', async (requete, reponse) => {
+    const { jeton } = valider(schemaVerificationEmail, requete.body)
+    const lien = await app.prisma.jetonEmail.findUnique({ where: { id: empreinteJeton(jeton) } })
+    if (!lien) throw lienInvalide()
+    if (lien.expireLe <= app.maintenant()) {
+      await app.prisma.jetonEmail.delete({ where: { id: lien.id } })
+      throw lienInvalide()
+    }
+    const compte = await app.prisma.utilisateur.findUnique({ where: { id: lien.utilisateurId } })
+    // Une vérification ne vaut que pour l'adresse à laquelle elle a été envoyée.
+    if (!compte || (lien.type === 'verification' && compte.email !== lien.email)) throw lienInvalide()
+    try {
+      await app.prisma.$transaction([
+        app.prisma.utilisateur.update({ where: { id: compte.id }, data: { email: lien.email, emailVerifieLe: app.maintenant() } }),
+        app.prisma.jetonEmail.deleteMany({ where: { utilisateurId: compte.id } }),
+      ])
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new ErreurApi(409, CODES_ERREUR.CONFLIT, 'Cette adresse est déjà utilisée par un autre compte.')
+      }
+      throw e
+    }
     return reponse.status(204).send()
   })
 }

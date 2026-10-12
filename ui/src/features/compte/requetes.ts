@@ -1,4 +1,4 @@
-import type { Connexion, Inscription, Utilisateur } from '@mysalary/partage'
+import type { Connexion, DemandeChangementEmail, Inscription, Utilisateur } from '@mysalary/partage'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -75,6 +75,25 @@ export function useNouveauMotDePasse() {
 
 export function useChangerMotDePasse() {
   return useMutation({ mutationFn: (saisie: { actuel: string; nouveau: string }) => api.modifier<void>('/compte/mot-de-passe', saisie) })
+}
+
+/** Demande de changement d'e-mail : un lien part vers la nouvelle adresse, qui ne change qu'à son ouverture. */
+export function useChangerEmail() {
+  return useMutation({ mutationFn: (saisie: { email: string; motDePasse: string }) => api.modifier<DemandeChangementEmail>('/compte/email', saisie) })
+}
+
+/** Renvoie le lien de confirmation de l'adresse du compte. */
+export function useRenvoyerVerification() {
+  return useMutation({ mutationFn: () => api.creer<void>('/compte/email/renvoi', {}) })
+}
+
+/** Ouvre le lien reçu par e-mail : confirme l'adresse ou la remplace. La session, si elle existe, se met à jour. */
+export function useVerifierEmail() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: (jeton: string) => api.creer<void>('/auth/email/verification', { jeton }),
+    onSuccess: () => client.invalidateQueries({ queryKey: CLE_SESSION }),
+  })
 }
 
 export function useRenommerUtilisateur() {
