@@ -15,7 +15,7 @@ vi.mock('../../lib/api', async (original) => ({
 }))
 
 const AUJOURDHUI = '2027-01-20' as DateCivile
-const compte: Utilisateur = { id: 'u1', prenom: 'Essai', devise: 'MAD', onboardingEtape: 0, onboardingTermine: false, protege: false, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
+const compte: Utilisateur = { id: 'u1', prenom: 'Essai', devise: 'MAD', onboardingEtape: 0, onboardingTermine: false, email: 'test@exemple.test', creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
 
 const categories: CategorieDto[] = [
   { id: 'c-log', libelle: 'Logement', groupe: 'essentiel', icone: 'maison', ordre: 0, utilisee: false },
@@ -63,7 +63,7 @@ function dette(paiements: { id: string; date: string; montant: number }[] = []):
 
 function serveur({ charges = [] as ChargeDto[], ponctuels = [] as PonctuelDto[], dettes = [] as DetteDto[], totaux = zero } = {}) {
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [compte]
+    if (chemin === '/auth/session') return compte
     if (chemin === '/categories') return categories
     if (chemin === '/charges') return charges
     if (chemin === '/ponctuels') return ponctuels

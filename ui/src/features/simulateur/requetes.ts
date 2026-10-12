@@ -2,7 +2,7 @@ import type { ApplicationDto, SaisieAjustements, SaisieExecution, SaisieScenario
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
-import { useUtilisateurCourant } from '../profils/requetes'
+import { useUtilisateurCourant } from '../compte/requetes'
 
 /** Requêtes du simulateur. Exécuter n'écrit rien ; appliquer recalcule tout ce qui dépend du plan. */
 function useCles() {

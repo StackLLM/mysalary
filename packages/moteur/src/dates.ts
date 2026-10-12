@@ -77,14 +77,6 @@ export function estWeekEnd(date: DateCivile): boolean {
 }
 
 /** Les dates `AAAA-MM-JJ` se comparent dans l'ordre alphabétique. */
-export function comparer(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0
-}
-
-export function plusTard<T extends string>(a: T, b: T): T {
-  return a >= b ? a : b
-}
-
 export function plusTot<T extends string>(a: T, b: T): T {
   return a <= b ? a : b
 }

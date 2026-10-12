@@ -1,6 +1,6 @@
 import * as Tooltip from '@radix-ui/react-tooltip'
 import { lazy, Suspense, useEffect, type ReactNode } from 'react'
-import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router-dom'
 import { styleBouton } from './components/Bouton'
 import { Carte } from './components/Carte'
 import { ErreurPage } from './components/ErreurPage'
@@ -8,6 +8,8 @@ import { FilAriane } from './components/FilAriane'
 import { GardeCompte } from './components/GardeCompte'
 import { MiseEnPage } from './components/MiseEnPage'
 import { Notifications } from './components/Notifications'
+import { useSession } from './features/compte/requetes'
+import { suiteSure } from './features/connexion/saisie'
 import { FournisseurSaisieRapide, useSaisieRapide } from './features/depenses/SaisieRapide'
 import { useReglages } from './features/reglages/requetes'
 import { FournisseurAnimations, useAnimations } from './state/animations'
@@ -24,8 +26,12 @@ const PageObjectif = lazy(() => import('./features/objectifs/PageObjectif').then
 const PageObjectifs = lazy(() => import('./features/objectifs/PageObjectifs').then((m) => ({ default: m.PageObjectifs })))
 const PageSimulateur = lazy(() => import('./features/simulateur/PageSimulateur').then((m) => ({ default: m.PageSimulateur })))
 const PagePlan = lazy(() => import('./features/plan/PagePlan').then((m) => ({ default: m.PagePlan })))
-const PageProfils = lazy(() => import('./features/profils/PageProfils').then((m) => ({ default: m.PageProfils })))
 const PageReglages = lazy(() => import('./features/reglages/PageReglages').then((m) => ({ default: m.PageReglages })))
+// Écrans d'authentification (lot 23), hors de la mise en page de l'app.
+const PageConnexion = lazy(() => import('./features/connexion/PageConnexion').then((m) => ({ default: m.PageConnexion })))
+const PageInscription = lazy(() => import('./features/connexion/PageInscription').then((m) => ({ default: m.PageInscription })))
+const PageMotDePasseOublie = lazy(() => import('./features/connexion/PageMotDePasseOublie').then((m) => ({ default: m.PageMotDePasseOublie })))
+const PageNouveauMotDePasse = lazy(() => import('./features/connexion/PageNouveauMotDePasse').then((m) => ({ default: m.PageNouveauMotDePasse })))
 // La vitrine du design system n'existe qu'en développement.
 const PageVitrine = lazy(() => import('./features/vitrine/PageVitrine').then((m) => ({ default: m.PageVitrine })))
 
@@ -56,12 +62,40 @@ function PageIntrouvable() {
 
 const compte = (page: ReactNode) => <GardeCompte>{page}</GardeCompte>
 
+/**
+ * Écrans publics : un compte déjà connecté va directement à l'app (ou à la page demandée).
+ * `vers` : destination d'un compte dont la mise en route n'est pas finie (juste après l'inscription).
+ */
+function Public({ children, vers }: { children: ReactNode; vers?: string }) {
+  const session = useSession()
+  const [params] = useSearchParams()
+  if (session.isPending) return null
+  if (session.data) return <Navigate to={vers && !session.data.onboardingTermine ? vers : suiteSure(params.get('suite'))} replace />
+  return children
+}
+
+const CHEMINS_PUBLICS = ['/connexion', '/inscription', '/mot-de-passe/oubli', '/mot-de-passe/nouveau']
+
+/** Les écrans publics ont leur propre mise en page ; le reste est l'app, derrière la garde. */
+function Racine() {
+  const emplacement = useLocation()
+  if (!CHEMINS_PUBLICS.includes(emplacement.pathname)) return <Vues />
+  // Le lien « mot de passe » d'un e-mail s'ouvre même connecté : on choisit un mot de passe pour le compte du lien.
+  const page = { '/connexion': <PageConnexion />, '/inscription': <PageInscription />, '/mot-de-passe/oubli': <PageMotDePasseOublie />, '/mot-de-passe/nouveau': <PageNouveauMotDePasse /> }[emplacement.pathname]
+  if (emplacement.pathname === '/mot-de-passe/nouveau') return <Suspense fallback={null}>{page}</Suspense>
+  return (
+    <Suspense fallback={null}>
+      <Public vers={emplacement.pathname === '/inscription' ? '/onboarding' : undefined}>{page}</Public>
+    </Suspense>
+  )
+}
+
 function Vues() {
   const emplacement = useLocation()
   const { ouvrir } = useSaisieRapide()
 
   return (
-    <MiseEnPage simple={emplacement.pathname === '/profils' || emplacement.pathname === '/onboarding'} onSaisie={() => ouvrir()}>
+    <MiseEnPage simple={emplacement.pathname === '/onboarding'} onSaisie={() => ouvrir()}>
       {/*
         Nouvelle page affichée tout de suite, avec une apparition en CSS. L'ancienne transition attendait la fin de
         l'animation de sortie (AnimatePresence « wait ») : une navigation rapide pouvait laisser la page blanche.
@@ -71,7 +105,6 @@ function Vues() {
         <ErreurPage cle={emplacement.pathname}>
           <Suspense fallback={<div className="py-16 text-center text-texte-sm text-gris" role="status">Chargement…</div>}>
           <Routes location={emplacement}>
-            <Route path="/profils" element={<PageProfils />} />
             {import.meta.env.DEV && <Route path="/vitrine" element={<PageVitrine />} />}
             <Route path="/" element={compte(<PageAujourdhui />)} />
             <Route path="/onboarding" element={compte(<PageOnboarding />)} />
@@ -102,7 +135,7 @@ export function App() {
         <Tooltip.Provider delayDuration={250}>
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <FournisseurSaisieRapide>
-              <Vues />
+              <Racine />
             </FournisseurSaisieRapide>
           </BrowserRouter>
           <Notifications />

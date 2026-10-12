@@ -40,7 +40,7 @@ const indicateurs = {
 
 beforeEach(() => {
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [compte]
+    if (chemin === '/auth/session') return compte
     if (chemin === '/recommandations') return conseils
     if (chemin === '/indicateurs?mois=2027-01') return indicateurs
     throw new Error(`Route non simulée : ${chemin}`)
@@ -85,7 +85,7 @@ describe('Cloche', () => {
   })
 
   it('sans alerte ni suggestion : pas de pastille, un message calme', async () => {
-    vi.mocked(api.lire).mockImplementation(async (chemin: string) => (chemin === '/utilisateurs' ? [compte] : { aujourdhui: '2027-01-10', alertes: [], recommandations: [] }))
+    vi.mocked(api.lire).mockImplementation(async (chemin: string) => (chemin === '/auth/session' ? compte : { aujourdhui: '2027-01-10', alertes: [], recommandations: [] }))
     rendre(<Cloche />, { route: '/mois', compte: 'u1' })
     fireEvent.click(await screen.findByRole('button', { name: 'Notifications' }))
     expect(await screen.findByText('Rien à signaler : tout ce qui était prévu est à jour.')).toBeInTheDocument()

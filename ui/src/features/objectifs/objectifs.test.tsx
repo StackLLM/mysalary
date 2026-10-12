@@ -18,7 +18,7 @@ vi.mock('../../lib/api', async (original) => ({
   api: { lire: vi.fn(), creer: vi.fn(), modifier: vi.fn(), supprimer: vi.fn() },
 }))
 
-const compte: Utilisateur = { id: 'u1', prenom: 'Essai', devise: 'MAD', onboardingEtape: 0, onboardingTermine: false, protege: false, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
+const compte: Utilisateur = { id: 'u1', prenom: 'Essai', devise: 'MAD', onboardingEtape: 0, onboardingTermine: false, email: 'test@exemple.test', creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
 
 const objectif = (modif: Record<string, unknown>): SuiviObjectif =>
   ({
@@ -99,7 +99,7 @@ let epargne: EpargneDto
 
 function serveur() {
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [compte]
+    if (chemin === '/auth/session') return compte
     if (chemin === '/objectifs') return objectifs
     if (chemin === '/objectifs/moto') return detailCourant
     if (chemin === '/epargne') return epargne

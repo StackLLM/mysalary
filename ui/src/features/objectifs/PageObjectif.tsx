@@ -24,7 +24,8 @@ import { dateDuJour } from '../../lib/dates'
 import { useSaisieRapide } from '../depenses/SaisieRapide'
 import { LIBELLES_MOUVEMENT } from '../epargne/saisie'
 import { useObjectif, useRealiserObjectif, useStatutObjectif, useSupprimerObjectif } from '../epargne/requetes'
-import { moisAbrege, pointsSimulation, texteEcart, TYPES, verdictObjectif } from './saisie'
+import { moisCourt } from '../annee/saisie'
+import { pointsTrajectoireSimulee, texteEcart, TYPES, verdictObjectif } from './saisie'
 
 const GRILLE = 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_352px] xl:gap-12'
 const TONS_VERDICT = {
@@ -302,7 +303,7 @@ function Simulation({ detail, simulation }: { detail: ObjectifDetailDto; simulat
   const parDefaut = simulation.moisSouhaite?.cle ?? (simulation.mois.some((m) => m.cle === simulation.dateAtteinte) ? simulation.dateAtteinte! : simulation.mois[0]!.cle)
   const [choisi, setChoisi] = useState(parDefaut)
   const m = simulation.mois.find((x) => x.cle === choisi) ?? simulation.mois[0]!
-  const trajectoire = pointsSimulation(detail.trajectoire, simulation.mois)
+  const trajectoire = pointsTrajectoireSimulee(detail.trajectoire, simulation.mois)
   const bande = useRef<HTMLDivElement>(null)
   // Le mois choisi d'office (souvent loin) est amené au centre de la bande, sans faire défiler la page.
   useEffect(() => {
@@ -333,7 +334,7 @@ function Simulation({ detail, simulation }: { detail: ObjectifDetailDto; simulat
                 souhaite && !actif && 'ring-1 ring-primaire',
               )}
             >
-              <span className="text-texte-sm font-semibold">{moisAbrege(x.cle)}</span>
+              <span className="text-texte-sm font-semibold">{moisCourt(x.cle)}</span>
               <span className={cn('inline-flex items-center gap-0.5 text-mention', actif ? 'text-white/75' : x.atteint ? 'text-positif' : 'text-gris')}>
                 {x.atteint && <Check className="h-3 w-3" aria-hidden />}
                 {x.cle.slice(0, 4)}
@@ -395,7 +396,7 @@ function ResultatMois({ m, o }: { m: MoisSimulation; o: SuiviObjectif }) {
         {m.versements > 0 && ligne('Versements prévus', <Montant valeur={m.versements} />, '+ ')}
         {ligne(
           <>
-            Cumul fin {moisAbrege(m.cle)} <span className="text-mention">({m.nature === 'enCours' ? 'estimation' : 'prévu'})</span>
+            Cumul fin {moisCourt(m.cle)} <span className="text-mention">({m.nature === 'enCours' ? 'estimation' : 'prévu'})</span>
           </>,
           m.cumul < 0 ? '0 DH' : <Montant valeur={m.cumul} />,
           '+ ',

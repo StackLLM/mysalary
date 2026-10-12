@@ -13,10 +13,12 @@ datasource db {
 model Utilisateur {
   id                String    @id @default(cuid())
   prenom            String
+  /// Identifiant de connexion (lot 23), en minuscules. Vide pour un compte d'avant le lot 23, jusqu'à son activation.
+  email             String?   @unique
   devise            String    @default("MAD")
   onboardingEtape   Int       @default(0)
   onboardingTermine Boolean   @default(false)
-  /// Hash scrypt du mot de passe (lot 22) ; vide = compte sans mot de passe.
+  /// Hash scrypt du mot de passe ; vide = compte d'avant le lot 23, qui ne peut pas se connecter avant son activation.
   motDePasse        String?
   derniereOuverture DateTime?
   creeLe            DateTime  @default(now())
@@ -39,6 +41,7 @@ model Utilisateur {
   scenarios         Scenario[]
   importSource      ImportSource?
   sessions          Session[]
+  jetons            JetonMotDePasse[]
 }
 
 model Reglages {
@@ -392,6 +395,17 @@ model ImportSource {
 
 /// Session ouverte avec le mot de passe d'un compte (lot 22). `id` = empreinte SHA-256 du jeton du cookie : le jeton n'est jamais stocké.
 model Session {
+  id            String      @id
+  utilisateurId String
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  creeLe        DateTime    @default(now())
+  expireLe      DateTime
+
+  @@index([utilisateurId])
+}
+
+/// Lien de réinitialisation (ou d'activation) du mot de passe (lot 23). `id` = empreinte SHA-256 du jeton envoyé : usage unique, durée limitée.
+model JetonMotDePasse {
   id            String      @id
   utilisateurId String
   utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)

@@ -1,7 +1,7 @@
-import { CODES_ERREUR, ENTETE_UTILISATEUR } from '@mysalary/partage'
+import { CODES_ERREUR } from '@mysalary/partage'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { ErreurApi } from '../lib/erreurs'
-import { exigerAcces } from './session'
+import { sessionDe } from './session'
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -11,22 +11,14 @@ declare module 'fastify' {
 }
 
 /**
- * Résout le compte courant à partir de l'en-tête `X-Utilisateur`.
- * Un compte protégé par mot de passe exige en plus la session de son cookie (lot 22).
+ * Le compte courant vient uniquement de la session du cookie (lot 23) : le client ne peut pas le choisir.
+ * Toutes les lectures et écritures des routes protégées sont ensuite filtrées par cet identifiant.
  */
 export function exigerUtilisateur(app: FastifyInstance) {
   return async (requete: FastifyRequest) => {
-    const valeur = requete.headers[ENTETE_UTILISATEUR]
-    const id = Array.isArray(valeur) ? valeur[0] : valeur
-    if (!id) {
-      throw new ErreurApi(401, CODES_ERREUR.UTILISATEUR_REQUIS, 'Aucun compte sélectionné.')
-    }
-    const utilisateur = await app.prisma.utilisateur.findUnique({ where: { id }, select: { id: true } })
-    if (!utilisateur) {
-      throw new ErreurApi(401, CODES_ERREUR.UTILISATEUR_INCONNU, 'Ce compte n’existe pas.')
-    }
-    await exigerAcces(app.prisma, requete, utilisateur.id)
-    requete.utilisateurId = utilisateur.id
+    const id = await sessionDe(app.prisma, requete)
+    if (!id) throw new ErreurApi(401, CODES_ERREUR.SESSION_REQUISE, 'Connecte-toi pour continuer.')
+    requete.utilisateurId = id
   }
 }
 

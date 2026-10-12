@@ -27,8 +27,6 @@ export const CERTITUDES_INFO: Record<Certitude, { libelle: string; aide: string;
 /** Certitude proposée selon le type (R5 : un projet futur n'entre pas dans le réaliste par défaut). */
 export const certitudeParDefaut = (type: TypeRevenu): Certitude => (type === 'prime' ? 'probable' : 'incertain')
 
-export const NOMS_MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.']
-
 /** « Chaque année en juin », « En juin et décembre », « Une fois, en mars 2027 ». */
 export function libelleFrequence(s: Pick<SourceRevenuDto, 'frequence' | 'mois' | 'debut'>): string {
   const mois = formaterMois(s.debut, { annee: false })

@@ -15,11 +15,13 @@ interface ProprietesChamp extends Omit<InputHTMLAttributes<HTMLInputElement>, 'p
   erreur?: string
   /** Unité à gauche, grise, comme le « $ » du template. */
   prefixe?: ReactNode
+  /** Petit bouton à droite, dans le champ (ex. afficher le mot de passe). */
+  action?: ReactNode
 }
 
 /** Champ du template : blanc, bordure très claire, rayon 12, texte foncé. */
 export const Champ = forwardRef<HTMLInputElement, ProprietesChamp>(function Champ(
-  { libelle, libelleMasque, aide, erreur, prefixe, className, id, ...reste },
+  { libelle, libelleMasque, aide, erreur, prefixe, action, className, id, ...reste },
   ref,
 ) {
   const idAuto = useId()
@@ -39,9 +41,10 @@ export const Champ = forwardRef<HTMLInputElement, ProprietesChamp>(function Cham
           id={idChamp}
           aria-invalid={Boolean(erreur) || undefined}
           aria-describedby={erreur || aide ? idMessage : undefined}
-          className={cn(styleSaisie, prefixe ? 'pl-11' : undefined)}
+          className={cn(styleSaisie, prefixe ? 'pl-11' : undefined, action ? 'pr-12' : undefined)}
           {...reste}
         />
+        {action && <span className="absolute inset-y-0 right-2 flex items-center">{action}</span>}
       </div>
       {erreur ? (
         <p id={idMessage} className="flex items-center gap-1 text-mention text-alerte">

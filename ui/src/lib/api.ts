@@ -1,4 +1,4 @@
-import { CODES_ERREUR, ENTETE_UTILISATEUR, PREFIXE_API, type CodeErreur, type ReponseErreur } from '@mysalary/partage'
+import { CODES_ERREUR, PREFIXE_API, type CodeErreur, type ReponseErreur } from '@mysalary/partage'
 import { lireUtilisateurCourant } from '../state/utilisateur'
 
 /** Émis quand le serveur refuse le compte ouvert faute de session. */
@@ -20,13 +20,12 @@ export class ErreurApi extends Error {
 type Methode = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
 /**
- * Seul point d'accès au serveur. Ajoute l'en-tête du compte courant
- * et transforme toute erreur en `ErreurApi`.
+ * Seul point d'accès au serveur. Le compte vient du cookie de session (HttpOnly, envoyé par le navigateur) :
+ * le client ne désigne jamais un compte. Toute erreur devient une `ErreurApi`.
  */
 export async function appelerApi<T>(methode: Methode, chemin: string, corps?: unknown): Promise<T> {
   const entetes: Record<string, string> = {}
   const utilisateur = lireUtilisateurCourant()
-  if (utilisateur) entetes[ENTETE_UTILISATEUR] = utilisateur
   if (corps !== undefined) entetes['content-type'] = 'application/json'
 
   let reponse: Response
@@ -34,6 +33,7 @@ export async function appelerApi<T>(methode: Methode, chemin: string, corps?: un
     reponse = await fetch(`${PREFIXE_API}${chemin}`, {
       method: methode,
       headers: entetes,
+      credentials: 'same-origin',
       ...(corps !== undefined ? { body: JSON.stringify(corps) } : {}),
     })
   } catch {
@@ -47,7 +47,7 @@ export async function appelerApi<T>(methode: Methode, chemin: string, corps?: un
   if (!reponse.ok) {
     const erreur = (donnees as Partial<ReponseErreur> | undefined)?.erreur
     // Session perdue ou expirée sur un compte ouvert : l'app le quitte et demande de se reconnecter.
-    if (erreur?.code === CODES_ERREUR.SESSION_REQUISE && utilisateur && !chemin.startsWith('/utilisateurs')) window.dispatchEvent(new Event(EVENEMENT_SESSION_EXPIREE))
+    if (erreur?.code === CODES_ERREUR.SESSION_REQUISE && utilisateur && !chemin.startsWith('/auth/')) window.dispatchEvent(new Event(EVENEMENT_SESSION_EXPIREE))
     throw new ErreurApi(
       reponse.status,
       erreur?.code ?? CODES_ERREUR.INTERNE,

@@ -11,7 +11,7 @@ vi.mock('../lib/api', async (original) => ({
 
 describe('Entete (structure du template)', () => {
   it('affiche la navigation en haut avec l’onglet actif souligné et l’initiale du compte', async () => {
-    vi.mocked(api.lire).mockResolvedValue([{ id: 'u1', prenom: 'Oussama', devise: 'MAD' }])
+    vi.mocked(api.lire).mockResolvedValue({ id: 'u1', prenom: 'Oussama', devise: 'MAD' })
     rendre(<Entete />, { route: '/mois', compte: 'u1' })
     const nav = screen.getByRole('navigation', { name: 'Navigation principale' })
     const actif = within(nav).getByRole('link', { name: 'Mois' })
@@ -22,7 +22,7 @@ describe('Entete (structure du template)', () => {
 
   it('en mode simple, n’affiche ni navigation ni compte', () => {
     vi.mocked(api.lire).mockResolvedValue([])
-    rendre(<Entete simple />, { route: '/profils' })
+    rendre(<Entete simple />, { route: '/onboarding' })
     expect(screen.queryByRole('navigation')).toBeNull()
     expect(screen.queryByRole('button', { name: /Compte/ })).toBeNull()
   })

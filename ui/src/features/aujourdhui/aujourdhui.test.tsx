@@ -75,7 +75,7 @@ afterAll(() => vi.useRealTimers())
 beforeEach(() => {
   donnees = journee()
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [compte]
+    if (chemin === '/auth/session') return compte
     if (chemin === '/aujourdhui') return donnees
     if (chemin === '/salaire/paies?du=2027-02&au=2027-02') return { aujourdhui: '2027-01-11', paies: [paieFevrier] }
     if (chemin === '/categories') return []
@@ -152,7 +152,7 @@ describe('Aujourd’hui', () => {
 
   it('erreur de chargement : message et « Réessayer »', async () => {
     vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-      if (chemin === '/utilisateurs') return [compte]
+      if (chemin === '/auth/session') return compte
       throw new Error('panne')
     })
     ouvrir()

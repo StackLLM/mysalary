@@ -2,7 +2,7 @@ import type { RattachementsDto, SaisieDepense, SuiviDepensesDto } from '@mysalar
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
-import { useUtilisateurCourant } from '../profils/requetes'
+import { useUtilisateurCourant } from '../compte/requetes'
 
 /** Requêtes des dépenses réelles. Toute écriture recalcule aussi les charges (catégories utilisées) et les mois. */
 function useCles() {

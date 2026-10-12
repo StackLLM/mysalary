@@ -40,7 +40,7 @@ beforeEach(() => {
   ob = { etape: 0, termine: false, import: null }
   contrats = []
   vi.mocked(api.lire).mockReset().mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [compte]
+    if (chemin === '/auth/session') return compte
     if (chemin === '/onboarding') return ob
     if (chemin === '/mois/courant') return { cle: '2026-10', debut: '2026-09-27', fin: '2026-10-26', statut: 'enCours', aujourdhui: '2026-10-12' }
     if (chemin === '/salaire/contrats') return contrats
@@ -255,7 +255,7 @@ describe('Onboarding (lot 19)', () => {
     unmount()
 
     vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-      if (chemin === '/utilisateurs') return [compte]
+      if (chemin === '/auth/session') return compte
       throw new Error('panne')
     })
     ouvrir()

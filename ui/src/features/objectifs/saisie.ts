@@ -91,16 +91,13 @@ export function pointsTrajectoire(points: PointTrajectoireObjectif[]): { points:
 }
 
 /** Trajectoire de la page Objectif : le réel jusqu'à aujourd'hui, puis l'épargne simulée avec le cumul de chaque fin de mois. */
-export function pointsSimulation(trajectoire: PointTrajectoireObjectif[], mois: { cle: string; epargne: number }[]): { points: PointTrajectoire[]; aujourdhui: string } {
+export function pointsTrajectoireSimulee(trajectoire: PointTrajectoireObjectif[], mois: { cle: string; epargne: number }[]): { points: PointTrajectoire[]; aujourdhui: string } {
   const base = pointsTrajectoire(trajectoire.filter((p) => p.aujourdhui || p.projete === null))
   return { aujourdhui: base.aujourdhui, points: [...base.points, ...mois.map((m) => ({ periode: court(m.cle), projete: m.epargne }))] }
 }
 
 /** Mois proposés pour la date souhaitée : du mois en cours à 10 ans. */
 export const moisSouhaitables = (moisCourant: string): string[] => Array.from({ length: 120 }, (_, i) => decalerMois(lireCleMois(moisCourant), i))
-
-/** « oct. » : nom de mois abrégé, pour les puces de la simulation. */
-export const moisAbrege = (cle: string) => formaterDate(`${cle}-01`, 'court').replace(/^1 /, '')
 
 type Verdict = { ton: 'positif' | 'alerte' | 'neutre'; titre: string; detail: string }
 type SimulationAffichee = { dateAtteinte: string | null; ecart: number | null; moisSouhaite: { cle: string; manque: number; atteint: boolean } | null }

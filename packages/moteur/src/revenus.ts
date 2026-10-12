@@ -86,13 +86,6 @@ export function equivalentMensuel(source: Pick<SourceRevenu, 'montant' | 'freque
   return centimes(Math.round((source.montant * parAn) / 12))
 }
 
-/** Scénarios et certitudes retenues (context.md § 4.5). */
-export const CERTITUDES_PAR_SCENARIO = {
-  prudent: ['garanti'],
-  realiste: ['garanti', 'probable'],
-  ambitieux: ['garanti', 'probable', 'incertain'],
-} as const satisfies Record<string, readonly Certitude[]>
-
 /** Totaux par certitude et cumuls par scénario. */
 export function totauxParCertitude(montants: { certitude: Certitude; montant: number }[]) {
   const par: Record<Certitude, Centimes> = { garanti: centimes(0), probable: centimes(0), incertain: centimes(0) }

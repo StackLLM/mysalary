@@ -2,7 +2,7 @@ import type { ResumeRevenusDto, RevenuPrevu, RevenuRecuDto, SaisieRevenuRecu, Sa
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
-import { useUtilisateurCourant } from '../profils/requetes'
+import { useUtilisateurCourant } from '../compte/requetes'
 
 /**
  * Requêtes des autres revenus. Une source « avec la paie » change les paies prévues :

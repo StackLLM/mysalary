@@ -2,7 +2,7 @@ import type { CalendrierMoisDto } from '@mysalary/partage'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
-import { useUtilisateurCourant } from '../profils/requetes'
+import { useUtilisateurCourant } from '../compte/requetes'
 
 /** Calendrier d'un mois (lot 17) : recalculé dès qu'une charge, une dépense, une paie ou un ponctuel change. */
 export function useCalendrierMois(cle: string | null) {

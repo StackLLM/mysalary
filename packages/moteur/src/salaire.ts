@@ -116,8 +116,6 @@ export function datePrevuePaie(mois: CleMois, version: Omit<VersionContrat, 'id'
 
 const somme = (montants: (Centimes | null)[]) => additionner(...montants.map((m) => m ?? centimes(0)))
 
-export type CalendrierPaie = ReturnType<typeof creerCalendrierPaie>
-
 /** Rassemble contrat et paies enregistrées pour répondre à toutes les questions de dates. */
 export function creerCalendrierPaie({ contrats, paies, aujourdhui, sources = [] }: DonneesSalaire) {
   const versions = [...contrats].sort((a, b) => (a.moisEffet < b.moisEffet ? -1 : 1))

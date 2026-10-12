@@ -1,8 +1,8 @@
-import { CODES_ERREUR, FORMAT_EXPORT, REGLAGES_PAR_DEFAUT, VERSION_EXPORT, type Devise, type ExportCompte, type ResultatImportCompte, type Utilisateur } from '@mysalary/partage'
+import { CODES_ERREUR, FORMAT_EXPORT, VERSION_EXPORT, type Devise, type ExportCompte, type ResultatImportCompte, type Utilisateur } from '@mysalary/partage'
 import type { Prisma, PrismaClient } from '@prisma/client'
 import { randomUUID } from 'node:crypto'
 import { ErreurApi, introuvable } from '../../lib/erreurs'
-import { versDto } from '../utilisateurs/depot'
+import { reglagesParDefaut, versDto } from '../utilisateurs/depot'
 
 /**
  * Tables d'un compte, des parents aux enfants (ordre d'import ; l'inverse sert à vider).
@@ -64,26 +64,36 @@ export async function exporter(prisma: PrismaClient, id: string, maintenant: Dat
 
 const invalide = (message: string) => new ErreurApi(400, CODES_ERREUR.VALIDATION, message)
 
+/** Un compte sans aucune donnée (seules les catégories par défaut, jamais utilisées, peuvent exister). */
+export async function estVide(prisma: PrismaClient, id: string): Promise<boolean> {
+  for (const { cle } of TABLES) {
+    if (cle === 'categorie') continue
+    if ((await delegue(prisma, cle).findMany({ where: { utilisateurId: id }, take: 1, select: { id: true } })).length > 0) return false
+  }
+  return true
+}
+
 /**
- * Crée un NOUVEAU compte à partir d'un export : rien n'est écrasé. Chaque ligne reçoit un nouvel identifiant,
- * les liens sont recopiés d'après les anciens. Tout ou rien.
+ * Restaure un export dans le compte connecté, seulement s'il est vide : rien n'est jamais écrasé ni fusionné.
+ * Chaque ligne reçoit un nouvel identifiant, les liens sont recopiés d'après les anciens. Tout ou rien.
  */
-export async function importer(prisma: PrismaClient, fichier: ExportCompte): Promise<ResultatImportCompte> {
+export async function restaurer(prisma: PrismaClient, utilisateurId: string, fichier: ExportCompte): Promise<ResultatImportCompte> {
   if (fichier.version > VERSION_EXPORT) throw invalide('Cet export vient d’une version plus récente de MySalary.')
+  if (!(await estVide(prisma, utilisateurId))) {
+    throw new ErreurApi(409, CODES_ERREUR.CONFLIT, 'Ton compte contient déjà des données. Réinitialise-le d’abord (exporte-le avant si besoin).')
+  }
   const nouveauxIds = new Map<string, string>()
   const idDe = (ancien: string) => {
     let n = nouveauxIds.get(ancien)
     if (!n) nouveauxIds.set(ancien, (n = randomUUID()))
     return n
   }
-  const deMemeNom = await prisma.utilisateur.count({ where: { prenom: fichier.compte.prenom } })
-  const prenom = deMemeNom > 0 ? `${fichier.compte.prenom} (import)`.slice(0, 40) : fichier.compte.prenom
   let total = 0
 
   try {
     return await prisma.$transaction(
       async (tx) => {
-        const cree = await tx.utilisateur.create({ data: { prenom, devise: fichier.compte.devise, onboardingEtape: 10, onboardingTermine: true } })
+        await tx.categorie.deleteMany({ where: { utilisateurId } })
         const existantes = new Map<string, Set<string>>()
         // Tous les anciens identifiants d'abord : les textes JSON (clôtures, scénarios) y font référence.
         for (const { cle } of TABLES) {
@@ -102,7 +112,7 @@ export async function importer(prisma: PrismaClient, fichier: ExportCompte): Pro
         }
         for (const table of TABLES) {
           const lignes = (fichier.donnees[table.cle] ?? []).map((l) => {
-            const sortie: Record<string, unknown> = { ...l, id: idDe(l.id as string), utilisateurId: cree.id }
+            const sortie: Record<string, unknown> = { ...l, id: idDe(l.id as string), utilisateurId }
             for (const [champ, valeur] of Object.entries(sortie)) if (DATES.has(champ) && typeof valeur === 'string') sortie[champ] = new Date(valeur)
             for (const [champ, lien] of Object.entries(table.liens ?? {})) {
               const ancien = l[champ]
@@ -116,14 +126,17 @@ export async function importer(prisma: PrismaClient, fichier: ExportCompte): Pro
           for (let i = 0; i < lignes.length; i += TAILLE_LOT) await delegue(tx, table.cle).createMany({ data: lignes.slice(i, i + TAILLE_LOT) })
           total += lignes.length
         }
+        await tx.reglages.deleteMany({ where: { utilisateurId } })
         const reglages = fichier.donnees.reglages?.[0]
         if (reglages) {
           const { id: _id, creeLe: _c, modifieLe: _m, ...champs } = reglages
-          await tx.reglages.create({ data: { ...(champs as object), utilisateurId: cree.id } as Prisma.ReglagesUncheckedCreateInput })
+          await tx.reglages.create({ data: { ...(champs as object), utilisateurId } as Prisma.ReglagesUncheckedCreateInput })
         } else {
-          await tx.reglages.create({ data: reglagesParDefaut(cree.id) })
+          await tx.reglages.create({ data: { ...reglagesParDefaut(), utilisateurId } })
         }
-        return { utilisateur: versDto(cree), lignes: total }
+        // Le compte vide prend la devise de l'export ; son plan est déjà fait : pas de mise en route.
+        const compte = await tx.utilisateur.update({ where: { id: utilisateurId }, data: { devise: fichier.compte.devise, onboardingEtape: 10, onboardingTermine: true } })
+        return { utilisateur: versDto(compte), lignes: total }
       },
       { timeout: 60_000 },
     )
@@ -133,19 +146,14 @@ export async function importer(prisma: PrismaClient, fichier: ExportCompte): Pro
   }
 }
 
-function reglagesParDefaut(utilisateurId: string): Prisma.ReglagesUncheckedCreateInput {
-  const { reglesScenarios: _r, depart: _d, ...reglages } = REGLAGES_PAR_DEFAUT
-  return { ...reglages, utilisateurId }
-}
-
-/** Vide le compte (plan, réel, épargne, import) et le remet au départ : il reste le prénom, la devise et les réglages par défaut. */
+/** Vide le compte (plan, réel, épargne, import) et le remet au départ : il reste le prénom, l'e-mail, le mot de passe, la devise et les réglages par défaut. */
 export async function reinitialiser(prisma: PrismaClient, id: string): Promise<Utilisateur> {
   if (!(await prisma.utilisateur.findUnique({ where: { id } }))) throw introuvable('Compte')
   return prisma.$transaction(async (tx) => {
     for (const { cle } of [...TABLES].reverse()) await delegue(tx, cle).deleteMany({ where: { utilisateurId: id } })
     await tx.importSource.deleteMany({ where: { utilisateurId: id } })
     await tx.reglages.deleteMany({ where: { utilisateurId: id } })
-    await tx.reglages.create({ data: reglagesParDefaut(id) })
+    await tx.reglages.create({ data: { ...reglagesParDefaut(), utilisateurId: id } })
     return versDto(await tx.utilisateur.update({ where: { id }, data: { onboardingEtape: 0, onboardingTermine: false } }))
   })
 }

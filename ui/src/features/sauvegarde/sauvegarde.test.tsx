@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { api, ErreurApi } from '../../lib/api'
 import { rendre } from '../../test/outils'
-import { PageProfils } from '../profils/PageProfils'
 import { PageReglages } from '../reglages/PageReglages'
 import { nomFichierExport } from './saisie'
 
@@ -15,7 +14,7 @@ vi.mock('../../lib/api', async (original) => ({
   api: { lire: vi.fn(), creer: vi.fn(), modifier: vi.fn(), supprimer: vi.fn() },
 }))
 
-const u1: Utilisateur = { id: 'u1', prenom: 'Léa', devise: 'MAD', onboardingEtape: 10, onboardingTermine: true, protege: false, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
+const u1: Utilisateur = { id: 'u1', prenom: 'Léa', devise: 'MAD', onboardingEtape: 10, onboardingTermine: true, email: 'test@exemple.test', creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
 const reglages: Reglages = { modePeriode: 'cyclePaie', debutSemaine: 1, reportHebdo: false, animations: true, reglesScenarios: REGLES_SCENARIOS_DEFAUT, depart: null }
 const EXPORT = { format: 'mysalary-export', version: 1, compte: { prenom: 'Léa', devise: 'MAD' }, donnees: {} }
 
@@ -24,9 +23,9 @@ let telechargements: { nom: string; contenu: string }[] = []
 beforeEach(() => {
   for (const f of [api.lire, api.creer, api.supprimer, toast]) vi.mocked(f).mockReset()
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [u1]
+    if (chemin === '/auth/session') return u1
     if (chemin === '/reglages') return reglages
-    if (chemin === '/utilisateurs/u1/export') return EXPORT
+    if (chemin === '/compte/export') return EXPORT
     throw new Error(`Route non simulée : ${chemin}`)
   })
   telechargements = []
@@ -52,11 +51,27 @@ describe('export, réinitialisation, import', () => {
     fireEvent.click(within(dialogue).getByRole('button', { name: /Exporter mes données/ }))
     await waitFor(() => expect(telechargements).toHaveLength(1))
     expect(telechargements[0]!.nom).toMatch(/^mysalary-lea-\d{4}-\d{2}-\d{2}\.json$/)
-    expect(api.lire).toHaveBeenCalledWith('/utilisateurs/u1/export')
+    expect(api.lire).toHaveBeenCalledWith('/compte/export')
     expect(api.supprimer).not.toHaveBeenCalled()
   })
 
-  it('réglages : réinitialiser demande le prénom, propose l’export, puis ramène à la mise en route', async () => {
+  it('suppression : le mot de passe est exigé ; un mauvais est signalé', async () => {
+    vi.mocked(api.creer).mockRejectedValueOnce(new ErreurApi(401, 'IDENTIFIANTS_REFUSES', 'Mot de passe incorrect.', { motDePasse: 'Mot de passe incorrect.' })).mockResolvedValueOnce(undefined)
+    rendre(<PageReglages />, { route: '/reglages', compte: 'u1', autres: { '/connexion': <p>Connexion</p> } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Supprimer ce compte' }))
+    const dialogue = await screen.findByRole('dialog')
+    const confirmer = within(dialogue).getByRole('button', { name: 'Supprimer définitivement' })
+    expect(confirmer).toBeDisabled()
+    fireEvent.change(within(dialogue).getByLabelText('Ton mot de passe'), { target: { value: 'faux' } })
+    fireEvent.click(confirmer)
+    expect(await within(dialogue).findByText('Mot de passe incorrect.')).toBeInTheDocument()
+    fireEvent.change(within(dialogue).getByLabelText('Ton mot de passe'), { target: { value: 'le-bon' } })
+    fireEvent.click(confirmer)
+    expect(await screen.findByText('Connexion')).toBeInTheDocument()
+    expect(api.creer).toHaveBeenLastCalledWith('/compte/suppression', { motDePasse: 'le-bon' })
+  })
+
+  it('réglages : réinitialiser demande le mot de passe, propose l’export, puis ramène à la mise en route', async () => {
     vi.mocked(api.creer).mockResolvedValue({ ...u1, onboardingEtape: 0, onboardingTermine: false })
     rendre(<PageReglages />, { route: '/reglages', compte: 'u1', autres: { '/onboarding': <p>Mise en route</p> } })
     fireEvent.click(await screen.findByRole('button', { name: 'Réinitialiser ce compte' }))
@@ -64,16 +79,16 @@ describe('export, réinitialisation, import', () => {
     expect(within(dialogue).getByRole('button', { name: /Exporter mes données/ })).toBeInTheDocument()
     const confirmer = within(dialogue).getByRole('button', { name: 'Réinitialiser' })
     expect(confirmer).toBeDisabled()
-    fireEvent.change(within(dialogue).getByLabelText(/Pour confirmer/), { target: { value: 'Léa' } })
+    fireEvent.change(within(dialogue).getByLabelText('Ton mot de passe'), { target: { value: 'mon-mot-de-passe' } })
     fireEvent.click(confirmer)
     expect(await screen.findByText('Mise en route')).toBeInTheDocument()
-    expect(api.creer).toHaveBeenCalledWith('/utilisateurs/u1/reinitialiser', {})
+    expect(api.creer).toHaveBeenCalledWith('/compte/reinitialisation', { motDePasse: 'mon-mot-de-passe' })
     expect(toast).toHaveBeenCalledWith('Compte réinitialisé.')
   })
 
-  it('profils : un export MySalary crée un compte ; un fichier illisible ou refusé le dit', async () => {
-    vi.mocked(api.creer).mockResolvedValue({ utilisateur: { ...u1, id: 'u2', prenom: 'Léa (import)' }, lignes: 12 })
-    rendre(<PageProfils />, { route: '/profils' })
+  it('réglages : un export se restaure dans le compte ; un fichier illisible ou refusé le dit', async () => {
+    vi.mocked(api.creer).mockResolvedValue({ utilisateur: u1, lignes: 12 })
+    rendre(<PageReglages />, { route: '/reglages', compte: 'u1' })
     const champ = await screen.findByLabelText('Fichier d’export')
     // jsdom ne fournit pas File.text().
     const fichier = (contenu: string) => Object.assign(new File([contenu], 'export.json', { type: 'application/json' }), { text: async () => contenu })
@@ -83,11 +98,11 @@ describe('export, réinitialisation, import', () => {
     expect(api.creer).not.toHaveBeenCalled()
 
     fireEvent.change(champ, { target: { files: [fichier(JSON.stringify(EXPORT))] } })
-    await waitFor(() => expect(toast).toHaveBeenCalledWith('Compte de Léa (import) importé.'))
-    expect(api.creer).toHaveBeenCalledWith('/utilisateurs/import', EXPORT)
+    await waitFor(() => expect(toast).toHaveBeenCalledWith('Sauvegarde restaurée : 12 éléments.'))
+    expect(api.creer).toHaveBeenCalledWith('/compte/restauration', EXPORT)
 
-    vi.mocked(api.creer).mockRejectedValueOnce(new ErreurApi(400, 'VALIDATION', 'Cet export vient d’une version plus récente de MySalary.'))
+    vi.mocked(api.creer).mockRejectedValueOnce(new ErreurApi(409, 'CONFLIT', 'Ton compte contient déjà des données. Réinitialise-le d’abord (exporte-le avant si besoin).'))
     fireEvent.change(champ, { target: { files: [fichier(JSON.stringify(EXPORT))] } })
-    await waitFor(() => expect(toast).toHaveBeenCalledWith('Cet export vient d’une version plus récente de MySalary.'))
+    await waitFor(() => expect(toast).toHaveBeenCalledWith('Ton compte contient déjà des données. Réinitialise-le d’abord (exporte-le avant si besoin).'))
   })
 })

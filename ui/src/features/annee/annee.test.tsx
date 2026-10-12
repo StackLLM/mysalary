@@ -61,7 +61,7 @@ const bilan = (cle: string, lignes: unknown[]) => ({ mois: { cle }, lignes }) as
 
 beforeEach(() => {
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [compte]
+    if (chemin === '/auth/session') return compte
     if (chemin === '/mois/courant') return { cle: '2026-10' }
     if (chemin === '/objectifs') return objectifs
     if (chemin === '/annee/2026') return annee2026Dto

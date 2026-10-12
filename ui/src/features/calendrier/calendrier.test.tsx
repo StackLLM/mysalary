@@ -77,7 +77,7 @@ let donnees = calendrier()
 beforeEach(() => {
   donnees = calendrier()
   vi.mocked(api.lire).mockReset().mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [compte]
+    if (chemin === '/auth/session') return compte
     if (chemin === '/mois/courant') return { cle: '2027-01' }
     if (chemin === '/mois/2027-01/calendrier') return donnees
     if (chemin === '/objectifs') return objectifs
@@ -201,14 +201,14 @@ describe('Calendrier (lot 17)', () => {
 
   it('mois sans événement : état vide ; erreur : « Réessayer »', async () => {
     donnees = calendrier({ evenements: [] })
-    vi.mocked(api.lire).mockImplementation(async (chemin: string) => (chemin === '/objectifs' ? { objectifs: [] } : chemin === '/mois/2027-01/calendrier' ? donnees : chemin === '/mois/courant' ? { cle: '2027-01' } : [compte]))
+    vi.mocked(api.lire).mockImplementation(async (chemin: string) => (chemin === '/objectifs' ? { objectifs: [] } : chemin === '/mois/2027-01/calendrier' ? donnees : chemin === '/mois/courant' ? { cle: '2027-01' } : compte))
     const { unmount } = ouvrir()
     expect(await screen.findByText('Aucun événement prévu sur ce mois.')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Ouvrir Mon plan' })).toHaveAttribute('href', '/plan')
     unmount()
 
     vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-      if (chemin === '/utilisateurs') return [compte]
+      if (chemin === '/auth/session') return compte
       throw new Error('panne')
     })
     ouvrir()

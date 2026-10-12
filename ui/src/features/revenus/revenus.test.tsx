@@ -12,7 +12,7 @@ vi.mock('../../lib/api', async (original) => ({
   api: { lire: vi.fn(), creer: vi.fn(), modifier: vi.fn(), supprimer: vi.fn() },
 }))
 
-const compte: Utilisateur = { id: 'u1', prenom: 'Essai', devise: 'MAD', onboardingEtape: 0, onboardingTermine: false, protege: false, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
+const compte: Utilisateur = { id: 'u1', prenom: 'Essai', devise: 'MAD', onboardingEtape: 0, onboardingTermine: false, email: 'test@exemple.test', creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
 const contrat = { id: 'v1', moisEffet: '2026-10', montantNet: 1_000_000, jourHabituel: 27, regleJourNonOuvre: 'apres', financeMoisSuivant: true, creeLe: '' } as unknown as VersionContratDto
 
 const totaux = (n: number) => ({ garanti: 0, probable: n, incertain: 0, prudent: 0, realiste: n, ambitieux: n })
@@ -46,7 +46,7 @@ const prime = {
 
 function serveur(sources: SourceRevenuDto[], recus: RevenuRecuDto[] = []) {
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [compte]
+    if (chemin === '/auth/session') return compte
     if (chemin === '/salaire/contrats') return [contrat]
     if (chemin === '/revenus/sources') return sources
     if (chemin === '/revenus/resume') return resume

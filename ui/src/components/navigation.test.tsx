@@ -14,7 +14,7 @@ vi.mock('../lib/api', async (original) => ({
 
 afterEach(() => vi.restoreAllMocks())
 
-/** Choisit puis quitte un compte, comme l'écran Profils. */
+/** Choisit puis quitte un compte, comme la connexion et la déconnexion. */
 function Bascule() {
   const { id, choisir, quitter } = useCompte()
   return (
@@ -23,7 +23,7 @@ function Bascule() {
       <button type="button" onClick={() => choisir('u1')}>
         Choisir
       </button>
-      <button type="button" onClick={quitter}>
+      <button type="button" onClick={() => quitter()}>
         Quitter
       </button>
     </>
@@ -51,7 +51,7 @@ function Pages() {
 
 describe('pages blanches (correctif)', () => {
   it('choisir puis quitter un compte ne fait plus planter la saisie rapide (ordre des hooks)', async () => {
-    vi.mocked(api.lire).mockResolvedValue([{ id: 'u1', prenom: 'Essai', devise: 'MAD' }])
+    vi.mocked(api.lire).mockResolvedValue({ id: 'u1', prenom: 'Essai', devise: 'MAD' })
     rendre(
       <FournisseurSaisieRapide>
         <Bascule />

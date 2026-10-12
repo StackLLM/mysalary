@@ -2,7 +2,7 @@ import type { AujourdhuiDto } from '@mysalary/partage'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
-import { useUtilisateurCourant } from '../profils/requetes'
+import { useUtilisateurCourant } from '../compte/requetes'
 
 /** Page Aujourd'hui (lot 16) : recalculée après chaque saisie (toutes les clés du compte sont invalidées). */
 export function useAujourdhui() {

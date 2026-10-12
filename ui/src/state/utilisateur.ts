@@ -1,6 +1,9 @@
 const CLE = 'mysalary.utilisateur'
 
-/** Compte choisi sur l'écran Profils. Le stockage peut être indisponible : on ne casse jamais. */
+/**
+ * Compte connecté sur ce navigateur, retenu pour afficher l'app sans attendre (clé des données en cache).
+ * Ce n'est qu'un indice : le serveur ne fait confiance qu'au cookie de session. Le stockage peut être indisponible.
+ */
 export function lireUtilisateurCourant(): string | null {
   try {
     return globalThis.localStorage?.getItem(CLE) ?? null

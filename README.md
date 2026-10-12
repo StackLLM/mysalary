@@ -1,35 +1,93 @@
 # MySalary
 
-Assistant financier personnel centré sur le salaire.
+Assistant financier personnel centré sur le salaire : ce qui reste aujourd'hui, cette semaine et ce mois-ci, et quand chaque objectif d'épargne sera atteint. Plusieurs personnes peuvent l'utiliser, chacune avec son compte privé.
 
-Documentation : `Plan.md` · `context.md` · `UX.md` · `UI.md` · `docs/lots/`.
+Documentation : `Plan.md` (vision, règles métier) · `UX.md` · `UI.md` · `context.md` · `docs/plan.md` (suivi des lots) · `docs/lots/` (bilan de chaque lot).
 
-## Démarrer
+## Fonctionnalités
 
-```bash
-npm install
-npm run db:migrer
-npm run dev
-```
+- **Compte** : inscription, connexion, déconnexion, mot de passe oublié, changement de mot de passe, suppression. Chaque compte ne voit que ses propres données.
+- **Mise en route** guidée, avec import de l'ancienne app (money-guru).
+- **Mon plan** : salaire et cycle de paie, primes et autres revenus, charges fixes, enveloppes (par mois, par semaine ou par jour), ponctuels, dettes, épargne.
+- **Aujourd'hui** : reste à dépenser, à faire, 7 prochains jours.
+- **Mois** : vue d'ensemble, dépenses, semaines (reste de chaque enveloppe), clôture du mois, cumul de mois en mois.
+- **Année**, **Calendrier**, **Objectifs** (simulation avec le cumul de fin de mois), **Simulateur** de scénarios, suggestions et alertes.
+- **Sauvegarde** : export JSON d'un compte, restauration dans un compte vide, sauvegarde de la base.
 
-- Interface : http://127.0.0.1:6010
-- Serveur : http://127.0.0.1:3010/api/v1/sante
-
-## Vérifier
-
-```bash
-npm run verifier
-```
-
-Types, tests et build de tous les paquets.
-
-## Structure
+## Architecture
 
 | Dossier | Rôle |
 |---|---|
-| `ui/` | Interface React + Vite |
-| `server/` | API Fastify + Prisma (SQLite) |
-| `packages/moteur/` | Moteur financier pur, sans base ni React |
-| `packages/partage/` | Schémas Zod, types et formatage partagés |
+| `ui/` | Interface React 18 + Vite, TanStack Query, Tailwind, Radix |
+| `server/` | API Fastify 5 + Prisma 6 (SQLite), sous `/api/v1` |
+| `packages/moteur/` | Moteur financier pur (aucune base, aucun React) : tous les calculs |
+| `packages/partage/` | Schémas Zod, types et formatage partagés par l'API et l'interface |
 
-Pas d'authentification en v1 : tout écoute uniquement en local.
+L'interface appelle l'API sur la même origine (Vite relaie `/api` vers le serveur en développement).
+
+## Installation et lancement
+
+Node 22 ou plus (voir `.nvmrc`).
+
+```bash
+npm install
+```
+
+```bash
+cp server/.env.example server/.env
+```
+
+```bash
+npm run db:migrer
+```
+
+```bash
+npm run dev
+```
+
+- Interface : http://127.0.0.1:6010 (créer un compte depuis `/inscription`)
+- API : http://127.0.0.1:3010/api/v1/sante
+
+## Variables d'environnement (`server/.env`)
+
+| Variable | Rôle | Défaut |
+|---|---|---|
+| `DATABASE_URL` | Fichier SQLite (relatif à `server/prisma/`) | `file:./mysalary.db` |
+| `PORT` | Port de l'API | `3010` |
+| `HOTE` | Adresse d'écoute ; `0.0.0.0` pour le réseau, derrière HTTPS | `127.0.0.1` |
+| `APP_URL` | Adresse de l'interface, pour les liens envoyés par e-mail ; en `https://`, le cookie devient `Secure` | `http://127.0.0.1:6010` |
+| `COOKIE_SECURE` | Forcer (`1`) ou non (`0`) le cookie `Secure` | selon `APP_URL` |
+| `TRUST_PROXY` | `1` derrière un proxy (adresse du client lue dans `X-Forwarded-For`) | désactivé |
+| `SMTP_URL` | Serveur d'envoi des e-mails, ex. `smtps://user:pass@smtp.exemple.com:465` | absent : les liens sont écrits dans le journal du serveur |
+| `MAIL_FROM` | Expéditeur des e-mails | `MySalary <no-reply@mysalary.local>` |
+
+## Authentification
+
+- **Comptes** : e-mail (unique) et mot de passe (8 caractères au moins), haché avec `scrypt`, jamais stocké ni renvoyé.
+- **Sessions** : cookie `HttpOnly`, `SameSite=Strict` (et `Secure` en HTTPS), valable 30 jours ; seule l'empreinte du jeton est en base. Changer ou réinitialiser le mot de passe ferme les autres sessions.
+- **Isolation** : le compte courant vient uniquement de la session ; toutes les données sont filtrées par compte côté serveur. Les actions lourdes (supprimer, réinitialiser) redemandent le mot de passe.
+- **Mot de passe oublié** : lien à usage unique, valable 1 heure, envoyé par e-mail (ou écrit dans le journal du serveur sans `SMTP_URL`).
+- **Essais limités** : 5 échecs de connexion par e-mail et 20 par adresse en 15 minutes.
+
+### Comptes créés avant l'authentification
+
+Ils gardent toutes leurs données mais n'ont ni e-mail ni mot de passe. Pour en activer un, sur la machine du serveur :
+
+```bash
+npm run compte:activer -- oussama ton-email@exemple.com
+```
+
+La commande affiche un lien (valable 24 heures) pour choisir le mot de passe ; ensuite, connexion normale avec cet e-mail.
+
+## Commandes utiles
+
+| Commande | Rôle |
+|---|---|
+| `npm run verifier` | Types, tests et build de tous les paquets |
+| `npm run db:migrer` | Appliquer les migrations (développement) |
+| `npm run sauvegarde` | Copier la base dans `sauvegardes/` (10 copies gardées) |
+| `npm run compte:activer -- <prénom> <e-mail>` | Activer un compte d'avant l'authentification |
+
+## Mise en ligne
+
+Avant d'ouvrir l'accès hors de cette machine : servir l'interface et l'API en HTTPS derrière un proxy (`APP_URL` en `https://`, `TRUST_PROXY=1`, `HOTE=0.0.0.0`), configurer `SMTP_URL`, et sauvegarder la base régulièrement.

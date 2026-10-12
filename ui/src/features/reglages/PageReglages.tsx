@@ -13,15 +13,14 @@ import { ErreurApi } from '../../lib/api'
 import { conteneurCascade, elementApparition } from '../../lib/animations'
 import { cn } from '../../lib/cn'
 import { dateCourte } from '../../lib/dates'
-import { useCompte } from '../../state/compte'
-import { useRenommerUtilisateur, useUtilisateurCourant } from '../profils/requetes'
+import { useDeconnexion, useRenommerUtilisateur, useUtilisateurCourant } from '../compte/requetes'
 import { lireMontant, versSaisie } from '../salaire/saisie'
 import { useMoisCourant } from '../salaire/requetes'
-import { deconnecter } from '../authentification/requetes'
-import { MotDePasseCompte } from '../authentification/MotDePasseCompte'
+import { MotDePasseCompte } from '../compte/MotDePasseCompte'
+import { SuppressionCompte } from '../compte/SuppressionCompte'
+import { RestaurationCompte } from '../sauvegarde/RestaurationCompte'
 import { BoutonExport } from '../sauvegarde/BoutonExport'
 import { ReinitialisationCompte } from '../sauvegarde/ReinitialisationCompte'
-import { SuppressionCompte } from '../profils/SuppressionCompte'
 import { useModifierReglages, useReglages } from './requetes'
 
 const MODES: { valeur: ModePeriode; titre: string; description: string }[] = [
@@ -77,7 +76,7 @@ export function PageReglages() {
               <>
                 <Section titre="Profil" sousTitre="Ton prénom et la devise de tes montants.">
                   <div className="grid gap-5 sm:grid-cols-2">
-                    <ChampPrenom id={utilisateur.id} prenom={utilisateur.prenom} />
+                    <ChampPrenom prenom={utilisateur.prenom} />
                     <div className="flex flex-col gap-1.5">
                       <span className="text-texte-sm text-gris">Devise</span>
                       <Cellule>{utilisateur.devise}</Cellule>
@@ -202,7 +201,7 @@ function Section({ titre, sousTitre, children }: { titre: string; sousTitre?: Re
 }
 
 /** Prénom : enregistré quand on quitte le champ ou qu'on appuie sur Entrée. */
-function ChampPrenom({ id, prenom }: { id: string; prenom: string }) {
+function ChampPrenom({ prenom }: { prenom: string }) {
   const renommer = useRenommerUtilisateur()
   const [valeur, setValeur] = useState(prenom)
   const [erreur, setErreur] = useState<string>()
@@ -210,12 +209,12 @@ function ChampPrenom({ id, prenom }: { id: string; prenom: string }) {
   function enregistrer() {
     if (valeur.trim() === prenom) return
     renommer.mutate(
-      { id, prenom: valeur },
+      { prenom: valeur },
       {
         onSuccess: (u) => {
           setErreur(undefined)
           setValeur(u.prenom)
-          toast('Prénom enregistré.', { action: { label: 'Annuler', onClick: () => renommer.mutate({ id, prenom }) } })
+          toast('Prénom enregistré.', { action: { label: 'Annuler', onClick: () => renommer.mutate({ prenom }) } })
         },
         onError: (e) => setErreur(e instanceof ErreurApi ? (e.champs?.prenom ?? e.message) : 'Erreur inattendue.'),
       },
@@ -237,7 +236,7 @@ function ChampPrenom({ id, prenom }: { id: string; prenom: string }) {
 
 function CarteCompte() {
   const utilisateur = useUtilisateurCourant()
-  const compte = useCompte()
+  const deconnecter = useDeconnexion()
   const naviguer = useNavigate()
   const [confirmer, setConfirmer] = useState(false)
   const [reinitialiser, setReinitialiser] = useState(false)
@@ -246,29 +245,23 @@ function CarteCompte() {
   return (
     <>
       <Carte titre="Compte">
-        <Identite
-          initiale={utilisateur.prenom.charAt(0).toUpperCase()}
-          nom={utilisateur.prenom}
-          detail={`Créé le ${dateCourte(utilisateur.creeLe)}`}
-        />
+        <Identite initiale={utilisateur.prenom.charAt(0).toUpperCase()} nom={utilisateur.prenom} detail={utilisateur.email ?? `Créé le ${dateCourte(utilisateur.creeLe)}`} />
         <Separateur className="my-5" />
-        <p className="text-texte-sm text-gris">Tes données restent sur cet ordinateur et sont séparées de celles des autres comptes.</p>
+        <p className="text-texte-sm text-gris">Tes données sont à toi seul : aucun autre compte n’y a accès.</p>
         <BoutonExport utilisateur={utilisateur} className="mt-6 w-full" />
         <Bouton
           variante="teinte"
           taille="md"
           className="mt-3 w-full"
-          onClick={async () => {
-            if (utilisateur.protege) await deconnecter()
-            compte.quitter()
-            naviguer('/profils')
-          }}
+          onClick={() => void deconnecter()}
         >
-          Changer de compte
+          Se déconnecter
         </Bouton>
       </Carte>
 
-      <MotDePasseCompte utilisateur={utilisateur} />
+      <MotDePasseCompte />
+
+      <RestaurationCompte />
 
       <Carte titre="Zone sensible">
         <p className="text-texte-sm text-gris">Efface définitivement les données de ce compte.</p>
@@ -281,7 +274,7 @@ function CarteCompte() {
       </Carte>
 
       <ReinitialisationCompte utilisateur={reinitialiser ? utilisateur : null} onFermer={() => setReinitialiser(false)} onFait={() => naviguer('/onboarding')} />
-      <SuppressionCompte utilisateur={confirmer ? utilisateur : null} onFermer={() => setConfirmer(false)} onSupprime={() => naviguer('/profils')} />
+      <SuppressionCompte utilisateur={confirmer ? utilisateur : null} onFermer={() => setConfirmer(false)} />
     </>
   )
 }

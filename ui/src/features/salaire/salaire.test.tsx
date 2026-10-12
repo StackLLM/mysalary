@@ -16,7 +16,7 @@ const compte: Utilisateur = {
   prenom: 'Essai',
   devise: 'MAD',
   onboardingEtape: 0,
-  onboardingTermine: false, protege: false,
+  onboardingTermine: false, email: 'test@exemple.test',
   creeLe: '2026-10-07T10:00:00.000Z',
   derniereOuverture: null,
 }
@@ -64,7 +64,7 @@ const moisCourant = {
 
 function serveur(versions: VersionContratDto[]) {
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [compte]
+    if (chemin === '/auth/session') return compte
     if (chemin === '/salaire/contrats') return versions
     if (chemin === '/mois/courant') return moisCourant
     if (chemin.startsWith('/salaire/paies')) return { aujourdhui: '2027-01-28', paies: versions.length ? [fevrier] : [] }

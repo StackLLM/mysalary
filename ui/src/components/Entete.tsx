@@ -1,10 +1,9 @@
 import { LogOut, Plus, Settings } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Cloche } from '../features/conseils/Conseils'
-import { useUtilisateurCourant } from '../features/profils/requetes'
+import { useDeconnexion, useUtilisateurCourant } from '../features/compte/requetes'
 import { cn } from '../lib/cn'
 import { DESTINATIONS } from '../lib/navigation'
-import { useCompte } from '../state/compte'
 import { Avatar } from './Elements'
 import { IconeEngrenage } from './icones'
 import { Menu } from './Menu'
@@ -12,11 +11,11 @@ import { Menu } from './Menu'
 /**
  * Barre de navigation du template : logo, liens icône + texte, onglet actif souligné,
  * deux boutons ronds gris, séparateur, avatar.
- * `simple` : écran Profils, sans navigation ni compte. `onSaisie` : bouton + de la saisie rapide (bureau ; barre du bas sur mobile).
+ * `simple` : mise en route, sans navigation. `onSaisie` : bouton + de la saisie rapide (bureau ; barre du bas sur mobile).
  */
 export function Entete({ simple = false, onSaisie }: { simple?: boolean; onSaisie?: () => void }) {
   const utilisateur = useUtilisateurCourant()
-  const { quitter } = useCompte()
+  const deconnecter = useDeconnexion()
   const naviguer = useNavigate()
 
   return (
@@ -90,19 +89,16 @@ export function Entete({ simple = false, onSaisie }: { simple?: boolean; onSaisi
               utilisateur && (
                 <>
                   <div className="text-texte font-semibold text-encre">{utilisateur.prenom}</div>
-                  <div className="text-mention text-gris">Compte {utilisateur.devise}</div>
+                  <div className="text-mention text-gris">{utilisateur.email ?? `Compte ${utilisateur.devise}`}</div>
                 </>
               )
             }
             actions={[
               { libelle: 'Réglages', icone: <Settings className="h-4 w-4 text-gris" />, onSelect: () => naviguer('/reglages') },
               {
-                libelle: 'Changer de compte',
+                libelle: 'Se déconnecter',
                 icone: <LogOut className="h-4 w-4 text-gris" />,
-                onSelect: () => {
-                  quitter()
-                  naviguer('/profils')
-                },
+                onSelect: () => void deconnecter(),
               },
             ]}
           />

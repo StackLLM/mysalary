@@ -1,6 +1,6 @@
 import { formaterMois, formaterMontant, type DepenseDto, type SaisieDepense } from '@mysalary/partage'
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Bouton } from '../../components/Bouton'
 import { Champ, ChampMontant } from '../../components/Champ'
@@ -13,7 +13,7 @@ import { ChampCategorie } from '../charges/ChampCategorie'
 import { FormulaireVersement } from '../epargne/FormulaireVersement'
 import { IconeCategorie } from '../charges/IconeCategorie'
 import { useCategories } from '../charges/requetes'
-import { useUtilisateurCourant } from '../profils/requetes'
+import { useUtilisateurCourant } from '../compte/requetes'
 import { useMoisCourant } from '../salaire/requetes'
 import { lireMontant, versSaisie } from '../salaire/saisie'
 import { useEnregistrerDepense, useRattachements, useSupprimerDepense } from './requetes'
@@ -38,13 +38,12 @@ export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
   const [etat, setEtat] = useState<{ mode: Mode; depense?: DepenseDto; date?: string; objectifId?: string; cle: number } | null>(null)
   // Toujours appelé (règle des hooks) : `useUtilisateurCourant` ne rend un compte que si un id est choisi.
   const actif = Boolean(useUtilisateurCourant())
-  const surProfils = useLocation().pathname === '/profils'
   const ouvrir = useCallback((depense?: DepenseDto, options?: { date?: string }) => setEtat({ mode: 'depense', depense, date: options?.date, cle: Date.now() }), [])
   const ouvrirVersement = useCallback((options?: { objectifId?: string }) => setEtat({ mode: 'epargne', objectifId: options?.objectifId, cle: Date.now() }), [])
 
   const naviguer = useNavigate()
   useEffect(() => {
-    if (!actif || surProfils) return
+    if (!actif) return
     const surTouche = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey || frappeOccupee(e)) return
       const touche = e.key.toLowerCase()
@@ -59,7 +58,7 @@ export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
     }
     window.addEventListener('keydown', surTouche)
     return () => window.removeEventListener('keydown', surTouche)
-  }, [actif, surProfils, ouvrir, naviguer])
+  }, [actif, ouvrir, naviguer])
 
   const valeur = useMemo(
     () => ({

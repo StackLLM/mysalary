@@ -16,7 +16,8 @@
     "build": "npm run build --workspaces --if-present",
     "verifier": "npm run typecheck && npm run test && npm run build",
     "db:migrer": "npm run db:migrer -w server",
-    "sauvegarde": "npm run sauvegarde -w server"
+    "sauvegarde": "npm run sauvegarde -w server",
+    "compte:activer": "npm run compte:activer -w server --"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",

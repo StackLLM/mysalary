@@ -2,7 +2,7 @@ import type { ImportDto, OnboardingDto, SaisieDecisionImport, SaisieOnboarding }
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
-import { useUtilisateurCourant } from '../profils/requetes'
+import { useUtilisateurCourant } from '../compte/requetes'
 
 /** Étape atteinte, fin, et import de l'ancienne app (lot 19) : sauvegardés par compte, relus à chaque ouverture. */
 function useCle() {

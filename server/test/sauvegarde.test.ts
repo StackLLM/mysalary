@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { sauvegarderBase, SAUVEGARDES_GARDEES } from '../src/lib/sauvegardeBase'
-import { creerCompte, pour, preparerApp, url } from './outils'
+import { creerCompte, MOT_DE_PASSE_TEST, pour, preparerApp, url } from './outils'
 
 const ctx = preparerApp()
 const appeler = (method: 'GET' | 'POST', chemin: string, payload?: object, id?: string) =>
@@ -35,13 +35,13 @@ async function remplir(utilisateurId: string) {
   return { charge, categorie }
 }
 
-describe('export, import et réinitialisation d’un compte', () => {
+describe('export, restauration et réinitialisation du compte connecté', () => {
   it('export : toutes les données du compte, sans identifiant de compte ; un autre compte n’y est pas', async () => {
     const a = await creerCompte(ctx.app, 'A')
     const b = await creerCompte(ctx.app, 'B')
     await remplir(a.id)
     await remplir(b.id)
-    const r = await appeler('GET', `/utilisateurs/${a.id}/export`)
+    const r = await appeler('GET', '/compte/export', undefined, a.id)
     expect(r.statusCode, r.body).toBe(200)
     const e = r.json() as ExportCompte
     expect(e).toMatchObject({ format: 'mysalary-export', version: 1, compte: { prenom: 'A', devise: 'MAD' } })
@@ -50,18 +50,18 @@ describe('export, import et réinitialisation d’un compte', () => {
     })
     expect(JSON.stringify(e)).not.toContain(a.id)
     expect(JSON.stringify(e)).not.toContain('moneyGuruV0')
-    expect((await appeler('GET', '/utilisateurs/inconnu/export')).statusCode).toBe(404)
+    expect((await appeler('GET', '/compte/export')).statusCode).toBe(401)
   })
 
-  it('import : un nouveau compte identique, tout est relié aux nouveaux identifiants ; la source n’est pas touchée', async () => {
+  it('restauration dans un compte vide : tout est relié aux nouveaux identifiants ; la source n’est pas touchée', async () => {
     const a = await creerCompte(ctx.app, 'A')
     const { charge } = await remplir(a.id)
-    const e = (await appeler('GET', `/utilisateurs/${a.id}/export`)).json() as ExportCompte
-    const r = await appeler('POST', '/utilisateurs/import', e)
-    expect(r.statusCode, r.body).toBe(201)
+    const e = (await appeler('GET', '/compte/export', undefined, a.id)).json() as ExportCompte
+    const b = await creerCompte(ctx.app, 'B')
+    const r = await appeler('POST', '/compte/restauration', e, b.id)
+    expect(r.statusCode, r.body).toBe(200)
     const { utilisateur, lignes } = r.json() as { utilisateur: { id: string; prenom: string; onboardingTermine: boolean }; lignes: number }
-    expect(utilisateur).toMatchObject({ prenom: 'A (import)', onboardingTermine: true })
-    expect(utilisateur.id).not.toBe(a.id)
+    expect(utilisateur).toMatchObject({ id: b.id, prenom: 'B', onboardingTermine: true })
     expect(lignes).toBeGreaterThan(10)
     const n = utilisateur.id
     const charges = await ctx.prisma.charge.findMany({ where: { utilisateurId: n } })
@@ -80,20 +80,20 @@ describe('export, import et réinitialisation d’un compte', () => {
     expect(await ctx.prisma.charge.count({ where: { utilisateurId: a.id } })).toBe(1)
     expect(((await appeler('GET', '/charges', undefined, n)).json() as unknown[]).length).toBeGreaterThan(0)
     // Aller-retour : réexporter donne les mêmes quantités.
-    const e2 = (await appeler('GET', `/utilisateurs/${n}/export`)).json() as ExportCompte
+    const e2 = (await appeler('GET', '/compte/export', undefined, n)).json() as ExportCompte
     expect(Object.fromEntries(Object.entries(e2.donnees).map(([k, v]) => [k, v.length]))).toEqual(Object.fromEntries(Object.entries(e.donnees).map(([k, v]) => [k, v.length])))
   })
 
-  it('import refusé : fichier étranger, version plus récente, lien cassé ; rien n’est créé', async () => {
+  it('restauration refusée : fichier étranger, version plus récente, lien cassé ; rien n’est écrit', async () => {
     const a = await creerCompte(ctx.app, 'A')
     await remplir(a.id)
-    const e = (await appeler('GET', `/utilisateurs/${a.id}/export`)).json() as ExportCompte
-    const avant = await ctx.prisma.utilisateur.count()
+    const e = (await appeler('GET', '/compte/export', undefined, a.id)).json() as ExportCompte
+    const b = await creerCompte(ctx.app, 'B')
     for (const mauvais of [{}, { format: 'autre', version: 1 }, { ...e, version: 2 }, { ...e, compte: { prenom: '', devise: 'MAD' } }, { ...e, donnees: { charge: [{ id: 'x', categorieId: 'absente', libelle: 'z' }] } }]) {
-      const r = await appeler('POST', '/utilisateurs/import', mauvais)
+      const r = await appeler('POST', '/compte/restauration', mauvais, b.id)
       expect(r.statusCode, JSON.stringify(mauvais).slice(0, 80)).toBe(400)
     }
-    expect(await ctx.prisma.utilisateur.count()).toBe(avant)
+    expect(await ctx.prisma.charge.count({ where: { utilisateurId: b.id } })).toBe(0)
   })
 
   it('réinitialisation : le plan, le réel et l’import disparaissent, le compte et son prénom restent, réglages par défaut', async () => {
@@ -102,7 +102,7 @@ describe('export, import et réinitialisation d’un compte', () => {
     await remplir(a.id)
     await remplir(b.id)
     await ctx.prisma.utilisateur.update({ where: { id: a.id }, data: { onboardingEtape: 10, onboardingTermine: true } })
-    const r = await appeler('POST', `/utilisateurs/${a.id}/reinitialiser`)
+    const r = await appeler('POST', '/compte/reinitialisation', { motDePasse: MOT_DE_PASSE_TEST }, a.id)
     expect(r.statusCode, r.body).toBe(200)
     expect(r.json()).toMatchObject({ id: a.id, prenom: 'A', onboardingEtape: 0, onboardingTermine: false })
     for (const table of ['categorie', 'charge', 'depense', 'dette', 'objectif', 'mouvementEpargne', 'compteEpargne', 'paie', 'clotureMois', 'scenario', 'importSource'] as const) {
@@ -110,7 +110,6 @@ describe('export, import et réinitialisation d’un compte', () => {
     }
     expect(await ctx.prisma.reglages.findUnique({ where: { utilisateurId: a.id } })).toMatchObject({ debutSemaine: 1, reportHebdo: false })
     expect(await ctx.prisma.charge.count({ where: { utilisateurId: b.id } })).toBe(1)
-    expect((await appeler('POST', '/utilisateurs/inconnu/reinitialiser')).statusCode).toBe(404)
   })
 })
 
@@ -119,7 +118,7 @@ describe('import d’un export MySalary à l’onboarding', () => {
     const a = await creerCompte(ctx.app, 'A')
     const r = await appeler('POST', '/import/apercu', { fichier: { format: 'mysalary-export', version: 1 } }, a.id)
     expect(r.statusCode).toBe(422)
-    expect(r.json().erreur.message).toContain('écran Profils')
+    expect(r.json().erreur.message).toContain('Réglages › Sauvegarde')
   })
 })
 

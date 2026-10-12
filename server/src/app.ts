@@ -2,20 +2,19 @@ import helmet from '@fastify/helmet'
 import { PREFIXE_API } from '@mysalary/partage'
 import type { PrismaClient } from '@prisma/client'
 import Fastify, { type FastifyServerOptions } from 'fastify'
+import { routesAuth } from './modules/auth/routes'
 import { routesCharges } from './modules/charges/routes'
+import { routesCompte } from './modules/compte/routes'
 import { routesConseils } from './modules/conseils/routes'
 import { routesDepenses } from './modules/depenses/routes'
 import { routesEpargne } from './modules/epargne/routes'
 import { routesSimulation } from './modules/simulation/routes'
 import { routesMois } from './modules/mois/routes'
 import { routesOnboarding } from './modules/onboarding/routes'
-import { routesSauvegarde } from './modules/sauvegarde/routes'
 import { routesReglages } from './modules/reglages/routes'
 import { routesRevenus } from './modules/revenus/routes'
 import { routesSalaire } from './modules/salaire/routes'
-import { routesSession } from './modules/session/routes'
-import { routesUtilisateurs } from './modules/utilisateurs/routes'
-import { installerBase } from './plugins/base'
+import { installerBase, type ConfigAuthentification } from './plugins/base'
 import { installerErreurs } from './plugins/erreurs'
 import { exigerUtilisateur } from './plugins/utilisateurCourant'
 
@@ -24,15 +23,26 @@ interface Options {
   logger?: FastifyServerOptions['logger']
   /** Horloge du serveur ; les tests la fixent pour rendre les dates reproductibles. */
   horloge?: () => Date
-  /** Écoute hors de cette machine : mot de passe obligatoire pour tout compte (lot 22). */
-  reseau?: boolean
+  /** Authentification (lot 23) ; par défaut : interface locale, cookie sans HTTPS, liens écrits dans le journal. */
+  auth?: Partial<ConfigAuthentification>
+  /** Faire confiance à X-Forwarded-For (derrière un proxy HTTPS). */
+  trustProxy?: boolean
 }
 
 /** Construit l'application sans l'écouter : utilisé par le serveur et par les tests. */
-export async function construireApp({ prisma, logger = false, horloge, reseau = false }: Options) {
-  const app = Fastify({ logger, bodyLimit: 1024 * 1024 })
+export async function construireApp({ prisma, logger = false, horloge, auth = {}, trustProxy = false }: Options) {
+  const app = Fastify({ logger, bodyLimit: 1024 * 1024, trustProxy })
 
-  installerBase(app, prisma, horloge, reseau)
+  installerBase(
+    app,
+    prisma,
+    {
+      urlApplication: auth.urlApplication ?? 'http://127.0.0.1:6010',
+      cookieSecurise: auth.cookieSecurise ?? false,
+      messagerie: auth.messagerie ?? (async ({ a, sujet, texte }) => app.log.info({ a, sujet }, `E-mail non envoyé (SMTP_URL absent)\n${texte}`)),
+    },
+    horloge,
+  )
   installerErreurs(app)
   await app.register(helmet)
 
@@ -40,13 +50,12 @@ export async function construireApp({ prisma, logger = false, horloge, reseau = 
     async (api) => {
       // Routes publiques (aucun compte requis).
       api.get('/sante', async () => ({ statut: 'ok' }))
-      await api.register(routesUtilisateurs)
-      await api.register(routesSauvegarde)
-      await api.register(routesSession)
+      await api.register(routesAuth)
 
       // Routes du compte courant : toutes passent par exigerUtilisateur.
       await api.register(async (compte) => {
         compte.addHook('preHandler', exigerUtilisateur(app))
+        await compte.register(routesCompte)
         await compte.register(routesReglages)
         await compte.register(routesSalaire)
         await compte.register(routesMois)

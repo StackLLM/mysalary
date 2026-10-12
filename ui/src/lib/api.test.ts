@@ -23,22 +23,32 @@ describe('client API', () => {
   beforeEach(() => vi.stubGlobal('localStorage', stockageMemoire()))
   afterEach(() => vi.unstubAllGlobals())
 
-  it('ajoute l’en-tête du compte courant', async () => {
+  it('n’envoie jamais d’identifiant de compte : seul le cookie de session (même origine) désigne le compte', async () => {
     choisirUtilisateur('u1')
     const fetchMock = vi.fn().mockResolvedValue(reponseJson(200, { ok: true }))
     vi.stubGlobal('fetch', fetchMock)
 
     await appelerApi('GET', '/reglages')
-    expect(fetchMock).toHaveBeenCalledWith('/api/v1/reglages', expect.objectContaining({
-      headers: { 'x-utilisateur': 'u1' },
-    }))
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/reglages', { method: 'GET', headers: {}, credentials: 'same-origin' })
+  })
+
+  it('session perdue sur un compte ouvert : prévient l’app ; pas sur les routes d’authentification', async () => {
+    choisirUtilisateur('u1')
+    const ecoute = vi.fn()
+    window.addEventListener('mysalary:session-expiree', ecoute)
+    const refus = () => reponseJson(401, { erreur: { code: 'SESSION_REQUISE', message: 'Connecte-toi pour continuer.' } })
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => refus()))
+    await appelerApi('GET', '/reglages').catch(() => undefined)
+    await appelerApi('GET', '/auth/session').catch(() => undefined)
+    window.removeEventListener('mysalary:session-expiree', ecoute)
+    expect(ecoute).toHaveBeenCalledTimes(1)
   })
 
   it('transforme une réponse d’erreur en ErreurApi', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
       reponseJson(400, { erreur: { code: 'VALIDATION', message: 'Invalide', champs: { prenom: 'Obligatoire' } } }),
     ))
-    const erreur = await appelerApi('POST', '/utilisateurs', {}).catch((e: unknown) => e)
+    const erreur = await appelerApi('POST', '/auth/inscription', {}).catch((e: unknown) => e)
     expect(erreur).toBeInstanceOf(ErreurApi)
     expect(erreur).toMatchObject({ statut: 400, code: 'VALIDATION', champs: { prenom: 'Obligatoire' } })
   })
@@ -50,6 +60,6 @@ describe('client API', () => {
 
   it('accepte une réponse vide (204)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })))
-    await expect(appelerApi('DELETE', '/utilisateurs/u1')).resolves.toBeUndefined()
+    await expect(appelerApi('DELETE', '/charges/c1')).resolves.toBeUndefined()
   })
 })

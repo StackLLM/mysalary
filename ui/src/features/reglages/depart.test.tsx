@@ -17,7 +17,7 @@ let reglages: Reglages
 beforeEach(() => {
   reglages = { modePeriode: 'cyclePaie', debutSemaine: 1, reportHebdo: false, animations: true, reglesScenarios: REGLES_SCENARIOS_DEFAUT, depart: null }
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [compte]
+    if (chemin === '/auth/session') return compte
     if (chemin === '/reglages') return reglages
     if (chemin === '/mois/courant') return { cle: '2027-01' }
     throw new Error(`Route non simulée : ${chemin}`)

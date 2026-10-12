@@ -2,7 +2,7 @@ import type { AnneeDto, BilanDto, CumulDto, SaisieCloture, SemainesDto, SuiviAnn
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
-import { useUtilisateurCourant } from '../profils/requetes'
+import { useUtilisateurCourant } from '../compte/requetes'
 
 /** Bilan, clôture et réouverture d'un mois. Clôturer ou rouvrir recalcule aussi les mois et les dépenses. */
 function useCles() {

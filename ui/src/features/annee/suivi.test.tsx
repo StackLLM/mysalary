@@ -56,7 +56,7 @@ let donnees = suivi()
 beforeEach(() => {
   donnees = suivi()
   vi.mocked(api.lire).mockReset().mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [compte]
+    if (chemin === '/auth/session') return compte
     if (chemin === '/mois/courant') return { cle: '2026-10' }
     if (chemin.startsWith('/annee/') && chemin.endsWith('/suivi')) return { ...donnees, annee: Number(chemin.split('/')[2]) }
     throw new Error(`Route non simulée : ${chemin}`)
@@ -146,7 +146,7 @@ describe('Année (lot 18)', () => {
 
   it('erreur de chargement : « Réessayer »', async () => {
     vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-      if (chemin === '/utilisateurs') return [compte]
+      if (chemin === '/auth/session') return compte
       if (chemin === '/mois/courant') return { cle: '2026-10' }
       throw new Error('panne')
     })

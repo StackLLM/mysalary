@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { construireApp } from './app'
+import { creerMessagerie } from './lib/messagerie'
 
 try {
   process.loadEnvFile()
@@ -9,21 +10,25 @@ try {
 
 const prisma = new PrismaClient()
 const hote = process.env.HOTE ?? '127.0.0.1'
-const reseau = !['127.0.0.1', 'localhost', '::1'].includes(hote)
-
-// Ouvert au réseau, tout compte doit avoir un mot de passe : le serveur refuse de démarrer sinon.
-if (reseau) {
-  const sansMotDePasse = await prisma.utilisateur.findMany({ where: { motDePasse: null }, select: { prenom: true } })
-  if (sansMotDePasse.length > 0) {
-    console.error(`HOTE=${hote} ouvre le serveur au réseau. Ces comptes n'ont pas de mot de passe : ${sansMotDePasse.map((u) => u.prenom).join(', ')}. Protège-les en local (Réglages › Mot de passe), puis relance.`)
-    process.exit(1)
-  }
-}
-
-const app = await construireApp({ prisma, logger: { level: 'info' }, reseau })
 const port = Number(process.env.PORT ?? 3010)
+const urlApplication = process.env.APP_URL ?? 'http://127.0.0.1:6010'
+const smtp = process.env.SMTP_URL
 
-// Par défaut, écoute locale uniquement. Hors de cette machine : HOTE=0.0.0.0, derrière HTTPS.
+const app = await construireApp({
+  prisma,
+  logger: { level: 'info' },
+  // Derrière un proxy HTTPS (Nginx, Caddy…), l'adresse du client vient de X-Forwarded-For.
+  trustProxy: process.env.TRUST_PROXY === '1',
+  auth: {
+    urlApplication,
+    // Un site en HTTPS garde le cookie de session pour HTTPS seulement.
+    cookieSecurise: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === '1' : urlApplication.startsWith('https://'),
+    // Sans SMTP_URL, les liens de mot de passe sont écrits dans ce journal (usage local).
+    ...(smtp ? { messagerie: creerMessagerie({ smtp, expediteur: process.env.MAIL_FROM ?? 'MySalary <no-reply@mysalary.local>', journal: (t) => console.info(t) }) } : {}),
+  },
+})
+
+// Par défaut, écoute locale uniquement. Pour un accès réseau : HOTE=0.0.0.0, derrière HTTPS (voir README).
 await app.listen({ host: hote, port })
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

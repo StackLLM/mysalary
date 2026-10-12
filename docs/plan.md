@@ -1,7 +1,7 @@
 # MySalary — Progression
 
 > Suivi de la construction de MySalary, lot par lot. Mis à jour à chaque lot.
-> État au 12/10/2026 : **lots 0 à 18 clôturés et validés**, **lot 19 livré, en attente de validation**, lots 20 à 22 à venir. Depuis le 11/10/2026, c'est toi qui commites : je donne seulement les messages de commit. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
+> État au 12/10/2026 : **lots 0 à 21 clôturés**, **lot 22 clôturé puis remplacé par le lot 23**, **lot 23 (nettoyage, authentification, multi-utilisateur) livré, en attente de validation**. Depuis le 11/10/2026, c'est toi qui commites : je donne seulement les messages de commit. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
 >
 > - Plan global de l'application (vision, architecture, données, règles métier) : [`Plan.md`](../Plan.md), à la racine.
 > - Bilan détaillé de chaque lot livré (périmètre, règles, tests, bugs corrigés) : [`docs/lots/`](lots/).
@@ -32,7 +32,8 @@
 | 19 | [Onboarding & import V0](#lot-19--onboarding--import-v0) | 4 — Entrée et finitions | ✅ Clôturé | 12/10/2026 | 414 | [Lot-19-onboarding.md](lots/Lot-19-onboarding.md) |
 | 20 | [Export & sauvegarde](#lot-20--export--sauvegarde) | 4 — Entrée et finitions | ✅ Clôturé | 12/10/2026 | 426 | [Lot-20-export-sauvegarde.md](lots/Lot-20-export-sauvegarde.md) |
 | 21 | [Finitions (polish)](#lot-21--finitions-polish) | 4 — Entrée et finitions | ✅ Clôturé (en partie) | 12/10/2026 | 429 | [Lot-21-finitions.md](lots/Lot-21-finitions.md) |
-| 22 | [Authentification](#lot-22--authentification) | 4 — Entrée et finitions | 🟡 Livré, à valider | — | 441 | [Lot-22-authentification.md](lots/Lot-22-authentification.md) |
+| 22 | [Authentification (locale)](#lot-22--authentification-locale) | 4 — Entrée et finitions | ✅ Clôturé, remplacé par le lot 23 | 13/10/2026 | 441 | [Lot-22-authentification.md](lots/Lot-22-authentification.md) |
+| 23 | [Nettoyage, authentification et multi-utilisateur](#lot-23--nettoyage-authentification-et-multi-utilisateur) | 5 — Multi-utilisateur | 🟡 Livré, à valider | — | 451 | [Lot-23-multi-utilisateur.md](lots/Lot-23-multi-utilisateur.md) |
 
 « Tests » = nombre total de tests automatiques du projet à la clôture du lot (partage + moteur + serveur + interface).
 
@@ -41,7 +42,7 @@ Autres sections :
 - [1. Méthode et règles de travail](#1-méthode-et-règles-de-travail)
 - [2. Lots clôturés](#2-lots-clôturés-0-à-15)
 - [3. Lots livrés, en attente de validation](#3-lots-livrés-en-attente-de-validation)
-- [4. Lots à venir](#4-lots-à-venir-17-à-22)
+- [4. Lots 20 à 23](#4-lots-20-à-23)
 - [5. Points reportés, rangés par lot](#5-points-reportés-rangés-par-lot)
 - [6. Historique des commits](#6-historique-des-commits)
 - [7. Questions ouvertes](#7-questions-ouvertes)
@@ -270,7 +271,7 @@ Règles appliquées à chaque lot :
 
 ### Lot 19 — Onboarding & import V0
 
-- **Statut** : 🟡 livré le 12/10/2026, en attente de validation · 414 tests · `docs/lots/Lot-19-onboarding.md`.
+- **Statut** : ✅ clôturé le 12/10/2026 · 414 tests · `docs/lots/Lot-19-onboarding.md`.
 - **Livré** :
   - page `/onboarding`, dix étapes que l'on peut passer, barre de progression, étape sauvegardée par compte, reprise, retour arrière sans perte ; un compte créé commence par la mise en route, un compte commencé affiche « Reprendre » sur Aujourd'hui ;
   - import d'un export money-guru : aperçu groupé par thème, Importer / Modifier / Ignorer, conflits posés en question (quel salaire ? dette ou aide ?) ; rien n'est importé comme réel ni créé sans confirmation ; « Savings » jamais en charge ; un même écart sur trois mois devient une charge fixe proposée ;
@@ -279,7 +280,7 @@ Règles appliquées à chaque lot :
   - moteur `analyserMoneyGuru` et `decider` ; table `ImportSource` ; routes `/onboarding` et `/import/*`.
 - **Écart** : l'étude HTML de la V0 n'est pas lue (ses chiffres se saisissent à la main) ; l'import d'un export MySalary arrive avec le lot 20 ; pas encore de bouton « relancer la mise en route » dans les Réglages.
 
-## 4. Lots à venir (20 à 22)
+## 4. Lots 20 à 23
 
 ### Lot 20 — Export & sauvegarde
 
@@ -288,17 +289,27 @@ Règles appliquées à chaque lot :
 
 ### Lot 21 — Finitions (polish)
 
-- **Périmètre prévu** :
-  - animations, responsive, accessibilité, performance (paquet JS ≈ 540 ko à alléger) ;
-  - parcours de bout en bout avec Playwright (`Plan.md` § 13) ;
-  - raccourcis `←` `→` pour changer de période ;
-  - retrait des textes de chantier (« Cette page arrive au lot N ») et décision sur la page vitrine ;
-  - points reportés listés au § 5.
+- **Livré** (en partie) : pages chargées à la demande, raccourcis `←` `→`, page introuvable à la place des textes de chantier, vitrine réservée au développement, lien « Aller au contenu ». Détail : `docs/lots/Lot-21-finitions.md`.
+- **Reste** : parcours de bout en bout avec Playwright ; points « proposés » du § 5.
 
-### Lot 22 — Authentification
+### Lot 22 — Authentification (locale)
 
-- **Livré** : mot de passe par compte (facultatif en local), sessions par cookie, blocage après 5 essais ; ouvert au réseau, le serveur exige un mot de passe sur tous les comptes. Détail : `docs/lots/Lot-22-authentification.md`.
-- **Écart** : pas de récupération de mot de passe, pas de HTTPS intégré.
+- **Livré** : mot de passe facultatif par profil local, sessions par cookie. Détail : `docs/lots/Lot-22-authentification.md`.
+- **Remplacé par le lot 23** : le compte ne vient plus d'un en-tête choisi par le client (`X-Utilisateur`) mais seulement de la session ; l'écran Profils disparaît.
+
+### Lot 23 — Nettoyage, authentification et multi-utilisateur
+
+- **Statut** : 🟡 livré le 12/10/2026, en attente de validation · 451 tests · `docs/lots/Lot-23-multi-utilisateur.md`.
+- **Livré** :
+  - audit et nettoyage : code mort supprimé (composant `Tableau`, fonctions et constantes jamais utilisées, doublon `moisAbrege`), routes et écrans remplacés retirés (Profils, `/utilisateurs/*`, en-tête `X-Utilisateur`) ;
+  - inscription (prénom, e-mail, mot de passe, devise), connexion, déconnexion, mot de passe oublié par lien à usage unique (1 h), changement de mot de passe ; pages de connexion au design de l'app ;
+  - sessions : cookie `HttpOnly`, `SameSite=Strict`, `Secure` en HTTPS, 30 jours, jeton stocké haché, renouvelé à chaque connexion ; toutes les sessions fermées au changement ou à la réinitialisation du mot de passe ;
+  - isolation : le compte courant vient uniquement de la session ; toutes les routes de données sont protégées ; les routes du compte (`/compte/*`) ne visent que le compte connecté ; suppression et réinitialisation redemandent le mot de passe ;
+  - essais limités (5 par e-mail et 20 par adresse en 15 min ; 5 demandes de lien par heure) ; e-mail inconnu et mauvais mot de passe donnent la même réponse ;
+  - migration `comptes_email` : les comptes existants gardent leurs données ; `npm run compte:activer -- <prénom> <e-mail>` leur donne un e-mail et un lien pour choisir le mot de passe ;
+  - restauration d'un export dans un compte vide (Réglages › Sauvegarde) à la place de « importer en nouveau compte ».
+- **Blocage à lever par toi** : ton compte `oussama` doit être activé une fois (commande ci-dessus) pour être accessible.
+- **Prochaines étapes** : SMTP réel pour les e-mails (variable `SMTP_URL`), vérification de l'adresse e-mail à l'inscription, HTTPS devant le serveur avant toute mise en ligne, base PostgreSQL si plusieurs instances.
 
 ## 5. Points reportés, rangés par lot
 
@@ -368,10 +379,15 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `6348af8` | Correctif : l'application reste affichée après un rechargement à chaud ; filet d'erreur global |
 | `245f514` | Enveloppes divisées par jour ou par semaine |
 | `ed0e51d` | Lot 16 : page Aujourd'hui ; budget d'enveloppe saisi par mois, par semaine ou par jour |
-| — (à commiter) | Enveloppe : budget du mois, montant libre sur chaque semaine ; les semaines ne reçoivent que ces montants |
-| — (à commiter) | Lot 17 : calendrier du mois (grille, liste, solde projeté) |
-| — (à commiter) | Lot 18 : page Année (suivi annuel) |
-| — (à commiter) | Lot 19 : onboarding et import de l'ancienne app |
+| `30b32f9` | Enveloppe : budget du mois, montant libre sur chaque semaine ; les semaines ne reçoivent que ces montants |
+| `7db32ac` | Lot 17 : calendrier du mois (grille, liste, solde projeté) |
+| `c9e63e6` | Lot 18 : page Année (suivi annuel) |
+| `23c07b0` | Lot 19 : onboarding et import de l'ancienne app ; reste de chaque enveloppe sur les cartes de semaine |
+| `358f4a5` | Lot 20 : export, restauration, réinitialisation, sauvegarde de la base ; suivi des enveloppes par semaine |
+| `2592f49` | Lot 21 : pages à la demande, raccourcis de période |
+| `3715fc6` | Lot 22 : mot de passe par profil local |
+| `336fb65`, `f159872` | Page Objectif : simulation avec le cumul de fin de mois |
+| — (à commiter) | Lot 23 : nettoyage, authentification et multi-utilisateur |
 
 ## 7. Questions ouvertes
 

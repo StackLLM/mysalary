@@ -2,7 +2,7 @@ import type { ConseilsDto, IndicateursDto } from '@mysalary/partage'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
-import { useUtilisateurCourant } from '../profils/requetes'
+import { useUtilisateurCourant } from '../compte/requetes'
 
 /**
  * Alertes, recommandations et indicateurs (lot 12). Rangés sous la clé « mois » :

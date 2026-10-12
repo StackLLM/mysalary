@@ -16,7 +16,7 @@ vi.mock('../../lib/api', async (original) => ({
   api: { lire: vi.fn(), creer: vi.fn(), modifier: vi.fn(), supprimer: vi.fn() },
 }))
 
-const compte: Utilisateur = { id: 'u1', prenom: 'Essai', devise: 'MAD', onboardingEtape: 0, onboardingTermine: false, protege: false, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
+const compte: Utilisateur = { id: 'u1', prenom: 'Essai', devise: 'MAD', onboardingEtape: 0, onboardingTermine: false, email: 'test@exemple.test', creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
 const point = (mois: string, epargne: number) => ({ mois, capacite: 160_000, epargne, reserve: 0 })
 
 const simulation = {
@@ -61,7 +61,7 @@ const reglages: Reglages = { modePeriode: 'cyclePaie', debutSemaine: 1, reportHe
 
 function serveur() {
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [compte]
+    if (chemin === '/auth/session') return compte
     if (chemin === '/charges') return charges
     if (chemin === '/scenarios') return scenarios
     if (chemin === '/reglages') return reglages
@@ -176,7 +176,7 @@ describe('raccourci et réglages', () => {
       { route: '/mois', compte: 'u1', autres: { '/simulateur': <p>Page du simulateur</p> } },
     )
     const champ = await screen.findByLabelText('Champ')
-    await waitFor(() => expect(api.lire).toHaveBeenCalledWith('/utilisateurs'))
+    await waitFor(() => expect(api.lire).toHaveBeenCalledWith('/auth/session'))
     fireEvent.keyDown(champ, { key: 's' })
     expect(screen.queryByText('Page du simulateur')).not.toBeInTheDocument()
     await waitFor(() => {

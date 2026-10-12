@@ -9,9 +9,6 @@ export const NATURES_CARTE: Record<NatureCumul, { libelle: string; explication: 
   avant: { libelle: 'Avant le suivi', explication: 'Ce mois précède le début de ton suivi : pas de cumul.' },
 }
 
-/** Premier et dernier mois d'une année civile de mois budgétaires. */
-export const plageAnnee = (annee: number) => ({ du: `${annee}-01`, au: `${annee}-12` })
-
 /** « janv. », « sept. » : nom court d'un mois. */
 export const moisCourt = (cle: string) => formaterDate(`${cle}-01`, 'court').replace(/^1 /, '')
 

@@ -2,7 +2,7 @@ import type { ModificationReglages, Reglages } from '@mysalary/partage'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
-import { useUtilisateurCourant } from '../profils/requetes'
+import { useUtilisateurCourant } from '../compte/requetes'
 
 const cleReglages = (id: string | null) => [CLE_COMPTE, id, 'reglages'] as const
 

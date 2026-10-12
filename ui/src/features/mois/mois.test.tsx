@@ -13,7 +13,7 @@ vi.mock('../../lib/api', async (original) => ({
   api: { lire: vi.fn(), creer: vi.fn(), modifier: vi.fn(), supprimer: vi.fn() },
 }))
 
-const compte: Utilisateur = { id: 'u1', prenom: 'Essai', devise: 'MAD', onboardingEtape: 0, onboardingTermine: false, protege: false, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
+const compte: Utilisateur = { id: 'u1', prenom: 'Essai', devise: 'MAD', onboardingEtape: 0, onboardingTermine: false, email: 'test@exemple.test', creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
 
 const categories = [
   { id: 'c-log', libelle: 'Logement', groupe: 'essentiel', icone: 'maison', ordre: 0, utilisee: true, depenses: 1 },
@@ -76,7 +76,7 @@ let bilanCourant = bilan()
 
 function serveur() {
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
-    if (chemin === '/utilisateurs') return [compte]
+    if (chemin === '/auth/session') return compte
     if (chemin === '/categories') return categories
     if (chemin === '/depenses' || chemin.startsWith('/depenses?mois=')) return suivi
     if (chemin.startsWith('/depenses/rattachements?date=')) return rattachements
