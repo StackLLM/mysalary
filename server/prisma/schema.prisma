@@ -1,4 +1,4 @@
-// MySalary — schéma de données (Plan.md § 6).
+// MySalary — schéma de données (produit.md (Plan) § 6).
 // Montants en centimes (Int). Chaque table métier porte utilisateurId.
 
 generator client {
@@ -64,7 +64,7 @@ model Reglages {
   modifieLe     DateTime    @updatedAt
 }
 
-// Lot 4 — salaire et cycle de paie (docs/lots/Lot-04-salaire.md).
+// Lot 4 — salaire et cycle de paie (docs/lots.md, bilan du lot 4).
 // Dates civiles en texte « AAAA-MM-JJ », mois en « AAAA-MM » : pas de fuseau sur une date de paie.
 
 /// Une version du contrat : s'applique à partir de moisEffet, jusqu'à la version suivante.
@@ -120,7 +120,7 @@ model LignePaie {
   @@index([utilisateurId])
 }
 
-// Lot 5 — autres revenus (docs/lots/Lot-05-revenus.md).
+// Lot 5 — autres revenus (docs/lots.md, bilan du lot 5).
 
 /// Revenu hors salaire qui revient : prime, revenu variable, autre.
 model SourceRevenu {
@@ -164,7 +164,7 @@ model RevenuRecu {
   @@index([utilisateurId, date])
 }
 
-// Lot 6 — charges, enveloppes, ponctuels, dettes (docs/lots/Lot-06-charges-dettes.md).
+// Lot 6 — charges, enveloppes, ponctuels, dettes (docs/lots.md, bilan du lot 6).
 
 model Categorie {
   id            String      @id @default(cuid())

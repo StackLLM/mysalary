@@ -3,7 +3,7 @@ import type { PointTrajectoire } from '../../components/graphiques/GraphiqueTraj
 
 /**
  * Données de DÉMONSTRATION de la vitrine. Elles ne sont pas réelles
- * et sont toujours affichées avec la mention « exemple » (Plan.md § 7.6).
+ * et sont toujours affichées avec la mention « exemple » (produit.md (Plan) § 7.6).
  * Montants en centimes. Les totaux sont écrits en dur : la vitrine ne calcule rien.
  */
 const dh = (v: number) => v * 100

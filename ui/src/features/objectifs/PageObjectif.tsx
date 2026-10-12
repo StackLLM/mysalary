@@ -34,7 +34,7 @@ const TONS_VERDICT = {
   neutre: { boite: 'bg-teinte ring-filet', texte: 'text-encre', Icone: Info },
 } as const
 
-/** Objectif (UX.md § 5.8) : est-il atteint au mois souhaité, combien reste-t-il, et la simulation avec le cumul. */
+/** Objectif (ux-ui.md (UX) § 5.8) : est-il atteint au mois souhaité, combien reste-t-il, et la simulation avec le cumul. */
 export function PageObjectif() {
   const { id } = useParams()
   const detail = useObjectif(id)

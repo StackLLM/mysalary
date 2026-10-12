@@ -9,7 +9,7 @@ export interface LigneInfobulle {
   pointille?: boolean
 }
 
-/** Infobulle en verre sombre : date, valeurs, nature (UI.md § 8). Le texte reste en encre, la couleur est sur la pastille. */
+/** Infobulle en verre sombre : date, valeurs, nature (ux-ui.md (UI) § 8). Le texte reste en encre, la couleur est sur la pastille. */
 export function InfobulleGraphique({ titre, lignes, note }: { titre: string; lignes: LigneInfobulle[]; note?: ReactNode }) {
   if (lignes.length === 0) return null
   return (

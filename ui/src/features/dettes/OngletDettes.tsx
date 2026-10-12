@@ -24,7 +24,7 @@ import { totauxDettes } from './saisie'
 
 const COLONNES = 'grid grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,0.95fr)_minmax(0,1.15fr)_28px] items-center gap-2.5'
 
-/** Mon plan › Dettes (UX.md § 5.11) : un total et un échéancier, jamais une charge sans fin (R9). */
+/** Mon plan › Dettes (ux-ui.md (UX) § 5.11) : un total et un échéancier, jamais une charge sans fin (R9). */
 export function OngletDettes() {
   const dettes = useDettes()
   const resume = useResumeCharges()

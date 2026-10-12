@@ -31,7 +31,7 @@ export function frappeOccupee(e: KeyboardEvent): boolean {
 type Mode = 'depense' | 'epargne'
 
 /**
- * Saisie rapide (UX.md § 4.3), accessible partout : bouton +, touche N. Une dépense, ou un versement d'épargne
+ * Saisie rapide (ux-ui.md (UX) § 4.3), accessible partout : bouton +, touche N. Une dépense, ou un versement d'épargne
  * (jamais une dépense, R11). Elle n'existe que lorsqu'un compte est ouvert.
  */
 export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
@@ -47,7 +47,7 @@ export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
     const surTouche = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey || frappeOccupee(e)) return
       const touche = e.key.toLowerCase()
-      // N : nouvelle saisie ; S : simulateur (Plan.md, lot 11).
+      // N : nouvelle saisie ; S : simulateur (produit.md (Plan), lot 11).
       if (touche === 'n') {
         e.preventDefault()
         ouvrir()

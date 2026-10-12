@@ -28,7 +28,7 @@ export function texteRegle(r: RegleScenario): string {
 /** « juillet 2027 », ou « au-delà de 10 ans » quand la projection n'atteint pas la cible. */
 export const texteEstimation = (mois: string | null) => (mois ? formaterMois(mois) : 'au-delà de 10 ans')
 
-/** Phrase de risque : toujours une condition, jamais une garantie (Plan.md § 7.5). */
+/** Phrase de risque : toujours une condition, jamais une garantie (produit.md (Plan) § 7.5). */
 export const RISQUES_PHRASES: Record<Risque, string> = {
   sur: 'Atteint à la date même avec les seuls revenus garantis.',
   probable: 'Atteint à la date si les revenus probables arrivent.',
@@ -59,7 +59,7 @@ export function phraseObjectif(o: ObjectifAffiche): string {
 }
 
 /**
- * Leviers chiffrés quand la date n'est pas tenue en réaliste (UX.md § 4.4, étape 7) :
+ * Leviers chiffrés quand la date n'est pas tenue en réaliste (ux-ui.md (UX) § 4.4, étape 7) :
  * repousser la date à l'estimation, ou verser l'effort nécessaire chaque mois.
  */
 export function propositions(o: ObjectifAffiche): string[] {

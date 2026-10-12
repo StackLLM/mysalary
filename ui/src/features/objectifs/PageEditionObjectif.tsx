@@ -29,7 +29,7 @@ function useStable<T>(valeur: T, delai = 350): T {
   return stable
 }
 
-/** Nouvel objectif ou modification (UX.md § 4.4) : formulaire à gauche, aperçu projeté à droite. */
+/** Nouvel objectif ou modification (ux-ui.md (UX) § 4.4) : formulaire à gauche, aperçu projeté à droite. */
 export function PageEditionObjectif() {
   const { id } = useParams()
   const existant = useObjectif(id)

@@ -8,7 +8,7 @@ import type { Calendrier, MoisBudgetaire } from './periodes'
 import { suiviDesSemaines } from './semaines'
 
 /**
- * Les huit KPI retenus (Plan.md § 8). Chacun répond à une question et garde ses montants de base,
+ * Les huit KPI retenus (produit.md (Plan) § 8). Chacun répond à une question et garde ses montants de base,
  * pour que l'écran montre « sur quoi repose ce calcul ». Un taux sans revenu est `null`, jamais 0 %.
  */
 

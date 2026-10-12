@@ -23,7 +23,7 @@ export const SERIES_SCENARIOS = [
 ] as const
 
 /**
- * Épargne simulée (UX.md § 4.5, § 9) : réel passé en trait plein, futur projeté hachuré (réaliste)
+ * Épargne simulée (ux-ui.md (UX) § 4.5, § 9) : réel passé en trait plein, futur projeté hachuré (réaliste)
  * et en pointillés (prudent, ambitieux). Ligne zéro visible : une épargne négative se voit.
  */
 export function GraphiqueSimulation({ points, aujourdhui, libelle, hauteur = 280 }: { points: PointSimulationGraphique[]; aujourdhui: string; libelle: string; hauteur?: number }) {

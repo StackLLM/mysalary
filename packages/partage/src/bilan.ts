@@ -4,7 +4,7 @@ import { z } from 'zod'
 export type { CibleBilan, FamilleBilan, LigneBilan, PointRythme, StatutLigneBilan, TotauxBilan } from '@mysalary/moteur'
 
 export const schemaCloture = z.strictObject({
-  /** Clôturer malgré des lignes non confirmées (UX.md § 5.3). */
+  /** Clôturer malgré des lignes non confirmées (ux-ui.md (UX) § 5.3). */
   forcer: z.boolean().default(false),
 })
 export type SaisieCloture = z.input<typeof schemaCloture>

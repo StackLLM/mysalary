@@ -17,7 +17,7 @@ const SERIES = [
 ] as const
 
 /**
- * Revenus, dépenses, épargne par mois (UI.md § 8) : barres groupées fines,
+ * Revenus, dépenses, épargne par mois (ux-ui.md (UI) § 8) : barres groupées fines,
  * légende toujours présente (3 séries), une seule échelle.
  */
 export function GraphiqueFlux({ points, libelle, hauteur = 260 }: { points: PointFlux[]; libelle: string; hauteur?: number }) {

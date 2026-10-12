@@ -39,7 +39,7 @@ import { exigerDatesOuvertes } from '../mois/clotures'
 import { chargerCalendrier } from '../salaire/depot'
 import { ecrireAjustements, versCharge, versDette, versPaiement, versPonctuel } from './conversion'
 
-// Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
+// Toute lecture ou écriture est filtrée par utilisateurId (isolation, produit.md (Plan) § 5.7).
 
 export const regle = (message: string, champs?: Record<string, string>) => new ErreurApi(422, CODES_ERREUR.REGLE_METIER, message, champs)
 

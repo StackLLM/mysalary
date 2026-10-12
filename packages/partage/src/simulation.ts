@@ -8,7 +8,7 @@ export type { AlerteSimulation, Ajustements, ObjectifSimule, PointSimulation } f
 
 const identifiant = z.string().min(1).max(64)
 
-/** Leviers d'une simulation (UX.md § 4.5) : des hypothèses, jamais des données. */
+/** Leviers d'une simulation (ux-ui.md (UX) § 4.5) : des hypothèses, jamais des données. */
 export const schemaAjustements = z.strictObject({
   versements: z.record(identifiant, schemaMontantPositif.nullable()).default({}),
   datesCibles: z.record(identifiant, schemaCleMois.nullable()).default({}),

@@ -20,7 +20,7 @@ const Contexte = createContext<ContexteCompte | null>(null)
 export const CLE_COMPTE = 'compte'
 
 /**
- * Compte courant (UX.md § 4.0). Changer de compte vide le cache des données
+ * Compte courant (ux-ui.md (UX) § 4.0). Changer de compte vide le cache des données
  * de l'ancien compte : rien ne reste affiché d'un compte à l'autre.
  */
 export function FournisseurCompte({ children }: { children: ReactNode }) {

@@ -17,7 +17,7 @@ interface ProprietesConfirmation {
   children?: ReactNode
 }
 
-/** Confirmation d'une action lourde ou irréversible (UX.md § 6). */
+/** Confirmation d'une action lourde ou irréversible (ux-ui.md (UX) § 6). */
 export function Confirmation({
   ouvert,
   onFermer,

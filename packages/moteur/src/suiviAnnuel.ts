@@ -7,7 +7,7 @@ import { REGLES_SCENARIOS_DEFAUT, suiviDesObjectifs, trajectoireObjectif, type D
 import type { Calendrier, StatutPeriode } from './periodes'
 
 /**
- * Suivi annuel (lot 18, UX.md § 4.8) : les douze mois budgétaires d'une année, revenus, dépenses et épargne avec le réel
+ * Suivi annuel (lot 18, ux-ui.md (UX) § 4.8) : les douze mois budgétaires d'une année, revenus, dépenses et épargne avec le réel
  * à date et le projeté restant toujours séparés, les mois les plus coûteux, la part variable du revenu, l'épargne
  * cumulée et la progression de chaque objectif sur l'année.
  */

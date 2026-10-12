@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 export type { DecisionImport, DonneesLigneImport, LigneImport, StatutImport, ThemeImport } from '@mysalary/moteur'
 
-/** Nombre d'étapes de l'onboarding (UX.md § 4.1). */
+/** Nombre d'étapes de l'onboarding (ux-ui.md (UX) § 4.1). */
 export const ETAPES_ONBOARDING = 10
 
 export const schemaEtapeOnboarding = z

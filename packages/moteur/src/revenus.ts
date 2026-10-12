@@ -3,7 +3,7 @@ import { dateCivile, ecartMois, joursDansMois, moisEntre, partiesMois, type CleM
 import type { Certitude } from './salaire'
 
 /**
- * Sources de revenus hors salaire (Plan.md § 6, context.md R1–R5).
+ * Sources de revenus hors salaire (produit.md (Plan) § 6, produit.md (Contexte) R1–R5).
  * Le mois d'une source est le mois civil où l'argent arrive (« la prime de juin »).
  */
 

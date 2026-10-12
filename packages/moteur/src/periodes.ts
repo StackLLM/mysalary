@@ -18,12 +18,12 @@ import { dateDeVersement, moisDeVersement, type RevenuRecu, type SourceRevenu, t
 import { creerCalendrierPaie, type Certitude, type DonneesSalaire, type SourceDebut } from './salaire'
 
 /**
- * Mois budgétaires et semaines (Plan.md § 7.1).
+ * Mois budgétaires et semaines (produit.md (Plan) § 7.1).
  * En cycle de paie, un mois va du jour de la paie qui le finance à la veille de la paie suivante.
  */
 
 export type ModePeriode = 'cyclePaie' | 'calendaire'
-/** `fige` : borne d'un mois clôturé, qui ne bouge plus (Plan.md § 7.1). */
+/** `fige` : borne d'un mois clôturé, qui ne bouge plus (produit.md (Plan) § 7.1). */
 export type SourceBorne = SourceDebut | 'calendaire' | 'fige'
 export type StatutPeriode = 'passe' | 'enCours' | 'aVenir'
 
@@ -163,7 +163,7 @@ export interface DepenseImputee extends Depense {
   ligne: string | null
 }
 
-/** Le réel d'un mois budgétaire (Plan.md § 7.2) et l'état des lignes prévues à payer. */
+/** Le réel d'un mois budgétaire (produit.md (Plan) § 7.2) et l'état des lignes prévues à payer. */
 export interface SuiviDuMois {
   depenses: DepenseImputee[]
   paiementsDettes: PaiementDette[]
@@ -447,7 +447,7 @@ export function creerCalendrier({
   const AVANCE_JOURS = 10
 
   /**
-   * Lignes auxquelles rattacher une dépense datée (UX.md § 4.3) : charges fixes et ponctuels pas entièrement payés
+   * Lignes auxquelles rattacher une dépense datée (ux-ui.md (UX) § 4.3) : charges fixes et ponctuels pas entièrement payés
    * du mois de la date, échéances des 10 jours suivants, enveloppes du mois.
    */
   function rattachements(date: DateCivile): { mois: CleMois; lignes: LigneAPayer[]; enveloppes: SuiviEnveloppe[] } {

@@ -1,5 +1,5 @@
 /**
- * Tokens MySalary — calqués sur le template Templates/image.png (UI.md § 1).
+ * Tokens MySalary — calqués sur le template Templates/image.png (ux-ui.md (UI) § 1).
  * Le violet du template est remplacé par la sauge #7D8C82. Aucune couleur en dur dans les composants.
  */
 /** @type {import('tailwindcss').Config} */

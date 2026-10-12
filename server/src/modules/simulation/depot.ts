@@ -6,7 +6,7 @@ import { introuvable } from '../../lib/erreurs'
 import { regle } from '../charges/depot'
 import { chargerCalendrier } from '../salaire/depot'
 
-// Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
+// Toute lecture ou écriture est filtrée par utilisateurId (isolation, produit.md (Plan) § 5.7).
 // Une simulation n'écrit rien ; seul « Appliquer », après confirmation, modifie le plan.
 
 type SaisieAjustements = z.output<typeof schemaAjustements>
@@ -18,7 +18,7 @@ export async function executer(prisma: PrismaClient, utilisateurId: string, aujo
 }
 
 /**
- * Applique les leviers au plan (UX.md § 4.5, étape 6), en une transaction, et rend le résumé :
+ * Applique les leviers au plan (ux-ui.md (UX) § 4.5, étape 6), en une transaction, et rend le résumé :
  * versement et date d'un objectif, prime en source « unique » probable, réduction d'une charge à partir du mois suivant.
  */
 export async function appliquer(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile, a: SaisieAjustements): Promise<ApplicationDto> {

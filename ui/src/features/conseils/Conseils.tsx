@@ -10,7 +10,7 @@ import { cn } from '../../lib/cn'
 import { useConseils, useIndicateurs } from './requetes'
 import { lignesIndicateurs } from './saisie'
 
-/** Une alerte : ce qui se passe, et le bouton vers l'écran qui le règle (UX.md § 1 « Calme »). */
+/** Une alerte : ce qui se passe, et le bouton vers l'écran qui le règle (ux-ui.md (UX) § 1 « Calme »). */
 export function ListeAlertes({ alertes, onAction }: { alertes: AlerteDto[]; onAction?: () => void }) {
   return (
     <ul className="flex flex-col gap-3" aria-label="À faire">
@@ -140,7 +140,7 @@ export function Cloche() {
   )
 }
 
-/** Carte « Indicateurs » d'un mois (Plan.md § 8) : un chiffre par question, la base de calcul à la demande. */
+/** Carte « Indicateurs » d'un mois (produit.md (Plan) § 8) : un chiffre par question, la base de calcul à la demande. */
 export function CarteIndicateurs({ cle }: { cle: string }) {
   const indicateurs = useIndicateurs(cle)
   const [bases, setBases] = useState(false)

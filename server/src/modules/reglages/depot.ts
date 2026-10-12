@@ -36,7 +36,7 @@ function versLigne({ reglesScenarios, depart, ...reste }: ModificationReglages) 
   }
 }
 
-// Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
+// Toute lecture ou écriture est filtrée par utilisateurId (isolation, produit.md (Plan) § 5.7).
 
 export async function lire(prisma: PrismaClient, utilisateurId: string) {
   const ligne = await prisma.reglages.upsert({

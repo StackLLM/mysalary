@@ -140,7 +140,7 @@ describe('répartition de la capacité (R18)', () => {
   })
 })
 
-describe('capacité par scénario (Plan.md § 7.3)', () => {
+describe('capacité par scénario (produit.md (Plan) § 7.3)', () => {
   const c = calendrier()
   it('mois en cours : reçu − charges − épargne déjà versée ; mois futur : revenus retenus − charges', () => {
     expect(capaciteDuMois(c, m('2027-01'), REGLES_SCENARIOS_DEFAUT.realiste)).toBe(550_000)

@@ -106,7 +106,7 @@ type Reponse = { type: 'avance' | 'retard' | 'marge' | 'depasse'; montant: numbe
 type Periode = { debut: string; fin: string }
 type Tendance = { moyenneSemaine: number; variation: number | null; sens: 'hausse' | 'baisse' | 'stable' }
 
-/** Réponse en tête à « Est-ce que je tiens mon budget ? » (UX.md § 4.6). */
+/** Réponse en tête à « Est-ce que je tiens mon budget ? » (ux-ui.md (UX) § 4.6). */
 export function reponseSemaines(r: Reponse): { texte: string; ton: Ton } | null {
   switch (r.type) {
     case 'avance':

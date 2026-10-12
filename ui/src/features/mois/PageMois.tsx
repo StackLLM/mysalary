@@ -17,7 +17,7 @@ const ONGLETS = [
   { valeur: 'semaines', libelle: 'Semaines' },
 ] as const
 
-/** Mois (UX.md § 5.3) : un mois budgétaire, prévu et réel. Le mois et l'onglet sont gardés dans l'adresse. */
+/** Mois (ux-ui.md (UX) § 5.3) : un mois budgétaire, prévu et réel. Le mois et l'onglet sont gardés dans l'adresse. */
 export function PageMois() {
   const [parametres, setParametres] = useSearchParams()
   const courant = useMoisCourant()

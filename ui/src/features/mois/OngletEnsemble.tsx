@@ -24,7 +24,7 @@ import { confirmation, FAMILLES, moisPrecedent, NATURES_CUMUL, parFamille, plus,
 const TONS: Record<Ton, string> = { positif: 'text-positif', alerte: 'text-alerte', info: 'text-info', neutre: 'text-gris' }
 const COLONNES = 'grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1.2fr)] items-center gap-3'
 
-/** Mois › Vue d'ensemble (UX.md § 4.7, § 5.3) : prévu et réel ligne à ligne, rythme, clôture. */
+/** Mois › Vue d'ensemble (ux-ui.md (UX) § 4.7, § 5.3) : prévu et réel ligne à ligne, rythme, clôture. */
 export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; changerMois: (cle: string) => void }) {
   const { mois, totaux, aujourdhui } = bilan
   const cloture = bilan.cloture !== null
@@ -310,7 +310,7 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
   )
 }
 
-/** Carte de clôture : état du mois et action possible (UX.md § 4.7, étape 5). */
+/** Carte de clôture : état du mois et action possible (ux-ui.md (UX) § 4.7, étape 5). */
 function CarteCloture({ bilan, onDemande }: { bilan: BilanDto; onDemande: (d: 'cloturer' | 'rouvrir') => void }) {
   const { mois, cloture } = bilan
   const nom = formaterMois(mois.cle, { annee: false, majuscule: true })

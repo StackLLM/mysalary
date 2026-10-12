@@ -14,7 +14,7 @@ interface ProprietesPanneau {
 }
 
 /**
- * Panneau de saisie en verre (UI.md § 7.10) : entre par la droite sur bureau,
+ * Panneau de saisie en verre (ux-ui.md (UI) § 7.10) : entre par la droite sur bureau,
  * par le bas sur mobile. Focus piégé et touche Échap gérés par Radix.
  */
 export function Panneau({ ouvert, onFermer, titre, description, children, pied }: ProprietesPanneau) {

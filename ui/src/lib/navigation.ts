@@ -14,7 +14,7 @@ export interface Destination {
   Icone: ComponentType<SVGProps<SVGSVGElement>>
 }
 
-/** Navigation principale, en haut comme dans le template (UX.md § 3). */
+/** Navigation principale, en haut comme dans le template (ux-ui.md (UX) § 3). */
 export const DESTINATIONS: Destination[] = [
   { chemin: '/', libelle: 'Aujourd’hui', Icone: IconeGrille },
   { chemin: '/mois', libelle: 'Mois', Icone: IconeMois },

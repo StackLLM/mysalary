@@ -11,7 +11,7 @@ const regle = z.strictObject({
   flexibleMoyenne: z.boolean({ error: 'Valeur oui / non attendue.' }),
 })
 
-/** Règles des scénarios (Plan.md § 7.3), modifiables (UX.md § 5.12). */
+/** Règles des scénarios (produit.md (Plan) § 7.3), modifiables (ux-ui.md (UX) § 5.12). */
 export const schemaReglesScenarios = z.strictObject({ prudent: regle, realiste: regle, ambitieux: regle })
 
 export const MODES_PERIODE = ['cyclePaie', 'calendaire'] as const

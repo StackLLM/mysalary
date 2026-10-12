@@ -19,7 +19,7 @@ import * as depot from './depot'
 type AvecId = { Params: { id: string } }
 type AvecMois = { Params: { mois: string } }
 
-/** Salaire : contrat versionné et paies (Plan.md § 5.8, lot 4). */
+/** Salaire : contrat versionné et paies (produit.md (Plan) § 5.8, lot 4). */
 export async function routesSalaire(app: FastifyInstance) {
   app.get('/salaire/contrats', async (requete) => depot.listerContrats(app.prisma, utilisateurDe(requete)))
 

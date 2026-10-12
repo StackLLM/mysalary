@@ -43,7 +43,7 @@ function useStable(valeur: string, delai = 350): string {
   return stable
 }
 
-/** Simulateur (UX.md § 4.5, § 5.9) : des leviers « et si », sans rien enregistrer tant qu'on n'applique pas. */
+/** Simulateur (ux-ui.md (UX) § 4.5, § 5.9) : des leviers « et si », sans rien enregistrer tant qu'on n'applique pas. */
 export function PageSimulateur() {
   const [parametres] = useSearchParams()
   const [leviers, setLeviers] = useState<Leviers>(() => depuisAdresse(parametres))

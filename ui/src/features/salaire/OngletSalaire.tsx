@@ -36,7 +36,7 @@ const TONS_TEXTE: Record<Ton, string> = {
 type PanneauOuvert = { paie: PaieDto; mode: 'detail' | 'primes' | 'reception' } | null
 type PanneauContrat = { mode: 'nouvelle' } | { mode: 'corriger'; version: VersionContratDto } | null
 
-/** Mon plan › Salaire & primes (UX.md § 5.11) : contrat, paies, mois budgétaire en cours. */
+/** Mon plan › Salaire & primes (ux-ui.md (UX) § 5.11) : contrat, paies, mois budgétaire en cours. */
 export function OngletSalaire() {
   const contrats = useContrats()
   const mois = useMoisCourant()
@@ -79,7 +79,7 @@ function Squelette() {
   )
 }
 
-/** État vide : ce qui manque, pourquoi, et le formulaire (UX.md § 8). */
+/** État vide : ce qui manque, pourquoi, et le formulaire (ux-ui.md (UX) § 8). */
 function PremierContrat({ aujourdhui }: { aujourdhui: string }) {
   const creer = useCreerContrat()
   return (
@@ -480,7 +480,7 @@ function LigneCumul({ paie, cumul, chargement }: { paie: PaieDto; cumul: MoisCum
   const mot = NATURES_CUMUL[cumul.nature]
   const suffixe = mot ? ` (${mot})` : ''
   const detail = detailCumul(cumul, paie)
-  // Prévu et estimation : texte secondaire en italique (UX.md § 9), lisible (contraste AA).
+  // Prévu et estimation : texte secondaire en italique (ux-ui.md (UX) § 9), lisible (contraste AA).
   const style = cn(mot && 'italic text-gris')
   return (
     <>

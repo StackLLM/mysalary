@@ -20,7 +20,7 @@ const SERIES = [
 ] as const
 
 /**
- * Revenus, dépenses et épargne des douze mois (UX.md § 4.8, § 9) : barres pleines pour le réel,
+ * Revenus, dépenses et épargne des douze mois (ux-ui.md (UX) § 4.8, § 9) : barres pleines pour le réel,
  * hachurées pour le mois en cours (estimation) et les mois prévus ; une seule échelle ; légende et tableau texte.
  */
 export function GraphiqueAnnee({ points, libelle, hauteur = 280 }: { points: PointAnnee[]; libelle: string; hauteur?: number }) {

@@ -28,7 +28,7 @@ import { dateDuJour, estAlertePaie, groupesJours, phraseSemainePassee, statutEve
 const GRILLE = 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_352px] xl:gap-12'
 const TONS: Record<Ton, string> = { positif: 'text-positif', alerte: 'text-alerte', info: 'text-info', neutre: 'text-gris' }
 
-/** Aujourd'hui (UX.md § 5.2) : où j'en suis, en 5 secondes. */
+/** Aujourd'hui (ux-ui.md (UX) § 5.2) : où j'en suis, en 5 secondes. */
 export function PageAujourdhui() {
   const donnees = useAujourdhui()
   return (

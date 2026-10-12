@@ -30,7 +30,7 @@ interface Proprietes {
   onFermer: () => void
 }
 
-/** Détail d'une paie : primes prévues, confirmation, correction, annulation (UX.md § 4.2). */
+/** Détail d'une paie : primes prévues, confirmation, correction, annulation (ux-ui.md (UX) § 4.2). */
 export function PanneauPaie({ paie, aujourdhui, modeInitial = 'detail', onFermer }: Proprietes) {
   return (
     <Panneau

@@ -8,7 +8,7 @@ import type { Certitude } from './salaire'
 import { suiviDesSemaines } from './semaines'
 
 /**
- * Alertes et recommandations (Plan.md § 7.5 ; context.md R24–R26 ; UX.md § 1 « Calme »).
+ * Alertes et recommandations (produit.md (Plan) § 7.5 ; produit.md (Contexte) R24–R26 ; ux-ui.md (UX) § 1 « Calme »).
  * Règles explicites et testées, sans boîte noire. Une alerte n'existe que si une action est utile ;
  * une recommandation donne un montant, son impact, sa base de calcul et un niveau de confiance.
  * Le moteur rend des données ; les phrases sont rédigées dans `partage` (toujours au conditionnel, jamais de garantie).

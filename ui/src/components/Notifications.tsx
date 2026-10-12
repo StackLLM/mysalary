@@ -1,6 +1,6 @@
 import { Toaster } from 'sonner'
 
-/** Toasts en verre sombre, en bas au centre, action « Annuler » en sauge clair (UI.md § 7.11). */
+/** Toasts en verre sombre, en bas au centre, action « Annuler » en sauge clair (ux-ui.md (UI) § 7.11). */
 export function Notifications() {
   return (
     <Toaster

@@ -4,7 +4,7 @@ import { dateDeVersement, verseCeMois, type Frequence } from './revenus'
 import type { Certitude } from './salaire'
 
 /**
- * Charges, enveloppes, ponctuels et dettes (Plan.md § 6, context.md R6–R11).
+ * Charges, enveloppes, ponctuels et dettes (produit.md (Plan) § 6, produit.md (Contexte) R6–R11).
  * L'épargne n'est jamais une charge (R11) : elle n'apparaît pas ici.
  */
 

@@ -2,7 +2,20 @@
 
 Assistant financier personnel centré sur le salaire : ce qui reste aujourd'hui, cette semaine et ce mois-ci, et quand chaque objectif d'épargne sera atteint. Plusieurs personnes peuvent l'utiliser, chacune avec son compte privé.
 
-Documentation : `Plan.md` (vision, règles métier, positionnement SaaS § 15) · `docs/etude/` (étude de marché) · `UX.md` · `UI.md` · `context.md` · `docs/plan.md` (suivi des lots) · `docs/lots/` (bilan de chaque lot).
+Documentation : voir la section [Documentation](#documentation) ci-dessous.
+
+## Documentation
+
+`README.md` est le seul document à la racine. Le reste est dans `docs/` :
+
+| Document | Contenu |
+|---|---|
+| [`docs/produit.md`](docs/produit.md) | **Contexte** (pourquoi MySalary existe, règles métier R1…) et **Plan** (décisions, architecture, données, logique du moteur, sécurité, tests, positionnement SaaS § 15) |
+| [`docs/ux-ui.md`](docs/ux-ui.md) | **UX** (parcours, pages, états) et **UI** (couleurs, typographie, composants, graphiques) |
+| [`docs/lots.md`](docs/lots.md) | **Suivi** des lots (sommaire, statut, points reportés, commits, lots 24 à 31 à venir) et **bilan détaillé** de chaque lot (§ 8) |
+| [`docs/etude/`](docs/etude/Etude-marche-2026-10.html) | Étude de marché et benchmark du 12/10/2026 (page HTML) |
+
+Les commentaires du code renvoient à ces documents : « produit.md (Plan) § 7.1 », « produit.md (Contexte) R27 », « ux-ui.md (UX) § 5.11 », « ux-ui.md (UI) § 8 », « docs/lots.md, bilan du lot 4 ».
 
 ## Fonctionnalités
 
@@ -77,7 +90,7 @@ npm run dev
 Ils gardent toutes leurs données mais n'ont ni e-mail ni mot de passe. Pour en activer un, sur la machine du serveur :
 
 ```bash
-npm run compte:activer -- oussama ton-email@exemple.com
+npm run compte:activer -- oussama <ton-e-mail>
 ```
 
 La commande affiche un lien (valable 24 heures) pour choisir le mot de passe ; ensuite, connexion normale avec cet e-mail, considéré comme confirmé. Pour le changer plus tard : Réglages › E-mail de connexion.

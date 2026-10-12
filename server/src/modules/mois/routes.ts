@@ -21,7 +21,7 @@ function versDto({ calendrier, debutSemaine }: Charge, cle: CleMois, aujourdhui:
   }
 }
 
-/** Mois budgétaires : bornes, durée, paie qui les finance, semaines (Plan.md § 7.1). */
+/** Mois budgétaires : bornes, durée, paie qui les finance, semaines (produit.md (Plan) § 7.1). */
 export async function routesMois(app: FastifyInstance) {
   app.get('/mois/courant', async (requete) => {
     const aujourdhui = app.aujourdhui()

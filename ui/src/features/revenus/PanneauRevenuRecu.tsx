@@ -153,7 +153,7 @@ function Formulaire({ aujourdhui, recu, prevu, onFini }: { aujourdhui: string; r
             onClick={() =>
               supprimer.mutate(recu.id, {
                 onSuccess: () => {
-                  // Un montant réel ne disparaît jamais sans retour possible (UX.md § 6).
+                  // Un montant réel ne disparaît jamais sans retour possible (ux-ui.md (UX) § 6).
                   const { id: _id, creeLe: _cree, ...copie } = recu
                   toast('Revenu reçu supprimé.', {
                     action: { label: 'Annuler', onClick: () => enregistrer.mutate({ ...copie, note: copie.note ?? undefined }) },

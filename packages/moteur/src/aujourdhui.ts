@@ -4,7 +4,7 @@ import type { Calendrier } from './periodes'
 import { suiviDesSemaines, type SuiviSemaine } from './semaines'
 
 /**
- * Page Aujourd'hui (lot 16, UX.md § 5.2) : ce qui tombe dans les prochains jours, et le bilan de la semaine
+ * Page Aujourd'hui (lot 16, ux-ui.md (UX) § 5.2) : ce qui tombe dans les prochains jours, et le bilan de la semaine
  * qui vient de finir. Le reste à dépenser, la semaine en cours, l'épargne et l'objectif viennent des indicateurs (lot 12).
  */
 

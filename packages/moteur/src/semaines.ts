@@ -5,7 +5,7 @@ import { budgetEnveloppesParJour, enveloppesARepartir, planEnveloppe } from './e
 import { semainesDe, type Calendrier, type MoisBudgetaire, type Semaine, type StatutPeriode } from './periodes'
 
 /**
- * Suivi hebdomadaire (Plan.md § 7.1, § 8 ; UX.md § 4.6, § 5.4) : le budget flexible du mois (les enveloppes)
+ * Suivi hebdomadaire (produit.md (Plan) § 7.1, § 8 ; ux-ui.md (UX) § 4.6, § 5.4) : le budget flexible du mois (les enveloppes)
  * réparti jour par jour sur ses semaines, face au dépensé flexible réel (enveloppes et hors plan).
  * Le prévu (budget, charges datées) et le réel (dépensé, payé) restent des champs distincts.
  */

@@ -35,7 +35,7 @@ const MODES: { valeur: ModePeriode; titre: string; description: string }[] = [
 
 const JOURS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
 
-/** Écran Réglages (UX.md § 5.12) : chaque changement s'enregistre seul, avec « Annuler ». */
+/** Écran Réglages (ux-ui.md (UX) § 5.12) : chaque changement s'enregistre seul, avec « Annuler ». */
 export function PageReglages() {
   const utilisateur = useUtilisateurCourant()
   const reglages = useReglages()
@@ -284,7 +284,7 @@ function CarteCompte() {
 
 const NOMS_SCENARIOS = { prudent: 'Prudent', realiste: 'Réaliste', ambitieux: 'Ambitieux' } as const
 
-/** Règles des scénarios (Plan.md § 7.3, UX.md § 5.12) : revenus retenus et dépenses flexibles. Les revenus garantis comptent toujours. */
+/** Règles des scénarios (produit.md (Plan) § 7.3, ux-ui.md (UX) § 5.12) : revenus retenus et dépenses flexibles. Les revenus garantis comptent toujours. */
 function ReglesScenarios({ regles, onChange }: { regles: Reglages['reglesScenarios']; onChange: (r: Reglages['reglesScenarios'], message: string) => void }) {
   return (
     <div className="flex flex-col gap-4">

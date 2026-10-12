@@ -8,7 +8,7 @@ import { regle, verifierCategorie } from '../charges/depot'
 import { exigerDatesOuvertes } from '../mois/clotures'
 import { chargerCalendrier } from '../salaire/depot'
 
-// Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
+// Toute lecture ou écriture est filtrée par utilisateurId (isolation, produit.md (Plan) § 5.7).
 
 type SaisieDepense = z.output<typeof schemaDepense>
 

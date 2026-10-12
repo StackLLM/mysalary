@@ -38,7 +38,7 @@ type Edition =
   | null
 type Suppression = { type: 'charge'; id: string; libelle: string } | { type: 'ponctuel'; id: string; libelle: string } | null
 
-/** Mon plan › Charges & enveloppes (UX.md § 5.11). */
+/** Mon plan › Charges & enveloppes (ux-ui.md (UX) § 5.11). */
 export function OngletCharges() {
   const resume = useResumeCharges()
   const charges = useCharges()

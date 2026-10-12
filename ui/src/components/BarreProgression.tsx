@@ -14,7 +14,7 @@ interface ProprietesBarre {
 
 const borner = (v: number) => Math.min(1, Math.max(0, v))
 
-/** Barre de progression (UI.md § 7.8). */
+/** Barre de progression (ux-ui.md (UI) § 7.8). */
 export function BarreProgression({ valeur, projection = 0, rythme, libelle, className }: ProprietesBarre) {
   const reel = borner(valeur)
   const projete = borner(reel + projection) - reel

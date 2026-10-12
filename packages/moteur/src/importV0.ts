@@ -2,7 +2,7 @@ import { centimes, type Centimes } from './argent'
 import { estCleMois, type CleMois, type DateCivile } from './dates'
 
 /**
- * Import de l'ancienne app (money-guru, la V0 ; Plan.md § 7.1 bis). L'analyse **propose**, l'utilisateur **décide** ligne
+ * Import de l'ancienne app (money-guru, la V0 ; produit.md (Plan) § 7.1 bis). L'analyse **propose**, l'utilisateur **décide** ligne
  * par ligne. Tout ce qui est proposé est du prévu : rien n'est jamais importé comme réel, et rien n'est écrit ici.
  * Les montants du fichier sont en dirhams entiers ; ils sont convertis en centimes.
  */

@@ -17,7 +17,7 @@ const ONGLETS = [
   { valeur: 'epargne', libelle: 'Épargne' },
 ] as const
 
-/** Mon plan (UX.md § 5.11) : ce qui génère le prévu. L'onglet est gardé dans l'adresse. */
+/** Mon plan (ux-ui.md (UX) § 5.11) : ce qui génère le prévu. L'onglet est gardé dans l'adresse. */
 export function PagePlan() {
   const [parametres, setParametres] = useSearchParams()
   const actif = ONGLETS.find((o) => o.valeur === parametres.get('onglet')) ?? ONGLETS[0]

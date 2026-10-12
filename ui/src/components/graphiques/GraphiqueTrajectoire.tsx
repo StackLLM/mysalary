@@ -23,7 +23,7 @@ interface Proprietes {
 }
 
 /**
- * Trajectoire d'un objectif (UI.md § 8) : réel plein, projection hachurée + pointillée, cible en pointillé.
+ * Trajectoire d'un objectif (ux-ui.md (UI) § 8) : réel plein, projection hachurée + pointillée, cible en pointillé.
  * Une seule série : pas de légende, le titre de la carte la nomme.
  */
 export function GraphiqueTrajectoire({ points, cible, aujourdhui, libelle, hauteur = 240 }: Proprietes) {

@@ -32,7 +32,7 @@ const VUES = [
 ] as const
 
 /**
- * Objectifs (UX.md § 5.7) : tous les objectifs, leur ordre de priorité, quand ils seront atteints.
+ * Objectifs (ux-ui.md (UX) § 5.7) : tous les objectifs, leur ordre de priorité, quand ils seront atteints.
  * Vue « Calendrier de l'année » (lot 14) : le cumul de chaque mois. La vue et l'année sont gardées dans l'adresse.
  */
 export function PageObjectifs() {
@@ -379,7 +379,7 @@ function CarteObjectif({
 
 const EXEMPLES: TypeObjectif[] = ['moto', 'voyage', 'ordinateur', 'securite']
 
-/** État vide (UX.md § 5.7) : ce qui manque, pourquoi, et l'action. */
+/** État vide (ux-ui.md (UX) § 5.7) : ce qui manque, pourquoi, et l'action. */
 function EtatVide() {
   return (
     <div className="mt-5 rounded-bouton bg-interne p-6">

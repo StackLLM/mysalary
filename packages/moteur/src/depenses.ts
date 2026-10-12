@@ -3,7 +3,7 @@ import { chargeCeMois, dateDeCharge, type Charge } from './charges'
 import { moisDe, type DateCivile } from './dates'
 
 /**
- * Dépenses réelles (Plan.md § 6, context.md R10).
+ * Dépenses réelles (produit.md (Plan) § 6, produit.md (Contexte) R10).
  * Une dépense est toujours réelle : elle ne modifie jamais le prévu, elle le couvre.
  */
 

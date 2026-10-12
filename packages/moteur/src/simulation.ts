@@ -5,7 +5,7 @@ import { analyser, REGLES_SCENARIOS_DEFAUT, SCENARIOS, type Ajustements, type Do
 import type { Calendrier } from './periodes'
 
 /**
- * Simulateur (Plan.md § 7.3 ; UX.md § 4.5, § 5.9) : les mêmes projections que les Objectifs, avec des leviers.
+ * Simulateur (produit.md (Plan) § 7.3 ; ux-ui.md (UX) § 4.5, § 5.9) : les mêmes projections que les Objectifs, avec des leviers.
  * Une simulation n'écrit jamais rien : les leviers s'appliquent à des copies.
  */
 
@@ -61,7 +61,7 @@ export interface Simulation {
   reel: { mois: CleMois; epargne: Centimes }[]
   series: Record<Scenario, PointSimulation[]>
   objectifs: ObjectifSimule[]
-  /** Scénario réaliste : messages clairs, jamais de blocage (UX.md § 5.9). */
+  /** Scénario réaliste : messages clairs, jamais de blocage (ux-ui.md (UX) § 5.9). */
   alertes: AlerteSimulation[]
 }
 

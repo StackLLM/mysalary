@@ -25,7 +25,7 @@ import { groupesMouvements, LIBELLES_MOUVEMENT } from './saisie'
 
 const GRILLE = 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_352px] xl:gap-12'
 
-/** Mon plan › Épargne (UX.md § 5.11, R12–R14) : ce qui est de côté, ce qui est réservé, ce qui reste disponible. */
+/** Mon plan › Épargne (ux-ui.md (UX) § 5.11, R12–R14) : ce qui est de côté, ce qui est réservé, ce qui reste disponible. */
 export function OngletEpargne() {
   const epargne = useEpargne()
   if (epargne.isPending) {

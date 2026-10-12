@@ -34,7 +34,7 @@ import { exigerDatesOuvertes } from '../mois/clotures'
 import { chargerCalendrier } from '../salaire/depot'
 import { versMouvement } from './conversion'
 
-// Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
+// Toute lecture ou écriture est filtrée par utilisateurId (isolation, produit.md (Plan) § 5.7).
 // L'épargne n'est jamais une dépense (R11) : aucune écriture ici ne crée de dépense.
 
 type Sortie<T extends z.ZodType> = z.output<T>
@@ -207,7 +207,7 @@ export async function supprimer(prisma: PrismaClient, utilisateurId: string, id:
 }
 
 /**
- * Aperçu en direct (UX.md § 4.4) : l'objectif est projeté comme s'il existait, en dernière priorité. Rien n'est écrit.
+ * Aperçu en direct (ux-ui.md (UX) § 4.4) : l'objectif est projeté comme s'il existait, en dernière priorité. Rien n'est écrit.
  * `remplace` : modification d'un objectif existant, projeté à sa place (même priorité, mêmes versements).
  */
 export async function apercu(

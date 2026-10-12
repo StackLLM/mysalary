@@ -5,14 +5,14 @@ import type { Calendrier } from './periodes'
 import type { Certitude } from './salaire'
 
 /**
- * Objectifs (Plan.md § 7.3, § 7.4 ; context.md R15–R20) : restant, effort, date estimée par scénario, risque.
+ * Objectifs (produit.md (Plan) § 7.3, § 7.4 ; produit.md (Contexte) R15–R20) : restant, effort, date estimée par scénario, risque.
  * Tout ce qui est futur est une projection : le réel (épargné, versements) n'est jamais modifié.
  */
 
 export const SCENARIOS = ['prudent', 'realiste', 'ambitieux'] as const
 export type Scenario = (typeof SCENARIOS)[number]
 
-/** Règle d'un scénario (Plan.md § 7.3), modifiable dans les Réglages. */
+/** Règle d'un scénario (produit.md (Plan) § 7.3), modifiable dans les Réglages. */
 export interface RegleScenario {
   /** Certitudes des revenus retenus ; « garanti » l'est toujours. */
   revenus: Certitude[]
@@ -28,7 +28,7 @@ export const REGLES_SCENARIOS_DEFAUT: ReglesScenarios = {
 }
 
 /**
- * Leviers d'une simulation (UX.md § 4.5) : des hypothèses, jamais enregistrées dans les données.
+ * Leviers d'une simulation (ux-ui.md (UX) § 4.5) : des hypothèses, jamais enregistrées dans les données.
  * `versements` et `datesCibles` remplacent ceux des objectifs ; une prime s'ajoute à un mois budgétaire ;
  * une réduction baisse une charge chaque mois à partir du mois suivant.
  */
@@ -343,7 +343,7 @@ export function analyser(
 }
 
 /**
- * Trajectoire d'un objectif (UX.md § 5.8) : épargné réel à la fin des mois passés depuis le premier versement,
+ * Trajectoire d'un objectif (ux-ui.md (UX) § 5.8) : épargné réel à la fin des mois passés depuis le premier versement,
  * point « aujourd'hui », puis épargné projeté (réaliste) jusqu'à la date estimée ou souhaitée (6 à 36 mois).
  */
 export function trajectoireObjectif(

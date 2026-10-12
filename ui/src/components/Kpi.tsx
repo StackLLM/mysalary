@@ -19,7 +19,7 @@ const TENDANCES = {
   neutre: { Icone: Minus, style: 'text-gris' },
 } as const
 
-/** Indicateur clé (UI.md § 7.3). La nature est affichée si ce n'est pas du réel. */
+/** Indicateur clé (ux-ui.md (UI) § 7.3). La nature est affichée si ce n'est pas du réel. */
 export function Kpi({ libelle, valeur, comparaison, tendance = 'neutre', nature = 'reel', className }: ProprietesKpi) {
   const { Icone, style } = TENDANCES[tendance]
   return (

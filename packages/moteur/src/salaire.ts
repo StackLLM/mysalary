@@ -14,7 +14,7 @@ import {
 } from './dates'
 
 /**
- * Salaire et cycle de paie (Plan.md § 7.1, context.md R27–R30).
+ * Salaire et cycle de paie (produit.md (Plan) § 7.1, produit.md (Contexte) R27–R30).
  *
  * - Le **contrat** dit ce qui est habituel. Il est versionné par mois financé.
  * - La **paie** de chaque mois est calculée depuis le contrat (prévue), puis confirmée (reçue).
@@ -87,7 +87,7 @@ export interface PaieCalculee {
 export interface DonneesSalaire {
   contrats: VersionContrat[]
   paies: PaieEnregistree[]
-  /** Date du jour : le moteur ne lit jamais l'horloge (Plan.md § 7.6). */
+  /** Date du jour : le moteur ne lit jamais l'horloge (produit.md (Plan) § 7.6). */
   aujourdhui: DateCivile
   /** Sources de revenus : celles versées « avec la paie » ajoutent une ligne aux paies prévues. */
   sources?: SourceRevenu[]

@@ -35,7 +35,7 @@ async function compte(prenom = 'A') {
   return { id, moto }
 }
 
-describe('indicateurs (Plan.md § 8)', () => {
+describe('indicateurs (produit.md (Plan) § 8)', () => {
   it('mois en cours par défaut ; reste à dépenser, taux, écart, part variable, objectif prioritaire', async () => {
     const { id, moto } = await compte()
     const k = await lire<IndicateursDto>(id, '/indicateurs')

@@ -4,7 +4,7 @@ import { budgetEnveloppesParJour } from './enveloppes'
 import type { Calendrier, MoisBudgetaire } from './periodes'
 
 /**
- * Bilan d'un mois budgétaire (Plan.md § 7.2, UX.md § 4.7) : chaque ligne prévue à côté de son réel.
+ * Bilan d'un mois budgétaire (produit.md (Plan) § 7.2, ux-ui.md (UX) § 4.7) : chaque ligne prévue à côté de son réel.
  * Le prévu et le réel restent deux colonnes distinctes ; l'écart n'existe que lorsque le réel est connu.
  */
 

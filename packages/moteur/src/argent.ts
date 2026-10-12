@@ -1,5 +1,5 @@
 /**
- * Règle absolue (Plan.md § 7.6) : l'argent est manipulé en centimes entiers.
+ * Règle absolue (produit.md (Plan) § 7.6) : l'argent est manipulé en centimes entiers.
  * Les arrondis ne se font qu'à l'affichage.
  */
 export type Centimes = number & { readonly __centimes: unique symbol }

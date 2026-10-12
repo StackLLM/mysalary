@@ -27,7 +27,7 @@ import { versRevenuRecu, versSource } from './conversion'
 
 import { exigerDatesOuvertes } from '../mois/clotures'
 
-// Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
+// Toute lecture ou écriture est filtrée par utilisateurId (isolation, produit.md (Plan) § 5.7).
 
 type SaisieSource = z.output<typeof schemaSource>
 type SaisieRecu = z.output<typeof schemaRevenuRecu>

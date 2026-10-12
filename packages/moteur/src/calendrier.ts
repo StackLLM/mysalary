@@ -4,7 +4,7 @@ import { ajouterJours, type CleMois, type DateCivile } from './dates'
 import type { MoisBudgetaire, Calendrier } from './periodes'
 
 /**
- * Calendrier d'un mois budgétaire (lot 17, UX.md § 5.10) : tout ce qui tombe chaque jour, avec son type, son statut et
+ * Calendrier d'un mois budgétaire (lot 17, ux-ui.md (UX) § 5.10) : tout ce qui tombe chaque jour, avec son type, son statut et
  * ce qu'il faut ouvrir pour le confirmer, et le solde du mois jour par jour.
  *
  * Solde du jour = revenus reçus − sorties réelles, depuis le début du mois, jusqu'à aujourd'hui (réel). Après aujourd'hui,

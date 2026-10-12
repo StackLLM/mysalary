@@ -1,8 +1,8 @@
 import { formaterMontant } from '@mysalary/partage'
 
 /**
- * Thème commun des graphiques (UI.md § 8).
- * Palette des séries validée par le validateur de la skill dataviz (docs/lots/Lot-02-design-system.md).
+ * Thème commun des graphiques (ux-ui.md (UI) § 8).
+ * Palette des séries validée par le validateur de la skill dataviz (docs/lots.md, bilan du lot 2).
  */
 export const COULEURS = {
   serieUnique: '#7D8C82',

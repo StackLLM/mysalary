@@ -36,7 +36,7 @@ const TONS_TEXTE: Record<Ton, string> = {
 type PanneauSource = { source?: SourceRevenuDto } | null
 type PanneauRecu = { recu?: RevenuRecuDto; prevu?: RevenuPrevu } | null
 
-/** Mon plan › Autres revenus (UX.md § 5.11) : sources qui reviennent, versements prévus, revenus reçus. */
+/** Mon plan › Autres revenus (ux-ui.md (UX) § 5.11) : sources qui reviennent, versements prévus, revenus reçus. */
 export function OngletRevenus() {
   const sources = useSources()
   const resume = useResumeRevenus()
@@ -138,7 +138,7 @@ function Squelette() {
   )
 }
 
-/** État vide : ce qui manque, pourquoi, et le formulaire (UX.md § 8). */
+/** État vide : ce qui manque, pourquoi, et le formulaire (ux-ui.md (UX) § 8). */
 function EtatVide({ aujourdhui, financeMoisSuivant, onRecu }: { aujourdhui: string; financeMoisSuivant: boolean | null; onRecu: () => void }) {
   const enregistrer = useEnregistrerSource()
   return (

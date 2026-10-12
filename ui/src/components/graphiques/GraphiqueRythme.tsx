@@ -18,7 +18,7 @@ const SERIES = [
 ] as const
 
 /**
- * Rythme du mois (UX.md § 5.3) : sorties réelles cumulées (plein) contre le prévu cumulé (pointillé).
+ * Rythme du mois (ux-ui.md (UX) § 5.3) : sorties réelles cumulées (plein) contre le prévu cumulé (pointillé).
  * Deux séries : légende toujours présente, une seule échelle.
  */
 export function GraphiqueRythme({ points, libelle, hauteur = 220 }: { points: PointRythmeGraphique[]; libelle: string; hauteur?: number }) {

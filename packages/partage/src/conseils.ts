@@ -4,7 +4,7 @@ import { deMois, formaterDate, formaterMois, formaterMontant } from './format'
 export type { Alerte, Confiance, EcartPlan, IndicateurObjectif, IndicateursDuMois, PartVariable, Recommandation, ResteADepenser, ResteSemaine, Taux } from '@mysalary/moteur'
 
 /**
- * Alertes et recommandations rédigées (Plan.md § 7.5 ; context.md R24–R26).
+ * Alertes et recommandations rédigées (produit.md (Plan) § 7.5 ; produit.md (Contexte) R24–R26).
  * Chaque phrase reste au conditionnel et porte sa condition : jamais de garantie.
  */
 
@@ -39,7 +39,7 @@ export interface IndicateursDto extends IndicateursDuMois {
 }
 
 /**
- * Page Aujourd'hui (lot 16, UX.md § 5.2) : tout « où j'en suis » en une lecture.
+ * Page Aujourd'hui (lot 16, ux-ui.md (UX) § 5.2) : tout « où j'en suis » en une lecture.
  * Les chiffres viennent du moteur (indicateurs, alertes, recommandations, prochains jours, semaine passée).
  */
 export interface AujourdhuiDto {

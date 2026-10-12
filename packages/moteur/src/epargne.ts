@@ -2,7 +2,7 @@ import { additionner, centimes, soustraire, type Centimes } from './argent'
 import type { CleMois, DateCivile } from './dates'
 
 /**
- * Épargne (context.md R11–R14, R19) : ce qui est de côté, ce qui est réservé aux objectifs, ce qui reste disponible.
+ * Épargne (produit.md (Contexte) R11–R14, R19) : ce qui est de côté, ce qui est réservé aux objectifs, ce qui reste disponible.
  * L'épargne n'est jamais une dépense (R11).
  */
 
@@ -110,7 +110,7 @@ export function etatEpargne({ comptes = [], mouvementsEpargne = [], objectifs = 
 export const epargneNette = (mouvements: MouvementEpargne[], du: DateCivile, au: DateCivile) =>
   additionner(...mouvements.filter((m) => m.type !== 'achat' && m.date >= du && m.date <= au).map((m) => m.montant))
 
-/** Cible proposée d'un fonds de sécurité : 3 à 6 mois de charges essentielles (Plan.md § 7.4). */
+/** Cible proposée d'un fonds de sécurité : 3 à 6 mois de charges essentielles (produit.md (Plan) § 7.4). */
 export function cibleFondsSecurite(essentielMensuel: Centimes): { min: Centimes; max: Centimes; base: Centimes } {
   return { min: centimes(essentielMensuel * 3), max: centimes(essentielMensuel * 6), base: essentielMensuel }
 }

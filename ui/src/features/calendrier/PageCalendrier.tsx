@@ -53,7 +53,7 @@ function styleEvenement(e: EvenementVue): string {
   return e.sens === 'entree' ? 'bg-positif-fond text-positif' : 'bg-teinte text-encre-2'
 }
 
-/** Calendrier (UX.md § 5.10) : quand l'argent entre et sort. Le mois, la vue et les filtres sont gardés dans l'adresse. */
+/** Calendrier (ux-ui.md (UX) § 5.10) : quand l'argent entre et sort. Le mois, la vue et les filtres sont gardés dans l'adresse. */
 export function PageCalendrier() {
   const [parametres, setParametres] = useSearchParams()
   const courant = useMoisCourant()

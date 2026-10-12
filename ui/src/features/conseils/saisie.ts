@@ -14,7 +14,7 @@ export function texteEcart(montant: number, part: number | null) {
 
 export type LigneIndicateur = { cle: string; libelle: string; valeur: string; detail: string; base: string; ton?: 'alerte' | 'positif' }
 
-/** Lignes de la carte « Indicateurs » d'un mois, dans l'ordre des questions (UX.md § 1). */
+/** Lignes de la carte « Indicateurs » d'un mois, dans l'ordre des questions (ux-ui.md (UX) § 1). */
 export function lignesIndicateurs(k: IndicateursDto): LigneIndicateur[] {
   const lignes: LigneIndicateur[] = []
   const r = k.resteADepenser

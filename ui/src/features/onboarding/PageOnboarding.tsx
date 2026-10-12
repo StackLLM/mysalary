@@ -20,7 +20,7 @@ import { useApercuImport, useEnregistrerEtape, useOnboarding, useSupprimerImport
 import { ETAPE_FINALE, ETAPES, etapeDeReprise, GROUPES_IMPORT, lignesDe, NOMS_NON_IMPORTES, progression } from './saisie'
 
 /**
- * Onboarding (UX.md § 4.1, § 5.1) : une première vue utile en moins de 5 minutes, en dix étapes que l'on peut passer.
+ * Onboarding (ux-ui.md (UX) § 4.1, § 5.1) : une première vue utile en moins de 5 minutes, en dix étapes que l'on peut passer.
  * Chaque étape écrit dans le plan avec les formulaires de Mon plan ; l'étape atteinte est sauvegardée par compte,
  * et revenir en arrière ne perd rien. Les valeurs importées restent « à confirmer » jusqu'à leur étape.
  */

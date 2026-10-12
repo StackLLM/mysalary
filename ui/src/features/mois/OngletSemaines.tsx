@@ -26,7 +26,7 @@ const FONDS: Record<Ton, string> = { positif: 'bg-positif-fond text-positif', al
 const STATUTS_SEMAINE = { passe: 'Passée', enCours: 'En cours', aVenir: 'À venir' } as const
 const GRILLE = 'grid gap-8'
 
-/** Mois › Semaines (UX.md § 4.6, § 5.4) : est-ce que je tiens mon rythme ? */
+/** Mois › Semaines (ux-ui.md (UX) § 4.6, § 5.4) : est-ce que je tiens mon rythme ? */
 export function OngletSemaines({ cle, verrouille, changerMois }: { cle: string; verrouille: boolean; changerMois: (cle: string) => void }) {
   const semaines = useSemaines(cle)
   const suivi = useSuiviDepenses(cle)
@@ -407,7 +407,7 @@ function FenetreSemaine({
   )
 }
 
-/** Semaine ouverte : charges datées et dépenses, jour par jour (UX.md § 5.4, « ouvrir une semaine »). */
+/** Semaine ouverte : charges datées et dépenses, jour par jour (ux-ui.md (UX) § 5.4, « ouvrir une semaine »). */
 function DetailSemaine({
   semaine: s,
   suivi,

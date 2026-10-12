@@ -19,7 +19,7 @@ interface Proprietes {
 const styleSelect =
   'h-[46px] w-full rounded-champ border border-filet bg-white px-4 text-texte font-medium text-encre hover:border-filet-fort focus:border-primaire focus:shadow-focus focus:outline-none'
 
-/** Formulaire du contrat de salaire. La saisie est conservée si l'enregistrement échoue (UX.md § 7). */
+/** Formulaire du contrat de salaire. La saisie est conservée si l'enregistrement échoue (ux-ui.md (UX) § 7). */
 export function FormulaireContrat({ initial, aujourdhui, libelleBouton, sansMoisEffet, chargement, onEnregistrer }: Proprietes) {
   const [montant, setMontant] = useState(initial?.montantNet ? versSaisie(initial.montantNet) : '')
   const [jour, setJour] = useState(String(initial?.jourHabituel ?? 27))

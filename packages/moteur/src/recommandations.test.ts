@@ -103,7 +103,7 @@ function cadre({ aujourdhui = AUJOURDHUI, paies = [paieJanvier], depenses = depe
 const types = <T extends { type: string }>(liste: T[]) => liste.map((x) => x.type)
 const trouver = <T extends { type: string }, K extends T['type']>(liste: T[], type: K) => liste.find((x) => x.type === type) as Extract<T, { type: K }> | undefined
 
-describe('KPI (Plan.md § 8)', () => {
+describe('KPI (produit.md (Plan) § 8)', () => {
   it('reste à dépenser : reçu − sorties − charges datées à payer − épargne prévue restante, et par jour', () => {
     const { calendrier, donnees } = cadre()
     const k = indicateurs(calendrier, donnees, m('2027-01'), { aujourdhui: AUJOURDHUI })
@@ -182,7 +182,7 @@ describe('alertes (cloche)', () => {
   })
 })
 
-describe('recommandations (Plan.md § 7.5)', () => {
+describe('recommandations (produit.md (Plan) § 7.5)', () => {
   const tout = () => {
     const { calendrier, donnees } = cadre()
     return recommandations(calendrier, donnees, { aujourdhui: AUJOURDHUI, essentielMensuel: centimes(550_000) })

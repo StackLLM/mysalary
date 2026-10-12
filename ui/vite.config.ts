@@ -5,7 +5,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   server: {
-    // Local uniquement : pas d'authentification en v1 (Plan.md § 5.7).
+    // Local uniquement : pas d'authentification en v1 (produit.md (Plan) § 5.7).
     host: '127.0.0.1',
     port: 6010,
     strictPort: true,

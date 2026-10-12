@@ -4,7 +4,7 @@ import type { PrismaClient } from '@prisma/client'
 import { ErreurApi } from '../../lib/erreurs'
 import { chargerCalendrier } from '../salaire/depot'
 
-// Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
+// Toute lecture ou écriture est filtrée par utilisateurId (isolation, produit.md (Plan) § 5.7).
 
 type Instantane = Omit<BilanDto, 'aujourdhui' | 'cloture' | 'journal' | 'cumul'>
 

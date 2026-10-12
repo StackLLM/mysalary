@@ -22,7 +22,7 @@ const VUES = [
   { valeur: 'calendrier', libelle: 'Calendrier' },
 ] as const
 
-/** Année (UX.md § 4.8, § 5.6) : l'année sans lire chaque mois. L'année et la vue sont gardées dans l'adresse. */
+/** Année (ux-ui.md (UX) § 4.8, § 5.6) : l'année sans lire chaque mois. L'année et la vue sont gardées dans l'adresse. */
 export function PageAnnee() {
   const [parametres, setParametres] = useSearchParams()
   const courant = useMoisCourant()

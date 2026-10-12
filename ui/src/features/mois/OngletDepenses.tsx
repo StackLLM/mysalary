@@ -26,7 +26,7 @@ const STYLE_LIGNE = 'flex items-center gap-2.5 rounded-champ border border-filet
 
 const TONS: Record<Ton, string> = { positif: 'text-positif', alerte: 'text-alerte', info: 'text-info', neutre: 'text-gris' }
 
-/** Mois › Dépenses (UX.md § 5.5) : le réel du mois, ce qui reste prévu, et le rattachement au plan. */
+/** Mois › Dépenses (ux-ui.md (UX) § 5.5) : le réel du mois, ce qui reste prévu, et le rattachement au plan. */
 export function OngletDepenses({ cle, verrouille, changerMois }: { cle: string; verrouille: boolean; changerMois: (cle: string) => void }) {
   const suivi = useSuiviDepenses(cle)
   const categories = useCategories()

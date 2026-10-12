@@ -61,7 +61,7 @@ export function optionsLien(r: RattachementsDto): OptionLien[] {
   ]
 }
 
-/** Proposition automatique (UX.md § 4.3) : une ligne à payer de même catégorie, sinon son enveloppe, sinon hors plan. */
+/** Proposition automatique (ux-ui.md (UX) § 4.3) : une ligne à payer de même catégorie, sinon son enveloppe, sinon hors plan. */
 export function lienPropose(options: OptionLien[], categorieId: string): CleLien {
   const memes = options.filter((o) => o.categorieId === categorieId)
   return (memes.find((o) => !o.cle.startsWith('enveloppe:')) ?? memes[0])?.cle ?? HORS_PLAN

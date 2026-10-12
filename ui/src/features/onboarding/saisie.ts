@@ -1,7 +1,7 @@
 import type { CategorieDto, DonneesLigneImport, LigneImport, StatutImport, ThemeImport } from '@mysalary/partage'
 import { formaterMois, formaterMontant } from '@mysalary/partage'
 
-/** Libellés et règles d'affichage de l'onboarding (lot 19, UX.md § 4.1). Aucun calcul : le moteur propose, l'utilisateur décide. */
+/** Libellés et règles d'affichage de l'onboarding (lot 19, ux-ui.md (UX) § 4.1). Aucun calcul : le moteur propose, l'utilisateur décide. */
 
 export const ETAPES = [
   { n: 1, nom: 'Bienvenue' },

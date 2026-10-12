@@ -6,16 +6,16 @@ import { essentielMensuel } from '../charges/depot'
 import { bornesFigees } from '../mois/clotures'
 import { chargerCalendrier } from '../salaire/depot'
 
-// Toute lecture est filtrée par utilisateurId (isolation, Plan.md § 5.7). Rien n'est écrit ici.
+// Toute lecture est filtrée par utilisateurId (isolation, produit.md (Plan) § 5.7). Rien n'est écrit ici.
 
-/** Les huit KPI d'un mois (Plan.md § 8) ; le mois en cours par défaut. */
+/** Les huit KPI d'un mois (produit.md (Plan) § 8) ; le mois en cours par défaut. */
 export async function lireIndicateurs(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile, cle?: CleMois): Promise<IndicateursDto> {
   const { calendrier, epargne, debutSemaine, reportHebdo, regles } = await chargerCalendrier(prisma, utilisateurId, aujourdhui)
   const mois = cle ?? calendrier.moisCourant().cle
   return { ...indicateurs(calendrier, epargne, mois, { aujourdhui, debutSemaine, report: reportHebdo, regles }), aujourdhui }
 }
 
-/** Alertes de la cloche et recommandations, rédigées (Plan.md § 7.5). Les mois clôturés n'alertent plus. */
+/** Alertes de la cloche et recommandations, rédigées (produit.md (Plan) § 7.5). Les mois clôturés n'alertent plus. */
 export async function lireConseils(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile): Promise<ConseilsDto> {
   const { alertes, recommandations } = await calculer(prisma, utilisateurId, aujourdhui)
   return { aujourdhui, alertes, recommandations }

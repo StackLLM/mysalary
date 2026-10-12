@@ -31,7 +31,7 @@ import { bornesFigees } from '../mois/clotures'
 import { lireDepart, lireRegles } from '../reglages/depot'
 import { versRevenuRecu, versSource } from '../revenus/conversion'
 
-// Toute lecture ou écriture est filtrée par utilisateurId (isolation, Plan.md § 5.7).
+// Toute lecture ou écriture est filtrée par utilisateurId (isolation, produit.md (Plan) § 5.7).
 
 function versVersion(ligne: ContratSalaire): VersionContrat {
   return {
@@ -194,7 +194,7 @@ export async function enregistrerPrimes(
 
 // --- Réception ---
 
-/** Messages clairs pour chaque refus du moteur (UX.md § 7). */
+/** Messages clairs pour chaque refus du moteur (ux-ui.md (UX) § 7). */
 function refusReception(probleme: ProblemeReception, mois: CleMois) {
   switch (probleme.code) {
     case 'futur':

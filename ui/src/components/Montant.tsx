@@ -9,7 +9,7 @@ interface ProprietesMontant {
   valeur: number
   devise?: Devise
   className?: string
-  /** Compteur animé vers la nouvelle valeur (UI.md § 9). */
+  /** Compteur animé vers la nouvelle valeur (ux-ui.md (UI) § 9). */
   anime?: boolean
   /** Sans « DH » : quand l'unité est déjà affichée à côté (préfixe d'une cellule). */
   sansDevise?: boolean

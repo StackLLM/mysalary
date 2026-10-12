@@ -10,7 +10,7 @@ const NATURES: Record<Exclude<Nature, 'reel'>, { texte: string; style: string }>
 }
 
 /**
- * Grammaire réel / prévu / projeté (UX.md § 9). Le réel n'a pas de badge :
+ * Grammaire réel / prévu / projeté (ux-ui.md (UX) § 9). Le réel n'a pas de badge :
  * c'est l'état normal d'un chiffre.
  */
 export function BadgeNature({ nature, className }: { nature: Nature; className?: string }) {
@@ -43,7 +43,7 @@ export function BadgeRisque({ risque, className }: { risque: Risque; className?:
   )
 }
 
-/** Mention « exemple » obligatoire sur toute donnée de démonstration (Plan.md § 7.6). */
+/** Mention « exemple » obligatoire sur toute donnée de démonstration (produit.md (Plan) § 7.6). */
 export function BadgeExemple({ className }: { className?: string }) {
   return (
     <span className={cn('inline-flex items-center gap-1 rounded-pilule bg-teinte px-2 py-0.5 text-mention text-gris', className)}>
