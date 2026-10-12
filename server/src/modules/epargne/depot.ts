@@ -6,6 +6,8 @@ import {
   lireDate,
   reserve,
   suiviDesObjectifs,
+  cumulDisponible,
+  scenariosCumul,
   trajectoireObjectif,
   type DateCivile,
   type Objectif,
@@ -154,15 +156,16 @@ export async function lister(prisma: PrismaClient, utilisateurId: string, aujour
   return { ...suivi, aujourdhui, fondsSecurite: essentiel > 0 ? cibleFondsSecurite(essentiel) : null, comptes, regles }
 }
 
-export async function detail(prisma: PrismaClient, utilisateurId: string, id: string, aujourdhui: DateCivile): Promise<ObjectifDetailDto> {
+export async function detail(prisma: PrismaClient, utilisateurId: string, id: string, aujourdhui: DateCivile, cumulChoisi?: number): Promise<ObjectifDetailDto> {
   await trouverObjectif(prisma, utilisateurId, id)
-  const [{ calendrier, epargne, regles }, versements, comptes] = await Promise.all([
+  const [{ calendrier, epargne, regles, depart }, versements, comptes] = await Promise.all([
     chargerCalendrier(prisma, utilisateurId, aujourdhui),
     mouvementsDto(prisma, utilisateurId, id),
     comptesCourts(prisma, utilisateurId),
   ])
   const suivi = suiviDesObjectifs(calendrier, epargne, aujourdhui, { regles })
   const objectif = suivi.objectifs.find((o) => o.id === id)!
+  const disponible = cumulDisponible(calendrier, aujourdhui, { regles, depart })
   return {
     aujourdhui,
     moisCourant: suivi.moisCourant,
@@ -172,6 +175,8 @@ export async function detail(prisma: PrismaClient, utilisateurId: string, id: st
     capacite: suivi.capacite,
     comptes,
     regles,
+    cumulDisponible: disponible,
+    scenariosCumul: scenariosCumul(calendrier, epargne, id, aujourdhui, centimes(cumulChoisi ?? disponible.montant), regles),
   }
 }
 

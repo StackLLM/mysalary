@@ -171,7 +171,7 @@ function Edition({
               <Champ libelle="Nom" placeholder="Moto, voyage…" value={libelle} onChange={(e) => setLibelle(e.target.value)} erreur={erreurs.libelle} maxLength={60} />
               <ChampMontant libelle="Montant cible" value={cible} onChange={(e) => setCible(e.target.value)} erreur={erreurs.montantCible} />
               <ChampMontant
-                libelle="Déjà mis de côté (facultatif)"
+                libelle="Épargne actuelle (facultatif)"
                 value={initial}
                 onChange={(e) => setInitial(e.target.value)}
                 erreur={erreurs.montantInitial}

@@ -22,6 +22,7 @@ import { dateDuJour } from '../../lib/dates'
 import { useSaisieRapide } from '../depenses/SaisieRapide'
 import { LIBELLES_MOUVEMENT } from '../epargne/saisie'
 import { useObjectif, useRealiserObjectif, useStatutObjectif, useSupprimerObjectif } from '../epargne/requetes'
+import { PlanCumul } from './PlanCumul'
 import { phraseObjectif, pointsTrajectoire, propositions, RISQUES_PHRASES, SCENARIOS_LIBELLES, texteEstimation, texteRegle, TYPES } from './saisie'
 
 const GRILLE = 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_352px] xl:gap-12'
@@ -29,7 +30,8 @@ const GRILLE = 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_352px] xl:gap
 /** Objectif (UX.md § 5.8) : savoir quand et comment l'atteindre. */
 export function PageObjectif() {
   const { id } = useParams()
-  const detail = useObjectif(id)
+  const [cumul, setCumul] = useState<number>()
+  const detail = useObjectif(id, cumul)
   return (
     <motion.div variants={conteneurCascade} initial="cache" animate="visible">
       <motion.div variants={elementApparition}>
@@ -50,13 +52,13 @@ export function PageObjectif() {
           <div className="h-64 animate-pulse rounded-carte bg-white shadow-carte" />
         </div>
       ) : (
-        <Detail detail={detail.data} />
+        <Detail detail={detail.data} onCumul={setCumul} calcul={detail.isPlaceholderData || detail.isFetching} />
       )}
     </motion.div>
   )
 }
 
-function Detail({ detail }: { detail: ObjectifDetailDto }) {
+function Detail({ detail, onCumul, calcul }: { detail: ObjectifDetailDto; onCumul: (centimes: number | undefined) => void; calcul: boolean }) {
   const { objectif: o, aujourdhui } = detail
   const navigate = useNavigate()
   const { ouvrirVersement } = useSaisieRapide()
@@ -141,6 +143,8 @@ function Detail({ detail }: { detail: ObjectifDetailDto }) {
               </ul>
             </div>
           )}
+
+          {detail.scenariosCumul && <PlanCumul detail={detail} onCumul={onCumul} calcul={calcul} onVerser={(montant) => ouvrirVersement({ objectifId: o.id, montant })} />}
 
           <section className="mt-8">
             <TitreSection

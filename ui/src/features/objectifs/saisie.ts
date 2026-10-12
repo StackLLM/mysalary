@@ -91,3 +91,11 @@ export function pointsTrajectoire(points: PointTrajectoireObjectif[]): { points:
 
 /** Mois proposés pour la date souhaitée : du mois en cours à 10 ans. */
 export const moisSouhaitables = (moisCourant: string): string[] => Array.from({ length: 120 }, (_, i) => decalerMois(lireCleMois(moisCourant), i))
+
+/** Écart entre la date estimée et la date cible : « À temps », « 2 mois de retard », « 1 mois d’avance ». */
+export function texteEcart(ecart: number | null): { texte: string; ton: 'positif' | 'alerte' | 'neutre' } {
+  if (ecart === null) return { texte: '—', ton: 'neutre' }
+  if (ecart === 0) return { texte: 'À temps', ton: 'positif' }
+  const n = Math.abs(ecart)
+  return ecart > 0 ? { texte: `${n} mois de retard`, ton: 'alerte' } : { texte: `${n} mois d’avance`, ton: 'positif' }
+}

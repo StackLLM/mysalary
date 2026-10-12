@@ -10,12 +10,14 @@ import {
   type Scenario,
   type SuiviDesObjectifs,
   type SuiviObjectif,
+  type ScenariosCumul,
 } from '@mysalary/moteur'
 import { z } from 'zod'
 import { schemaMontantPositif, schemaNote } from './charges'
 import { schemaCleMois, schemaDateCivile } from './salaire'
 
 export { SCENARIOS, STATUTS_OBJECTIF, TYPES_OBJECTIF } from '@mysalary/moteur'
+export type { EstimationObjectif, ScenariosCumul } from '@mysalary/moteur'
 export type { EtatEpargne, PointTrajectoireObjectif, Risque, Scenario, StatutObjectif, SuiviObjectif, TypeObjectif } from '@mysalary/moteur'
 
 const libelle = (nom: string) =>
@@ -122,7 +124,16 @@ export interface ObjectifDetailDto {
   capacite: Record<Scenario, number>
   comptes: { id: string; libelle: string }[]
   regles: ReglesScenarios
+  /** Ce qui reste sur le compte courant au début du mois en cours (projection de départ du cumul). */
+  cumulDisponible: { montant: number; mois: CleMois }
+  /** Avec et sans le cumul ajouté à l'épargne actuelle ; `null` si l'objectif n'est pas actif. */
+  scenariosCumul: ScenariosCumul | null
 }
+
+/** Cumul ajouté dans le scénario « avec » (centimes) ; absent = le cumul disponible. */
+export const schemaCumulObjectif = z.object({
+  cumul: z.coerce.number({ error: 'Montant invalide.' }).int('Montant invalide.').min(0, 'Le cumul ne peut pas être négatif.').max(100_000_000_00, 'Montant trop élevé.').optional(),
+})
 
 /** Aperçu en direct d'un objectif pas encore créé (projection seule). */
 export interface ApercuObjectifDto {

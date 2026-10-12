@@ -81,6 +81,12 @@ const detail = (modif: Record<string, unknown> = {}) =>
     capacite: { prudent: 160_000, realiste: 160_000, ambitieux: 160_000 },
     comptes: [{ id: 'cih', libelle: 'CIH' }],
     regles: REGLES_SCENARIOS_DEFAUT,
+    cumulDisponible: { montant: 300_000, mois: '2026-10' },
+    scenariosCumul: {
+      cumul: 300_000,
+      sans: { depart: 1_200_000, restant: 7_400_000, mensuel: 740_000, moisRestants: 10, date: '2027-11', ecart: 4 },
+      avec: { depart: 1_500_000, restant: 7_100_000, mensuel: 710_000, moisRestants: 10, date: '2027-09', ecart: 2 },
+    },
   }) as unknown as ObjectifDetailDto
 let detailCourant = detail()
 let epargne: EpargneDto
@@ -90,6 +96,8 @@ function serveur() {
     if (chemin === '/utilisateurs') return [compte]
     if (chemin === '/objectifs') return objectifs
     if (chemin === '/objectifs/moto') return detailCourant
+    if (chemin === '/objectifs/moto?cumul=0')
+      return { ...detailCourant, scenariosCumul: { ...detailCourant.scenariosCumul!, cumul: 0, avec: detailCourant.scenariosCumul!.sans } }
     if (chemin === '/epargne') return epargne
     throw new Error(`Route non simulée : ${chemin}`)
   })
@@ -183,7 +191,7 @@ describe('Nouvel objectif', () => {
     rendre(<PageEditionObjectif />, { route: '/objectifs/nouveau', compte: 'u1' })
     fireEvent.change(await screen.findByLabelText('Nom'), { target: { value: 'Vélo' } })
     fireEvent.change(screen.getByLabelText('Montant cible'), { target: { value: '100' } })
-    fireEvent.change(screen.getByLabelText('Déjà mis de côté (facultatif)'), { target: { value: '200' } })
+    fireEvent.change(screen.getByLabelText('Épargne actuelle (facultatif)'), { target: { value: '200' } })
     fireEvent.click(screen.getByRole('button', { name: 'Créer l’objectif' }))
     expect(await screen.findByText('Déjà plus que la cible.')).toBeInTheDocument()
     expect(api.creer).not.toHaveBeenCalledWith('/objectifs', expect.anything())
@@ -201,6 +209,31 @@ describe('Objectif (détail)', () => {
     const panneau = await screen.findByRole('dialog')
     fireEvent.click(within(panneau).getByRole('button', { name: 'Marquer comme réalisé' }))
     await waitFor(() => expect(api.creer).toHaveBeenCalledWith('/objectifs/moto/realiser', { date: '2026-10-09', compteId: 'cih' }))
+  })
+
+  it('avec et sans le cumul : par mois, date estimée, écart ; un autre cumul recalcule ; verser le cumul le propose au versement', async () => {
+    rendre(<FournisseurSaisieRapide><PageObjectif /></FournisseurSaisieRapide>, { route: '/objectifs/moto', chemin: '/objectifs/:id', compte: 'u1' })
+    const bloc = await screen.findByRole('region', { name: 'Avec ou sans le cumul' })
+    const sans = within(bloc).getByRole('group', { name: 'Sans cumul' })
+    const avec = within(bloc).getByRole('group', { name: 'Avec cumul' })
+    expect(espaces(sans.textContent)).toContain('Par mois pour juillet 2027')
+    expect(espaces(sans.textContent)).toContain('7 400 DH')
+    expect(espaces(sans.textContent)).toContain('novembre 2027')
+    expect(within(sans).getByText('4 mois de retard')).toHaveClass('text-alerte')
+    expect(espaces(avec.textContent)).toContain('7 100 DH')
+    expect(within(avec).getByText('2 mois de retard')).toBeInTheDocument()
+
+    const champ = within(bloc).getByLabelText('Cumul ajouté')
+    expect(champ).toHaveValue('3000')
+    fireEvent.change(champ, { target: { value: '0' } })
+    fireEvent.blur(champ)
+    await waitFor(() => expect(api.lire).toHaveBeenCalledWith('/objectifs/moto?cumul=0'))
+    await waitFor(() => expect(within(bloc).getAllByText('4 mois de retard')).toHaveLength(2))
+
+    fireEvent.change(champ, { target: { value: '3000' } })
+    fireEvent.blur(champ)
+    fireEvent.click(await within(bloc).findByRole('button', { name: 'Verser ce cumul' }))
+    expect(await screen.findByLabelText('Montant')).toHaveValue('3000')
   })
 
   it('cible atteinte : bravo et achat proposé', async () => {
