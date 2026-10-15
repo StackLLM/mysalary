@@ -124,15 +124,43 @@ describe('bilan d’un mois en cours', () => {
     expect(charges.reduce((s, l) => s + (l.reel ?? 0), 0)).toBe(bilan.totaux.sortiesReelles)
   })
 
-  it('synthèse : consommé des charges (fixes, enveloppes, ponctuels, dettes) et reste à payer sans les enveloppes', () => {
-    // Loyer 3 600 + courses 2 000 + prêt 1 000 + hors plan 150 ; pas le loyer de février payé d'avance, pas l'épargne.
-    expect(syntheseCharges(bilan.lignes)).toEqual({ consomme: 675_000, resteAPayer: 240_000 })
-    expect(syntheseCharges([])).toEqual({ consomme: 0, resteAPayer: 0 })
+  it('synthèse : consommé des charges, hors plan à part, reste à payer toutes charges (enveloppes comprises)', () => {
+    // Consommé : loyer 3 600 + courses 2 000 + prêt 1 000. Hors plan : 150. À payer : assurance 2 400 + 500 de courses = les 2 900 de l'estimation.
+    // L'assurance (2 400 DH) est en retard : à confirmer. Les 500 DH de courses sont à venir.
+    expect(syntheseCharges(bilan.lignes)).toEqual({ consomme: 660_000, horsPlan: 15_000, resteAPayer: 290_000, aConfirmer: 240_000, aVenir: 50_000 })
+    expect(bilan.estimation?.chargesAttendues).toBe(290_000)
+    expect(syntheseCharges([])).toEqual({ consomme: 0, horsPlan: 0, resteAPayer: 0, aConfirmer: 0, aVenir: 0 })
+  })
+
+  it('synthèse : sans dépassement, consommé + reste à payer = charges prévues', () => {
+    const lignes = [
+      { famille: 'fixe' as const, prevu: centimes(10_000), reel: centimes(10_000), statut: 'confirme' as const },
+      { famille: 'ponctuel' as const, prevu: centimes(20_000), reel: null, statut: 'prevu' as const },
+      { famille: 'enveloppe' as const, prevu: centimes(30_000), reel: centimes(12_000), statut: 'enCours' as const },
+    ]
+    const { consomme, resteAPayer } = syntheseCharges(lignes)
+    expect([consomme, resteAPayer, consomme + resteAPayer]).toEqual([22_000, 38_000, 60_000])
+  })
+
+  it('synthèse : à confirmer = date passée sans paiement noté ; à confirmer + à venir = reste à payer', () => {
+    const lignes = [
+      { famille: 'fixe' as const, prevu: centimes(100_000), reel: null, statut: 'enRetard' as const },
+      { famille: 'ponctuel' as const, prevu: centimes(20_000), reel: centimes(14_000), statut: 'partiel' as const },
+      { famille: 'fixe' as const, prevu: centimes(30_000), reel: null, statut: 'prevu' as const },
+      { famille: 'enveloppe' as const, prevu: centimes(40_000), reel: centimes(10_000), statut: 'enCours' as const },
+    ]
+    const s = syntheseCharges(lignes)
+    expect([s.resteAPayer, s.aConfirmer, s.aVenir]).toEqual([166_000, 100_000, 66_000])
+  })
+
+  it('synthèse : une enveloppe d’un mois terminé ne laisse rien à payer', () => {
+    const lignes = [{ famille: 'enveloppe' as const, prevu: centimes(30_000), reel: centimes(12_000), statut: 'confirme' as const }]
+    expect(syntheseCharges(lignes)).toEqual({ consomme: 12_000, horsPlan: 0, resteAPayer: 0, aConfirmer: 0, aVenir: 0 })
   })
 
   it('synthèse : un ponctuel payé en partie ne laisse à payer que le manque', () => {
     const lignes = [{ famille: 'ponctuel' as const, prevu: centimes(20_000), reel: centimes(14_000), statut: 'partiel' as const }]
-    expect(syntheseCharges(lignes)).toEqual({ consomme: 14_000, resteAPayer: 6_000 })
+    expect(syntheseCharges(lignes)).toEqual({ consomme: 14_000, horsPlan: 0, resteAPayer: 6_000, aConfirmer: 0, aVenir: 6_000 })
   })
 
   it('le mois suivant voit son loyer déjà payé', () => {

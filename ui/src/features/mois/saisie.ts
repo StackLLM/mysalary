@@ -93,6 +93,15 @@ export function confirmation(l: LigneBilan, aujourdhui: string): Confirmation {
   }
 }
 
+/** Lignes en retard qu'on paie d'un geste (charge fixe ou ponctuel), chacune avec la dépense à noter à sa date prévue. */
+export function paiementsEnRetard(lignes: LigneBilan[], aujourdhui: string) {
+  return lignes.flatMap((l) => {
+    if (l.statut !== 'enRetard') return []
+    const c = confirmation(l, aujourdhui)
+    return c?.type === 'payer' ? [{ ligne: l, saisie: c.saisie }] : []
+  })
+}
+
 /** Points du graphique de rythme : jour du mois en abscisse (« 5 oct. »). */
 export const pointsRythme = (points: PointRythme[]) =>
   points.map((p) => ({ jour: formaterDate(p.date, 'court'), prevu: p.prevu, ...(p.reel !== null ? { reel: p.reel } : {}) }))

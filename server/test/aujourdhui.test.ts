@@ -54,8 +54,9 @@ describe('page Aujourd’hui (lot 16)', () => {
       ['Courses', 310_000, 30_000],
       ['Internet', 25_000, 0],
     ])
-    // Consommé : les 300 DH de courses. Reste à payer : loyer 3 500 et internet 250 (les enveloppes se dépensent librement).
-    expect(a.tableau.synthese).toEqual({ consomme: 30_000, resteAPayer: 375_000 })
+    // Consommé : les 300 DH de courses sur 6 850 DH prévus. Reste à payer : loyer 3 500, internet 250 et 2 800 DH de courses : 300 + 6 550 = 6 850.
+    // Le loyer du 5 est en retard (à confirmer) ; internet (15) et 2 800 DH de courses sont à venir.
+    expect(a.tableau.synthese).toEqual({ consomme: 30_000, horsPlan: 0, resteAPayer: 655_000, aConfirmer: 350_000, aVenir: 305_000 })
     expect(a.tableau.restePrevu).toBe(315_000)
     expect(a.tableau.grossesDepenses.map((d) => [d.date, d.montant])).toEqual([['2027-01-06', 30_000]])
     expect(a.epargne).toMatchObject({ declare: false, solde: 0 })

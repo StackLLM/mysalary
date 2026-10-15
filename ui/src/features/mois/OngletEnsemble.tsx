@@ -20,7 +20,7 @@ import { useEnregistrerDepense, useSupprimerDepense } from '../depenses/requetes
 import type { Ton } from '../salaire/saisie'
 import { EnteteMois } from './EnteteMois'
 import { useCloturer, useRouvrir } from './requetes'
-import { confirmation, FAMILLES, moisPrecedent, NATURES_CUMUL, parFamille, plus, pointsRythme, statutLigne } from './saisie'
+import { confirmation, FAMILLES, moisPrecedent, NATURES_CUMUL, paiementsEnRetard, parFamille, plus, pointsRythme, statutLigne } from './saisie'
 
 const TONS: Record<Ton, string> = { positif: 'text-positif', alerte: 'text-alerte', info: 'text-info', neutre: 'text-gris' }
 const COLONNES = 'grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1.2fr)] items-center gap-3'
@@ -33,6 +33,8 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
   const enregistrer = useEnregistrerDepense()
   const supprimer = useSupprimerDepense()
   const [demande, setDemande] = useState<'cloturer' | 'rouvrir' | null>(null)
+  const [toutPaye, setToutPaye] = useState(false)
+  const enRetard = paiementsEnRetard(bilan.lignes, aujourdhui)
   const cloturer = useCloturer()
   const rouvrir = useRouvrir()
 
@@ -43,6 +45,20 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
       onSuccess: ({ id }) => toast(`« ${l.libelle} » payé : ${formaterMontant(c.saisie.montant)}.`, { action: { label: 'Annuler', onClick: () => supprimer.mutate(id) } }),
       onError: (e) => toast(e instanceof ErreurApi ? e.message : 'Le paiement n’a pas été noté. Réessaie.'),
     })
+  }
+
+  /** Note d'un coup tous les paiements en retard, chacun à sa date prévue ; un seul « Annuler » les retire tous. */
+  async function payerTout() {
+    const ids: string[] = []
+    try {
+      for (const { saisie } of enRetard) ids.push((await enregistrer.mutateAsync(saisie)).id)
+      toast(`${ids.length} paiement${ids.length > 1 ? 's notés' : ' noté'}.`, { action: { label: 'Annuler', onClick: () => ids.forEach((id) => supprimer.mutate(id)) } })
+    } catch (e) {
+      const dejaNotes = ids.length > 0 ? ` ${ids.length} déjà noté${ids.length > 1 ? 's' : ''}.` : ''
+      toast(`${e instanceof ErreurApi ? e.message : 'Un paiement n’a pas été noté. Réessaie.'}${dejaNotes}`)
+    } finally {
+      setToutPaye(false)
+    }
   }
 
   const action = (l: LigneBilan) => {
@@ -69,10 +85,12 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
           <CarteBandeau
             className="mt-7"
             gauche={{
-              titre: 'Dépensé',
+              titre: `Dépensé sur ${formaterMontant(totaux.chargesPrevues)} de charges`,
               lignes: [
                 { valeur: <Montant valeur={bilan.synthese.consomme} className="text-montant" /> },
-                { libelle: 'Reste à payer', valeur: <Montant valeur={bilan.synthese.resteAPayer} /> },
+                { libelle: 'À confirmer (date passée)', valeur: <Montant valeur={bilan.synthese.aConfirmer} /> },
+                { libelle: 'À venir', valeur: <Montant valeur={bilan.synthese.aVenir} /> },
+                ...(bilan.synthese.horsPlan > 0 ? [{ libelle: 'Hors plan', valeur: <Montant valeur={bilan.synthese.horsPlan} /> }] : []),
               ],
             }}
             droite={{
@@ -192,8 +210,9 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
             <BlocTotaux
               lignes={[
                 { libelle: 'Revenus reçus', valeur: <Montant valeur={totaux.revenusReels} />, fort: true },
-                { libelle: 'Dépensé (charges consommées)', valeur: <Montant valeur={bilan.synthese.consomme} /> },
-                { libelle: 'Reste à payer', valeur: <Montant valeur={bilan.synthese.resteAPayer} /> },
+                { libelle: `Dépensé, sur ${formaterMontant(totaux.chargesPrevues)} de charges`, valeur: <Montant valeur={bilan.synthese.consomme} /> },
+                { libelle: 'À confirmer (date passée)', valeur: <Montant valeur={bilan.synthese.aConfirmer} /> },
+                { libelle: 'À venir, enveloppes comprises', valeur: <Montant valeur={bilan.synthese.aVenir} /> },
                 // L'épargne n'est pas une sortie (R11) : elle est montrée à part, prévue et réelle.
                 ...(bilan.epargne
                   ? [
@@ -225,6 +244,11 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
         {!cloture && mois.statut !== 'aVenir' && <CarteIndicateurs cle={mois.cle} />}
 
         <Carte titre="À confirmer" precision={bilan.aConfirmer.length ? `(${bilan.aConfirmer.length})` : undefined}>
+          {!cloture && enRetard.length > 0 && (
+            <Bouton variante="contour" taille="sm" className="mb-4 w-full" onClick={() => setToutPaye(true)} disabled={enregistrer.isPending}>
+              Tout marquer payé ({enRetard.length})
+            </Bouton>
+          )}
           {bilan.aConfirmer.length === 0 ? (
             <p className="text-texte-sm text-gris">{mois.statut === 'aVenir' ? 'Rien à confirmer avant le début du mois.' : 'Tout ce qui était prévu est confirmé.'}</p>
           ) : (
@@ -264,6 +288,17 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
           </Carte>
         )}
       </motion.div>
+
+      <Confirmation
+        ouvert={toutPaye}
+        onFermer={() => setToutPaye(false)}
+        titre={`Marquer ${enRetard.length} ligne${enRetard.length > 1 ? 's' : ''} comme payée${enRetard.length > 1 ? 's' : ''} ?`}
+        description={`${enRetard.map(({ ligne }) => ligne.libelle).join(', ')}. Chacune est notée payée à sa date prévue, pour son montant prévu. Tu pourras annuler juste après.`}
+        libelleConfirmer="Tout marquer payé"
+        ton="principal"
+        chargement={enregistrer.isPending}
+        onConfirmer={() => void payerTout()}
+      />
 
       <Confirmation
         ouvert={demande === 'cloturer'}

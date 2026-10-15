@@ -254,7 +254,7 @@ Format pour chaque page : objectif · données · actions · relations · état 
 #### 5.2 Aujourd'hui
 - **Objectif** : où j'en suis, en 5 secondes.
 - **Données** (dans l'ordre) :
-  1. Carte héro : **reste du mois, avant épargne** (revenus prévus − charges prévues), avec la mention « Ce reste est calculé sans l'épargne » et le montant d'épargne prévu non retiré. Quatre chiffres au-dessus : reçu, dépensé (charges fixes, enveloppes, ponctuels, dettes consommés, plus le hors plan), reste à payer (charges fixes, ponctuels et dettes pas encore payés, sans les enveloppes), épargné. Plus de « reste à dépenser », de « par jour » ni de « reste réel » (supprimés le 15/10/2026).
+  1. Carte héro : **reste du mois, avant épargne** (revenus prévus − charges prévues), avec la mention « Ce reste est calculé sans l'épargne » et le montant d'épargne prévu non retiré. Quatre chiffres au-dessus : reçu, dépensé (charges fixes, enveloppes, ponctuels et dettes consommés, à lire sur le total des charges prévues, avec une barre ; le hors plan est ajouté à part), reste à payer (toutes les charges pas encore payées, enveloppes comprises : dépensé + reste à payer = charges prévues), séparé en « à confirmer (date passée) » (en retard, peut-être déjà payé) et « à venir », avec un lien vers le mois, épargné. Plus de « reste à dépenser », de « par jour » ni de « reste réel » (supprimés le 15/10/2026).
   2. Reste flexible de la semaine + barre de rythme.
   3. Actions attendues : salaire à confirmer, charges du jour, échéance de dette.
   4. Épargne du mois : prévue vs réelle.
@@ -276,8 +276,8 @@ Format pour chaque page : objectif · données · actions · relations · état 
 
 #### 5.3 Mois
 - **Objectif** : comparer prévu et réel sur une période.
-- **Données** : bandeau « Dépensé » (avec le reste à payer) et « Reste du mois, avant épargne », puis le cumul ; en bas, les totaux (reçu, dépensé, reste à payer, épargne) et « Reste du mois, sans épargne » avec sa mention. Identique pour tous les mois (passés, en cours, à venir). Tableau prévu / réel / écart par ligne, graphique de rythme cumulé (réel vs ligne prévue), onglets Semaines et Dépenses.
-- **Actions** : changer de période, confirmer une ligne, ajouter une dépense, modifier une dépense, clôturer / rouvrir.
+- **Données** : bandeau « Dépensé » (avec « à confirmer (date passée) » et « à venir ») et « Reste du mois, avant épargne », puis le cumul ; en bas, les totaux (reçu, dépensé, reste à payer, épargne) et « Reste du mois, sans épargne » avec sa mention. Identique pour tous les mois (passés, en cours, à venir). Tableau prévu / réel / écart par ligne, graphique de rythme cumulé (réel vs ligne prévue), onglets Semaines et Dépenses.
+- **Actions** : changer de période, confirmer une ligne, ajouter une dépense, modifier une dépense, clôturer / rouvrir. **Tout marquer payé** (carte « À confirmer », mois non clôturé) : après confirmation, note en une fois toutes les charges fixes et ponctuels en retard, chacun à sa date prévue ; un seul « Annuler » les retire.
 - **Relations** : Aujourd'hui, Année, Mon plan (modifier la source d'une ligne prévue), Calendrier.
 - **État vide** : aucune dépense → « Aucune dépense notée sur cette période » + ajouter. Période future → prévisions seules, bandeau « Mois à venir ».
 - **Erreurs** : clôture impossible (lignes non confirmées) → liste des lignes concernées, possibilité de clôturer quand même avec mention.

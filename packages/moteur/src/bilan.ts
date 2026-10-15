@@ -58,27 +58,38 @@ export interface TotauxBilan {
 }
 
 /**
- * Ce que les charges du mois ont consommé, et ce qu'il reste à payer (lot 29 prod : pour tous les mois).
- * - `consomme` : réel des charges fixes, enveloppes, ponctuels et échéances de dettes, plus les dépenses hors plan (jamais cachées).
- *   L'épargne et les paiements d'un autre mois n'en font pas partie.
- * - `resteAPayer` : ce qui est daté et pas encore payé (fixes, ponctuels, échéances), sans les enveloppes, qui se dépensent librement.
+ * Ce que les charges du mois ont consommé et ce qu'il reste à payer, pour tous les mois.
+ * - `consomme` : réel des charges fixes, enveloppes, ponctuels et échéances de dettes, à lire sur `chargesPrevues`.
+ * - `horsPlan` : dépenses sans charge prévue, à part pour ne rien cacher ; elles ne sont pas dans `chargesPrevues`.
+ * - `resteAPayer` : ce qui est prévu et pas encore payé ou dépensé, toutes charges comprises, enveloppes incluses.
+ *   Sans dépassement, `consomme` + `resteAPayer` = charges prévues. Une enveloppe d'un mois terminé ne laisse rien à payer.
+ * - `aConfirmer` : la part du reste à payer dont la date est passée sans paiement noté (« en retard ») : peut-être déjà payée, à confirmer.
+ * - `aVenir` : le reste (pas encore arrivé, partiel, enveloppes) ; `aConfirmer` + `aVenir` = `resteAPayer`.
+ * L'épargne et les paiements d'un autre mois n'en font pas partie.
  */
 export interface SyntheseCharges {
   consomme: Centimes
+  horsPlan: Centimes
   resteAPayer: Centimes
+  aConfirmer: Centimes
+  aVenir: Centimes
 }
 
-const FAMILLES_CONSOMMEES: FamilleBilan[] = ['fixe', 'enveloppe', 'ponctuel', 'dette', 'horsPlan']
-const FAMILLES_A_PAYER: FamilleBilan[] = ['fixe', 'ponctuel', 'dette']
+const FAMILLES_CHARGES: FamilleBilan[] = ['fixe', 'enveloppe', 'ponctuel', 'dette']
 
 export function syntheseCharges(lignes: Pick<LigneBilan, 'famille' | 'prevu' | 'reel' | 'statut'>[]): SyntheseCharges {
-  const consomme = additionner(...lignes.filter((l) => FAMILLES_CONSOMMEES.includes(l.famille)).map((l) => l.reel ?? centimes(0)))
-  const resteAPayer = additionner(
-    ...lignes
-      .filter((l) => FAMILLES_A_PAYER.includes(l.famille) && l.statut !== 'confirme')
-      .map((l) => centimes(Math.max(0, (l.prevu ?? 0) - (l.reel ?? 0)))),
-  )
-  return { consomme, resteAPayer }
+  const charges = lignes.filter((l) => FAMILLES_CHARGES.includes(l.famille))
+  const manque = (l: Pick<LigneBilan, 'prevu' | 'reel'>) => centimes(Math.max(0, (l.prevu ?? 0) - (l.reel ?? 0)))
+  const aPayer = charges.filter((l) => l.statut !== 'confirme')
+  const resteAPayer = additionner(...aPayer.map(manque))
+  const aConfirmer = additionner(...aPayer.filter((l) => l.statut === 'enRetard').map(manque))
+  return {
+    consomme: additionner(...charges.map((l) => l.reel ?? centimes(0))),
+    horsPlan: additionner(...lignes.filter((l) => l.famille === 'horsPlan').map((l) => l.reel ?? centimes(0))),
+    resteAPayer,
+    aConfirmer,
+    aVenir: soustraire(resteAPayer, aConfirmer),
+  }
 }
 
 export interface BilanDuMois {

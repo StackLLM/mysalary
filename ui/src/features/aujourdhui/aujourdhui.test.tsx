@@ -68,7 +68,7 @@ const journee = (modif: Partial<AujourdhuiDto> = {}) =>
       avancement: 16 / 31,
       revenusPrevus: 1_000_000,
       restePrevu: 200_000,
-      synthese: { consomme: 580_000, resteAPayer: 30_000 },
+      synthese: { consomme: 580_000, horsPlan: 0, resteAPayer: 220_000, aConfirmer: 100_000, aVenir: 120_000 },
       postes: [
         { cle: 'fixe:loyer', famille: 'fixe', libelle: 'Loyer', prevu: 350_000, reel: 350_000, part: 0.35, consommation: null, surveillance: null },
         { cle: 'enveloppe:courses', famille: 'enveloppe', libelle: 'Courses', prevu: 200_000, reel: 180_000, part: 0.2, consommation: 0.9, surveillance: 'rythme' },
@@ -151,7 +151,9 @@ describe('Aujourd’hui', () => {
     const kpi = screen.getByRole('region', { name: 'Indicateurs du mois' })
     await waitFor(() => expect(visible(kpi)).toContain('Reçu10 000DHsur 10 000DH prévus'))
     expect(visible(kpi)).toContain('Dépensé5 800DHsur 8 000DH de charges prévues')
-    expect(visible(kpi)).toContain('Reste à payer300DHCharges fixes, ponctuels et dettes, sans les enveloppes')
+    expect(within(kpi).getByRole('progressbar', { name: 'Dépensé : 73 % des charges prévues' })).toBeInTheDocument()
+    expect(visible(kpi)).toContain('Reste à payer2 200DHÀ confirmer (date passée) : 1 000DHÀ venir : 1 200DH')
+    expect(within(kpi).getByRole('link', { name: 'Confirmer les paiements' })).toHaveAttribute('href', '/mois?mois=2027-01')
     expect(visible(kpi)).toContain('Épargné500DHsur 1 000DH prévus')
     expect(screen.queryByText('Tu peux encore dépenser')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Ouvrir l’objectif' })).toHaveAttribute('href', '/objectifs/moto')

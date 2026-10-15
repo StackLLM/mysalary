@@ -50,7 +50,8 @@ describe('bilan du mois', () => {
       ['Hors plan', null, 200_000, 'confirme'],
     ])
     expect(b.totaux).toMatchObject({ revenusReels: 1_000_000, chargesPrevues: 600_000, sortiesReelles: 200_000, restePrevu: 400_000, resteReel: 800_000, ecart: 400_000 })
-    expect(b.synthese).toEqual({ consomme: 200_000, resteAPayer: 350_000 })
+    // Les 2 000 DH sortis n'étaient prévus nulle part : hors plan, à part. Le loyer de 3 500 DH reste à payer.
+    expect(b.synthese).toEqual({ consomme: 0, horsPlan: 200_000, resteAPayer: 350_000, aConfirmer: 350_000, aVenir: 0 })
     expect(b.aConfirmer.map((l) => l.libelle)).toEqual(['Loyer'])
     expect(b.rythme).toHaveLength(31)
     expect(b.cloture).toBeNull()

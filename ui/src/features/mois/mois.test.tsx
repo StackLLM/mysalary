@@ -1,6 +1,7 @@
 import type { BilanDto, CategorieDto, DepenseDto, RattachementsDto, SuiviDepensesDto, Utilisateur } from '@mysalary/partage'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { toast } from 'sonner'
 import { api } from '../../lib/api'
 import { rendre } from '../../test/outils'
 import { FournisseurSaisieRapide } from '../depenses/SaisieRapide'
@@ -64,7 +65,7 @@ const bilan = (modif: Partial<BilanDto> = {}) =>
       { cle: 'dette:d1:1', famille: 'dette', libelle: 'Prêt voiture', date: '2027-01-10', prevu: 100_000, reel: 100_000, ecart: 0, statut: 'confirme', cible: { type: 'dette', id: 'd1' } },
     ],
     totaux: totauxBilan,
-    synthese: { consomme: 140_000, resteAPayer: 350_000 },
+    synthese: { consomme: 140_000, horsPlan: 0, resteAPayer: 560_000, aConfirmer: 350_000, aVenir: 210_000 },
     estimation: { revenusAttendus: 0, chargesAttendues: 560_000, resteFinDeMois: 300_000 },
     aConfirmer: [],
     rythme: [{ date: '2027-01-20', prevu: 100_000, reel: 140_000 }],
@@ -263,7 +264,7 @@ describe('Mois › Vue d’ensemble', () => {
     // Dépensé (charges consommées), reste à payer, reste du mois avant épargne : plus de « reste réel ».
     const espaces = (t: string | null) => (t ?? '').replace(/[\u202f\u00a0\s]+/g, ' ')
     expect(screen.queryByText('Reste réel')).not.toBeInTheDocument()
-    expect(espaces(screen.getByText('Dépensé', { selector: 'p, span, div' }).closest('div')!.textContent)).toMatch(/1 400.*Reste à payer.*3 500/)
+    expect(espaces(screen.getByText(/^Dépensé sur 7 000/, { selector: 'p, span, div' }).closest('div')!.textContent)).toMatch(/1 400.*À confirmer \(date passée\).*3 500.*À venir.*2 100/)
     expect(espaces(screen.getByText('Reste du mois, avant épargne').closest('div')!.textContent)).toMatch(/3 000.*Revenus prévus.*10 000.*Charges prévues.*7 000/)
     expect(espaces(screen.getByRole('note').textContent)).toMatch(/Ce reste est calculé sans l’épargne/)
     // Cumul (lot 13) : le reste de décembre arrive en janvier, le cumul de fin de janvier est une estimation.
@@ -282,6 +283,39 @@ describe('Mois › Vue d’ensemble', () => {
         ponctuelId: null,
       }),
     )
+  })
+
+  it('« Tout marquer payé » : une confirmation, puis chaque ligne en retard notée à sa date prévue', async () => {
+    ouvrirMois('/mois')
+    fireEvent.click(await screen.findByRole('button', { name: 'Tout marquer payé (1)' }))
+    const dialogue = await screen.findByRole('dialog', { name: 'Marquer 1 ligne comme payée ?' })
+    expect(dialogue.textContent).toContain('Loyer')
+    expect(api.creer).not.toHaveBeenCalled()
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Tout marquer payé' }))
+    await waitFor(() =>
+      expect(api.creer).toHaveBeenCalledWith('/depenses', {
+        date: '2027-01-05',
+        montant: 350_000,
+        categorieId: 'c-log',
+        libelle: 'Loyer',
+        chargeId: 'loyer',
+        echeance: '2027-01-05',
+        ponctuelId: null,
+      }),
+    )
+    expect(api.creer).toHaveBeenCalledTimes(1)
+    // Un seul « Annuler » retire les paiements notés.
+    await waitFor(() => expect(toast).toHaveBeenCalledWith('1 paiement noté.', expect.objectContaining({ action: expect.objectContaining({ label: 'Annuler' }) })))
+    const options = vi.mocked(toast).mock.calls.at(-1)![1] as unknown as { action: { onClick: () => void } }
+    options.action.onClick()
+    await waitFor(() => expect(api.supprimer).toHaveBeenCalledWith('/depenses/nouvelle'))
+  })
+
+  it('mois clôturé : pas de bouton « Tout marquer payé »', async () => {
+    bilanCourant = bilan({ cloture: { le: '2027-02-01T10:00:00.000Z', forcee: false, nonConfirmees: 0 } } as Partial<BilanDto>)
+    ouvrirMois('/mois')
+    expect(await screen.findByText('Bilan de janvier')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Tout marquer payé/ })).not.toBeInTheDocument()
   })
 
   it('mois terminé avec une ligne non confirmée : « Clôturer quand même »', async () => {

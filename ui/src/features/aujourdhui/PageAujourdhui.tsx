@@ -257,14 +257,38 @@ function Indicateurs({ donnees }: { donnees: AujourdhuiDto }) {
         icone={<Receipt className="h-5 w-5" aria-hidden />}
         ton={synthese.consomme > c.chargesPrevues ? 'alerte' : 'neutre'}
         valeur={<Montant valeur={synthese.consomme} anime />}
-        detail={<>sur <Montant valeur={c.chargesPrevues} /> de charges prévues</>}
+        detail={
+          <>
+            sur <Montant valeur={c.chargesPrevues} /> de charges prévues
+            <BarreProgression className="mt-2" valeur={part(synthese.consomme, c.chargesPrevues)} libelle={`Dépensé : ${Math.round(part(synthese.consomme, c.chargesPrevues) * 100)} % des charges prévues`} />
+            {synthese.horsPlan > 0 && (
+              <span className="mt-1 block">
+                + <Montant valeur={synthese.horsPlan} /> hors plan
+              </span>
+            )}
+          </>
+        }
       />
       <TuileIndicateur
         libelle="Reste à payer"
         icone={<Hourglass className="h-5 w-5" aria-hidden />}
-        ton={synthese.resteAPayer > 0 ? 'attention' : 'positif'}
+        ton={synthese.aConfirmer > 0 ? 'attention' : synthese.resteAPayer > 0 ? 'neutre' : 'positif'}
         valeur={<Montant valeur={synthese.resteAPayer} anime />}
-        detail="Charges fixes, ponctuels et dettes, sans les enveloppes"
+        detail={
+          <>
+            <span className="block">
+              À confirmer (date passée) : <Montant valeur={synthese.aConfirmer} className="font-semibold" />
+            </span>
+            <span className="block">
+              À venir : <Montant valeur={synthese.aVenir} className="font-semibold" />
+            </span>
+            {synthese.aConfirmer > 0 && (
+              <Link to={`/mois?mois=${donnees.indicateurs.mois.cle}`} className="mt-1 inline-block font-semibold text-lien hover:underline">
+                Confirmer les paiements
+              </Link>
+            )}
+          </>
+        }
       />
       <TuileIndicateur
         libelle="Épargné"
