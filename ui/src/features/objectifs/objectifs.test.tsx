@@ -50,7 +50,7 @@ const objectif = (modif: Record<string, unknown>): SuiviObjectif =>
 const permis = objectif({ id: 'permis', libelle: 'Permis', type: 'autre', priorite: 2, montantCible: 400_000, epargne: 100_000, restant: 300_000, risque: 'sur', estimations: { prudent: '2026-12', realiste: '2026-12', ambitieux: '2026-12' } })
 const voyage = objectif({ id: 'voyage', libelle: 'Voyage', type: 'voyage', priorite: 3, statut: 'realise', realiseLe: '2026-09-01', risque: null, estimations: null })
 
-const etat = { comptes: [{ id: 'cih', libelle: 'CIH', solde: 2_000_000, auLe: '2026-10-01', soldeActuel: 2_300_000 }], solde: 2_300_000, reserve: 1_300_000, disponible: 1_000_000, depassement: 0 }
+const etat = { comptes: [{ id: 'cih', libelle: 'CIH', solde: 2_000_000, auLe: '2026-10-01', soldeActuel: 2_300_000 }], declare: true, solde: 2_300_000, reserve: 1_300_000, disponible: 1_000_000, depassement: 0 }
 
 let objectifs: ObjectifsDto
 const liste = (modif: Partial<ObjectifsDto> = {}) =>
@@ -63,6 +63,27 @@ const liste = (modif: Partial<ObjectifsDto> = {}) =>
     fondsSecurite: { min: 1_980_000, max: 3_960_000, base: 660_000 },
     comptes: [{ id: 'cih', libelle: 'CIH' }],
     regles: REGLES_SCENARIOS_DEFAUT,
+    annee: {
+      annee: 2026,
+      enCours: 2,
+      cible: 8_900_000,
+      epargne: 1_300_000,
+      restant: 7_600_000,
+      progression: 1_300_000 / 8_900_000,
+      aRisque: ['moto'],
+      verseCetteAnnee: 200_000,
+      finAnnee: { prudent: 1_700_000, realiste: 1_900_000, ambitieux: 2_100_000 },
+      points: [
+        { mois: '2026-09', reel: 1_100_000, projete: null, aujourdhui: false },
+        { mois: '2026-10', reel: 1_300_000, projete: 1_300_000, aujourdhui: true },
+        { mois: '2026-11', reel: null, projete: 1_600_000, aujourdhui: false },
+        { mois: '2026-12', reel: null, projete: 1_900_000, aujourdhui: false },
+      ],
+      objectifs: [
+        { id: 'moto', debutAnnee: 1_000_000, epargne: 1_200_000, finAnnee: 1_500_000, atteintCetteAnnee: null },
+        { id: 'permis', debutAnnee: 0, epargne: 100_000, finAnnee: 400_000, atteintCetteAnnee: '2026-12' },
+      ],
+    },
     ...modif,
   }) as unknown as ObjectifsDto
 
@@ -96,6 +117,14 @@ const detail = (modif: Record<string, unknown> = {}) =>
   }) as unknown as ObjectifDetailDto
 let detailCourant = detail()
 let epargne: EpargneDto
+const conseils = {
+  aujourdhui: '2026-10-09',
+  alertes: [
+    { cle: 'v', type: 'versementPrevu', objectifId: 'moto', libelle: 'Moto', reste: 200_000, mois: '2026-10', titre: 'Versement « Moto » à faire', message: '2 000 DH prévus ce mois-ci pour « Moto ».', action: { libelle: 'Noter le versement', chemin: '/plan?onglet=epargne' } },
+    { cle: 'p', type: 'paieEnRetard', titre: 'Paie en retard', message: 'Hors sujet ici.', action: { libelle: 'Confirmer', chemin: '/plan' } },
+  ],
+  recommandations: [],
+}
 
 function serveur() {
   vi.mocked(api.lire).mockImplementation(async (chemin: string) => {
@@ -103,6 +132,7 @@ function serveur() {
     if (chemin === '/objectifs') return objectifs
     if (chemin === '/objectifs/moto') return detailCourant
     if (chemin === '/epargne') return epargne
+    if (chemin === '/recommandations') return conseils
     throw new Error(`Route non simulée : ${chemin}`)
   })
 }
@@ -115,7 +145,13 @@ afterAll(() => vi.useRealTimers())
 beforeEach(() => {
   objectifs = liste()
   detailCourant = detail()
-  epargne = { aujourdhui: '2026-10-09', etat, mouvements: [versement], objectifs: [{ id: 'moto', libelle: 'Moto', statut: 'actif' }] } as unknown as EpargneDto
+  epargne = {
+    aujourdhui: '2026-10-09',
+    etat,
+    planMois: { cle: '2026-10', debut: '2026-09-27', fin: '2026-10-26', lignes: [{ objectifId: 'moto', libelle: 'Moto', prevu: 400_000, reel: 200_000 }], prevue: 400_000, reelle: 200_000 },
+    mouvements: [versement],
+    objectifs: [{ id: 'moto', libelle: 'Moto', statut: 'actif' }],
+  } as unknown as EpargneDto
   serveur()
   vi.mocked(api.creer).mockReset().mockResolvedValue({ id: 'nouveau' })
   vi.mocked(api.modifier).mockReset().mockResolvedValue(undefined)
@@ -157,6 +193,30 @@ describe('Objectifs (liste)', () => {
     expect(within(enCours).getByText('Hors de portée')).toBeInTheDocument()
     expect(screen.getByText('Réalisés (1)')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Créer ce fonds' })).toHaveAttribute('href', '/objectifs/nouveau?type=securite')
+  })
+
+  it('vue de l’année : indicateurs réels, trajectoire, fin d’année par scénario ; chaque objectif garde son lien', async () => {
+    rendre(<FournisseurSaisieRapide><PageObjectifs /></FournisseurSaisieRapide>, { route: '/objectifs', compte: 'u1' })
+    const kpi = await screen.findByRole('region', { name: 'Indicateurs des objectifs' })
+    expect(within(kpi).getByRole('progressbar', { name: 'Progression globale : 15 %' })).toBeInTheDocument()
+    expect(espaces(kpi.textContent)).toMatch(/Déjà épargné.*13 000.*sur.*89 000/)
+    expect(espaces(kpi.textContent)).toMatch(/À risque.*1.*Moto/)
+    const annee = screen.getByRole('region', { name: 'Année 2026' })
+    expect(espaces(annee.textContent)).toMatch(/Fin 2026 prévue.*19 000.*De.*17 000.*à.*21 000/)
+    expect(within(annee).getByRole('figure', { name: 'Épargne des objectifs en 2026' })).toBeInTheDocument()
+    const enCours = screen.getByRole('list', { name: 'Objectifs en cours' })
+    expect(within(enCours).getByRole('link', { name: 'Moto' })).toHaveAttribute('href', '/objectifs/moto')
+    expect(within(enCours).getByText('Atteint en décembre')).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Calendrier de l’année' })).not.toBeInTheDocument()
+  })
+
+  it('prochaines actions : seulement ce qui concerne les objectifs ; le versement prévu s’ouvre pré-rempli', async () => {
+    rendre(<FournisseurSaisieRapide><PageObjectifs /></FournisseurSaisieRapide>, { route: '/objectifs', compte: 'u1' })
+    const actions = await screen.findByRole('list', { name: 'À faire pour tes objectifs' })
+    expect(within(actions).queryByText('Paie en retard')).not.toBeInTheDocument()
+    fireEvent.click(within(actions).getByRole('button', { name: 'Noter le versement' }))
+    expect(await screen.findByLabelText('Montant')).toHaveValue('2000')
+    expect(screen.getByLabelText('Pour')).toHaveValue('moto')
   })
 
   it('monter un objectif envoie l’ordre complet', async () => {
@@ -274,6 +334,35 @@ describe('Épargne', () => {
     )
     expect(espaces((await screen.findByRole('alert')).textContent)).toMatch(/réservent 500 DH de plus que ton épargne déclarée/)
     expect(within(screen.getByRole('list', { name: 'Comptes d’épargne' })).getByText('CIH')).toBeInTheDocument()
+  })
+
+  it('versement mensuel prévu : prévu, versé, reste ; « Noter » pré-remplit le versement', async () => {
+    rendre(
+      <FournisseurSaisieRapide>
+        <OngletEpargne />
+      </FournisseurSaisieRapide>,
+      { route: '/plan', compte: 'u1' },
+    )
+    const prevus = await screen.findByRole('region', { name: 'Versements prévus ce mois-ci' })
+    expect(espaces(prevus.textContent)).toMatch(/Prévu 4 000 ?DH.*· versé 2 000 ?DH/)
+    fireEvent.click(within(prevus).getByRole('button', { name: /Noter le versement de 2.000.DH pour Moto/ }))
+    expect(await screen.findByLabelText('Montant')).toHaveValue('2000')
+    expect(screen.getByLabelText('Pour')).toHaveValue('moto')
+  })
+
+  it('sans compte déclaré : pas d’alerte « en trop », on propose de déclarer le compte avec l’épargne des objectifs', async () => {
+    epargne = { ...epargne, etat: { comptes: [], declare: false, solde: 0, reserve: 900_000, disponible: 0, depassement: 0 } } as unknown as EpargneDto
+    rendre(
+      <FournisseurSaisieRapide>
+        <OngletEpargne />
+      </FournisseurSaisieRapide>,
+      { route: '/plan', compte: 'u1' },
+    )
+    const alerte = await screen.findByRole('alert')
+    expect(espaces(alerte.textContent)).toMatch(/Aucun compte d’épargne déclaré\.Tes objectifs ont 9 000 ?DH.* de côté/)
+    expect(screen.getAllByText('Non déclaré').length).toBeGreaterThan(0)
+    fireEvent.click(within(alerte).getByRole('button', { name: 'Déclarer mon compte' }))
+    expect(await screen.findByLabelText('Solde réel')).toHaveValue('9000')
   })
 
   it('saisie rapide d’un versement vers un objectif : jamais une dépense', async () => {

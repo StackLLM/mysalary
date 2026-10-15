@@ -1,5 +1,6 @@
 import type { ResumeRevenusDto, RevenuPrevu, RevenuRecuDto, SaisieRevenuRecu, SaisieSource, SourceRevenuDto } from '@mysalary/partage'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
+import { useActualiserDonnees } from '../../lib/actualisation'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
 import { useUtilisateurCourant } from '../compte/requetes'
@@ -44,10 +45,9 @@ export function useRevenusPrevus(du: string, au: string, active = true) {
   })
 }
 
+/** Toute écriture recharge toutes les vues du compte (lib/actualisation). */
 function useInvalider() {
-  const client = useQueryClient()
-  const { revenus, salaire, mois } = useCles()
-  return () => Promise.all([revenus, salaire, mois].map((queryKey) => client.invalidateQueries({ queryKey })))
+  return useActualiserDonnees()
 }
 
 export function useEnregistrerSource() {

@@ -41,3 +41,18 @@ export function phraseSemainePassee(s: { depense: number; disponible: number; re
 
 /** Les alertes de paie s'ouvrent ici même, sur la confirmation de la paie. */
 export const estAlertePaie = (a: { type: string }) => a.type === 'paieAujourdhui' || a.type === 'paieEnRetard'
+
+/** Ce qu'un poste du mois a coûté à ce jour, en mots : « 1 610 DH sur 2 000 DH », « 3 500 DH, payé », « 400 DH hors plan ». */
+export function textePoste(p: { famille: string; prevu: number; reel: number; consommation: number | null }): string {
+  if (p.famille === 'horsPlan') return `${formaterMontant(p.reel)} dépensés hors plan`
+  if (p.famille === 'enveloppe') return `${formaterMontant(p.reel)} dépensés sur ${formaterMontant(p.prevu)}`
+  if (p.reel >= p.prevu) return `${formaterMontant(p.prevu)}, payé`
+  if (p.reel > 0) return `${formaterMontant(p.reel)} payés sur ${formaterMontant(p.prevu)}`
+  return `${formaterMontant(p.prevu)}, à payer`
+}
+
+/** Pourquoi une enveloppe est à surveiller. */
+export function texteSurveillance(p: { surveillance: 'depassee' | 'rythme' | null; prevu: number; reel: number; consommation: number | null }, avancement: number): string {
+  if (p.surveillance === 'depassee') return `Dépassée de ${formaterMontant(p.reel - p.prevu)}.`
+  return `${Math.round((p.consommation ?? 0) * 100)} % du budget dépensé pour ${Math.round(avancement * 100)} % du mois écoulé.`
+}

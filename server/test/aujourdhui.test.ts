@@ -48,6 +48,17 @@ describe('page Aujourd’hui (lot 16)', () => {
     // Le loyer du 5 n'est pas payé : il est à faire.
     expect(a.alertes.map((x) => x.titre)).toContain('« Loyer » pas encore payé')
     expect(a.recommandations.length).toBeLessThanOrEqual(3)
+    // Tableau de bord : postes du plus lourd au plus léger, grosses dépenses du mois, épargne et objectifs.
+    expect(a.tableau.postes.map((p) => [p.libelle, p.prevu, p.reel])).toEqual([
+      ['Loyer', 350_000, 0],
+      ['Courses', 310_000, 30_000],
+      ['Internet', 25_000, 0],
+    ])
+    expect(a.tableau.grossesDepenses.map((d) => [d.date, d.montant])).toEqual([['2027-01-06', 30_000]])
+    expect(a.epargne).toMatchObject({ declare: false, solde: 0 })
+    expect(a.objectifs).toBeNull()
+    await ok(id, '/objectifs', { libelle: 'Moto', type: 'moto', montantCible: 8_300_000, montantInitial: 900_000, dateCible: '2027-02' })
+    expect((await lire(id)).objectifs).toEqual({ enCours: 1, cible: 8_300_000, epargne: 900_000, progression: 900_000 / 8_300_000, aRisque: ['Moto'] })
 
     ctx.jour = '2027-01-12'
     expect((await lire(id)).semainePassee).toBeNull()

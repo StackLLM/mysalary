@@ -1,5 +1,6 @@
 import {
   STATUTS_OBJECTIF,
+  type AnneeDesObjectifs,
   TYPES_OBJECTIF,
   type CleMois,
   type DateCivile,
@@ -18,7 +19,7 @@ import { schemaCleMois, schemaDateCivile } from './salaire'
 
 export { SCENARIOS, STATUTS_OBJECTIF, TYPES_OBJECTIF } from '@mysalary/moteur'
 export type { MoisSimulation, SimulationObjectif } from '@mysalary/moteur'
-export type { EtatEpargne, PointTrajectoireObjectif, Risque, Scenario, StatutObjectif, SuiviObjectif, TypeObjectif } from '@mysalary/moteur'
+export type { AnneeDesObjectifs, EtatEpargne, ObjectifAnnee, PointAnneeObjectifs, PointTrajectoireObjectif, Risque, Scenario, StatutObjectif, SuiviObjectif, TypeObjectif } from '@mysalary/moteur'
 
 const libelle = (nom: string) =>
   z
@@ -65,10 +66,22 @@ export interface MouvementEpargneDto extends Omit<MouvementEpargne, 'montant'> {
 
 export type CompteSuiviDto = EtatEpargne['comptes'][number]
 
+/** Versements prévus du mois budgétaire en cours, par objectif (versement mensuel choisi) : prévu ≠ réel. */
+export interface PlanEpargneMoisDto {
+  cle: CleMois
+  debut: DateCivile
+  fin: DateCivile
+  lignes: { objectifId: string | null; libelle: string; prevu: number | null; reel: number }[]
+  prevue: number
+  reelle: number
+}
+
 /** Mon plan › Épargne. */
 export interface EpargneDto {
   aujourdhui: DateCivile
   etat: EtatEpargne
+  /** Ce qui est prévu ce mois-ci (versements mensuels des objectifs) et ce qui est déjà versé. */
+  planMois: PlanEpargneMoisDto
   mouvements: MouvementEpargneDto[]
   /** Objectifs qui peuvent recevoir un versement (actifs ou en pause). */
   objectifs: { id: string; libelle: string; statut: string }[]
@@ -112,6 +125,8 @@ export interface ObjectifsDto extends SuiviDesObjectifs {
   comptes: { id: string; libelle: string }[]
   /** Règles des scénarios utilisées (Réglages). */
   regles: ReglesScenarios
+  /** Vue annuelle (lot 26) : tous les objectifs en cours, de janvier à décembre de l'année en cours. */
+  annee: AnneeDesObjectifs
 }
 
 /** Page Objectif (détail). */

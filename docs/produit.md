@@ -408,13 +408,14 @@ Non-objectifs v1 : connexion bancaire, multi-devises, investissement boursier, b
 | Autres revenus | Primes versées à part (ponctuelles, mensuelles, trimestrielles, annuelles), revenus variables, certitude (garanti / probable / incertain), confirmation de réception. |
 | Charges | Charges fixes récurrentes, enveloppes flexibles (nourriture, transport, loisirs), charges ponctuelles planifiées, dettes avec échéancier. |
 | Dépenses réelles | Saisie rapide, catégorie, rattachement à une charge prévue, confirmation « payé ». |
-| Épargne | Solde déclaré, montant réservé aux objectifs, montant disponible, versements. |
+| Épargne | Solde déclaré (ou « non déclaré » : solde inconnu), montant réservé aux objectifs, montant disponible, versements ; versements prévus du mois (versement mensuel de chaque objectif), versé et reste à verser, notés en un clic (lot 25). |
 | Suivi semaine | Budget flexible de la semaine, dépensé, reste, écart, tendance. |
 | Suivi mois | Prévu vs réel par ligne, épargne prévue vs réelle, clôture du mois. |
 | Suivi année | Totaux, mois les plus coûteux, évolution revenus / épargne, progression des objectifs. |
-| Objectifs | Plusieurs objectifs, priorité, versements, date estimée, risque de retard, achat réalisé. |
+| Objectifs | Plusieurs objectifs, priorité, versements, date estimée, risque de retard, achat réalisé. Vue annuelle de tous les objectifs : indicateurs, trajectoire de l'année, fin d'année par scénario, prochaines actions (lot 26). |
 | Simulation | Scénarios prudent / réaliste / ambitieux, « et si » (prime, versement, réduction de dépense). |
-| Recommandations | Montant à épargner par mois / semaine, dépense à réduire, impact d'une prime, faisabilité. |
+| Recommandations | Montant à épargner par mois / semaine, dépense à réduire, impact d'une prime, faisabilité. Alertes « versement prévu à noter » et « compte d'épargne à déclarer » (lot 25). |
+| Aujourd'hui | Tableau de bord du mois : indicateurs (revenus reçus, dépensé, épargne, objectifs), reste du mois et de la semaine, à faire, postes qui pèsent le plus, enveloppes à surveiller, grosses dépenses, 7 prochains jours (lot 27). |
 | Calendrier | Salaire, primes, charges, échéances de dette, objectifs, événements futurs. |
 | Données | Export / import JSON, sauvegarde. |
 
@@ -882,8 +883,8 @@ workspaces `npm`, `vitest`, `jsdom`, `@testing-library/react`, `playwright`, `fa
 
 ### 14. Questions ouvertes
 
-1. **Hébergement** : au Maroc (pas de transfert de données hors du pays) ou à l'étranger (autorisation préalable de la CNDP) ? À trancher avant le lot 28.
-2. **Encaissement** : CMI avec module récurrent via la banque, ou revendeur « merchant of record » ? À trancher avant le lot 29.
+1. **Hébergement** : au Maroc (pas de transfert de données hors du pays) ou à l'étranger (autorisation préalable de la CNDP) ? À trancher avant le lot 31.
+2. **Encaissement** : CMI avec module récurrent via la banque, ou revendeur « merchant of record » ? À trancher avant le lot 32.
 3. **Prix** : hypothèse 199 à 299 MAD/an après essai gratuit, à tester pendant la bêta.
 
 Les questions sur l'ordre des lots sont dans `docs/lots.md`.
@@ -902,7 +903,7 @@ Source : `docs/etude/Etude-marche-2026-10.html` (benchmark de 16 applications, m
 2. Où va mon argent ? (enveloppes, semaine, mois, année, prévu contre réel)
 3. Combien puis-je épargner sans déséquilibrer mon budget ? (capacité par scénario, cumul de fin de mois)
 4. Quand pourrai-je financer mes projets ? (objectifs datés, avec et sans cumul)
-5. Quelle sera ma situation dans 1, 3, 5 ou 10 ans ? (**partiel : 36 mois au plus aujourd'hui → lot 25**)
+5. Quelle sera ma situation dans 1, 3, 5 ou 10 ans ? (**partiel : 36 mois au plus aujourd'hui → lot 28**)
 
 Différences avec le marché : budget calé sur la paie réelle, revenus classés par certitude, réel / prévu / projeté jamais mélangés, cumul de fin de mois qui alimente des objectifs datés. Les applications marocaines (Flouss, Budget Maroc) suivent la dépense du mois ; les internationales s'appuient sur la synchro bancaire, indisponible au Maroc.
 
@@ -913,16 +914,19 @@ Cible de lancement : salariés marocains francophones, salaire fixe et primes, a
 | Ajout | Raison | Lot |
 |---|---|---|
 | Vérification de l'e-mail, envoi réel des e-mails | Récupération de compte, confiance | 24 |
-| Projection 1, 3, 5, 10 ans avec fourchettes | Question 5 ; argument premium (PocketSmith, Monarch Plus) | 25 |
-| Taux d'endettement avec seuil | 36 % en moyenne, plus de 40 % dans 4 dossiers sur 10 (BAM 2025) | 25 |
-| Modèles d'événements (Ramadan, Aïd, rentrée, vacances, 13e mois) | Dépenses saisonnières fortes (HCP) | 25 |
-| Cas de référence des calculs, parcours Playwright | Exactitude, prévu au § 13 et jamais fait | 26 |
-| PostgreSQL, build de production, PWA, pages légales, CNDP | Prérequis d'un SaaS | 27 |
-| Hébergement HTTPS, sauvegardes, surveillance, bêta fermée | Mise en ligne | 28 |
+| Épargne synchronisée (versement mensuel visible et notable, compte non déclaré) | Ajouté le 15/10/2026 : incohérence constatée | 25 |
+| Objectifs en vue annuelle | Ajouté le 15/10/2026 : questions 4 et 5 sur l'année | 26 |
+| Aujourd'hui en tableau de bord | Ajouté le 15/10/2026 : question 2 et prochaines actions | 27 |
+| Projection 1, 3, 5, 10 ans avec fourchettes | Question 5 ; argument premium (PocketSmith, Monarch Plus) | 28 |
+| Taux d'endettement avec seuil | 36 % en moyenne, plus de 40 % dans 4 dossiers sur 10 (BAM 2025) | 28 |
+| Modèles d'événements (Ramadan, Aïd, rentrée, vacances, 13e mois) | Dépenses saisonnières fortes (HCP) | 28 |
+| Cas de référence des calculs, parcours Playwright | Exactitude, prévu au § 13 et jamais fait | 29 |
+| PostgreSQL, build de production, PWA, pages légales, CNDP | Prérequis d'un SaaS | 30 |
+| Hébergement HTTPS, sauvegardes, surveillance, bêta fermée | Mise en ligne | 31 |
 
 #### 15.3 Écarté ou reporté (historique conservé)
 
-- **Reporté** (après la bêta) : abonnement payant (lot 29), arabe et darija (lot 30), import de relevés et SMS (lot 31), rappels par e-mail, double authentification, budget partagé du foyer, assistant IA, net depuis le brut, jours fériés.
+- **Reporté** (après la bêta) : abonnement payant (lot 32), arabe et darija (lot 33), import de relevés et SMS (lot 34), rappels par e-mail, double authentification, budget partagé du foyer, assistant IA, net depuis le brut, jours fériés.
 - **Écarté** : synchro bancaire (pas d'accès ouvert au Maroc), placements et patrimoine, avances de salaire et crédit (services régulés), négociation de factures, application native avant d'avoir mesuré la PWA.
 
 #### 15.4 Sécurité et données pour le SaaS
@@ -934,10 +938,10 @@ Cible de lancement : salariés marocains francophones, salaire fixe et primes, a
 
 #### 15.5 Prêt à commercialiser quand
 
-- Lots 24 à 28 validés ; bêta de 4 semaines sans perte de données.
+- Lots 24 à 31 validés ; bêta de 4 semaines sans perte de données.
 - Chaque calcul clé a un cas de référence exact au centime.
 - Aucun compte ne lit les données d'un autre (tests et essai manuel).
 - Une restauration depuis la sauvegarde de la veille a été faite pour de vrai.
 - Les e-mails arrivent en boîte de réception.
 - Conditions, confidentialité et déclaration CNDP en place.
-- Abonnement payant fonctionnel avec une carte marocaine (lot 29).
+- Abonnement payant fonctionnel avec une carte marocaine (lot 32).

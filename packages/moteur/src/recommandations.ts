@@ -24,6 +24,10 @@ export type Alerte = { cle: string } & (
   | { type: 'enveloppeDepassee'; id: string; libelle: string; budget: Centimes; depassement: Centimes; mois: CleMois }
   | { type: 'semaineDepassee'; mois: CleMois; numero: number; depassement: Centimes; joursRestants: number; budgetMoisRestant: Centimes; parJourMois: Centimes; joursRestantsMois: number }
   | { type: 'reserveDepasse'; depassement: Centimes }
+  /** Des objectifs ont de l'épargne mais aucun compte n'est déclaré : le solde réel est inconnu. */
+  | { type: 'epargneNonDeclaree'; reserve: Centimes }
+  /** Versement mensuel d'un objectif prévu ce mois-ci, pas encore (entièrement) noté. */
+  | { type: 'versementPrevu'; objectifId: string; libelle: string; reste: Centimes; mois: CleMois }
 )
 
 export type Recommandation = { cle: string; confiance: Confiance } & (
@@ -132,8 +136,15 @@ export function alertes(calendrier: Calendrier, donnees: DonneesObjectifs, { auj
     }
   }
 
-  const { depassement } = etatEpargne(donnees)
-  if (depassement > 0) liste.push({ cle: 'reserve', type: 'reserveDepasse', depassement })
+  const etat = etatEpargne(donnees)
+  if (etat.depassement > 0) liste.push({ cle: 'reserve', type: 'reserveDepasse', depassement: etat.depassement })
+  if (!etat.declare && etat.reserve > 0) liste.push({ cle: 'reserve', type: 'epargneNonDeclaree', reserve: etat.reserve })
+
+  // Versements mensuels des objectifs encore à faire ce mois-ci (même source que le bilan et le cumul).
+  for (const l of clos.has(courant) ? [] : calendrier.epargneDuMois(courant).lignes) {
+    const reste = (l.prevu ?? 0) - l.reel
+    if (l.objectifId && reste > 0) liste.push({ cle: `versement:${l.objectifId}:${courant}`, type: 'versementPrevu', objectifId: l.objectifId, libelle: l.libelle, reste: centimes(reste), mois: courant })
+  }
   return liste
 }
 

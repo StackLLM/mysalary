@@ -3,7 +3,7 @@
 > Ce document réunit le **suivi** de la construction (§ 0 à 7 : sommaire, méthode, lots, points reportés, commits, questions ouvertes ; ancien fichier `docs/plan.md`) et le **bilan détaillé de chaque lot** (§ 8 ; anciens fichiers `docs/lots/Lot-NN-*.md`).
 
 > Suivi de la construction de MySalary, lot par lot. Mis à jour à chaque lot.
-> État au 12/10/2026 : **lots 0 à 21 clôturés**, **lot 22 clôturé puis remplacé par le lot 23**, **lot 23 (nettoyage, authentification, multi-utilisateur) livré et commité, en attente de validation explicite**. Le 12/10/2026, l'étude de marché (`docs/etude/Etude-marche-2026-10.html`) a fixé les lots 24 à 31 : MySalary devient un SaaS ; **lot 24 (comptes fiables et e-mails) livré, à valider ; prochain lot : 25**. Depuis le 11/10/2026, c'est toi qui commites : je donne seulement les messages de commit. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
+> État au 12/10/2026 : **lots 0 à 21 clôturés**, **lot 22 clôturé puis remplacé par le lot 23**, **lot 23 (nettoyage, authentification, multi-utilisateur) livré et commité, en attente de validation explicite**. Le 12/10/2026, l'étude de marché (`docs/etude/Etude-marche-2026-10.html`) a fixé les lots 24 à 31 : MySalary devient un SaaS ; **lot 24 (comptes fiables et e-mails) livré, à valider**. Le 15/10/2026, trois lots demandés ont été insérés et livrés : **25 épargne synchronisée, 26 objectifs en vue annuelle, 27 tableau de bord Aujourd'hui** (à valider) ; les lots prévus par l'étude sont décalés de trois numéros (25 → 28, etc.). **Prochain lot : 28**. Depuis le 11/10/2026, c'est toi qui commites : je donne seulement les messages de commit. Les lots 13, 14 et 15 ont été ajoutés le 09/10/2026 à ta demande ; les lots suivants ont été renumérotés (Aujourd'hui passe de 13 à 16, etc.).
 >
 > - Plan global de l'application (vision, architecture, données, règles métier) : [produit.md (Plan)](produit.md).
 > - Bilan détaillé de chaque lot livré (périmètre, règles, tests, bugs corrigés) : [§ 8](#8-bilans-détaillés-des-lots).
@@ -37,13 +37,16 @@
 | 22 | [Authentification (locale)](#lot-22--authentification-locale) | 4 — Entrée et finitions | ✅ Clôturé, remplacé par le lot 23 | 13/10/2026 | 441 | [Bilan du lot 22](#bilan-du-lot-22--authentification) |
 | 23 | [Nettoyage, authentification et multi-utilisateur](#lot-23--nettoyage-authentification-et-multi-utilisateur) | 5 — Multi-utilisateur | 🟡 Livré, à valider | — | 453 | [Bilan du lot 23](#bilan-du-lot-23--nettoyage-authentification-et-multi-utilisateur) |
 | 24 | [Comptes fiables et e-mails](#lot-24--comptes-fiables-et-e-mails) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 467 | [Bilan du lot 24](#bilan-du-lot-24--comptes-fiables-et-e-mails) |
-| 25 | [Projection pluriannuelle et endettement](#lot-25--projection-pluriannuelle-et-endettement) | 6 — Finalisation fonctionnelle | ⏭️ Prochain | — | — | — |
-| 26 | [Exactitude des calculs et parcours](#lot-26--exactitude-des-calculs-et-parcours) | 7 — Validation et tests | ⬜ Prévu | — | — | — |
-| 27 | [PostgreSQL, sécurité, PWA, légal](#lot-27--postgresql-sécurité-pwa-légal) | 8 — Préparation de la production | ⬜ Prévu | — | — | — |
-| 28 | [Mise en ligne en bêta fermée](#lot-28--mise-en-ligne-en-bêta-fermée) | 9 — Déploiement et hébergement | ⬜ Prévu | — | — | — |
-| 29 | [Abonnement payant](#lots-29-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
-| 30 | [Arabe et darija](#lots-29-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
-| 31 | [Import de relevés](#lots-29-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
+| 25 | [Épargne synchronisée](#lot-25--épargne-synchronisée) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 473 | [Bilan du lot 25](#bilan-du-lot-25--épargne-synchronisée) |
+| 26 | [Objectifs : vue annuelle](#lot-26--objectifs--vue-annuelle) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 480 | [Bilan du lot 26](#bilan-du-lot-26--objectifs--vue-annuelle) |
+| 27 | [Aujourd'hui : tableau de bord](#lot-27--aujourdhui--tableau-de-bord) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 486 | [Bilan du lot 27](#bilan-du-lot-27--aujourdhui--tableau-de-bord) |
+| 28 | [Projection pluriannuelle et endettement](#lot-28--projection-pluriannuelle-et-endettement) | 6 — Finalisation fonctionnelle | ⏭️ Prochain | — | — | — |
+| 29 | [Exactitude des calculs et parcours](#lot-29--exactitude-des-calculs-et-parcours) | 7 — Validation et tests | ⬜ Prévu | — | — | — |
+| 30 | [PostgreSQL, sécurité, PWA, légal](#lot-30--postgresql-sécurité-pwa-légal) | 8 — Préparation de la production | ⬜ Prévu | — | — | — |
+| 31 | [Mise en ligne en bêta fermée](#lot-31--mise-en-ligne-en-bêta-fermée) | 9 — Déploiement et hébergement | ⬜ Prévu | — | — | — |
+| 32 | [Abonnement payant](#lots-32-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
+| 33 | [Arabe et darija](#lots-32-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
+| 34 | [Import de relevés](#lots-32-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
 
 « Tests » = nombre total de tests automatiques du projet à la clôture du lot (partage + moteur + serveur + interface).
 
@@ -53,7 +56,7 @@ Autres sections :
 - [2. Lots clôturés](#2-lots-clôturés-0-à-15)
 - [3. Lots livrés, en attente de validation](#3-lots-livrés-en-attente-de-validation)
 - [4. Lots 20 à 23](#4-lots-20-à-23)
-- [4 bis. Lots 24 à 31 : finaliser le SaaS](#4-bis-lots-24-à-31--finaliser-le-saas)
+- [4 bis. Lots 24 à 34 : finaliser le SaaS](#4-bis-lots-24-à-34--finaliser-le-saas)
 - [5. Points reportés, rangés par lot](#5-points-reportés-rangés-par-lot)
 - [6. Historique des commits](#6-historique-des-commits)
 - [7. Questions ouvertes](#7-questions-ouvertes)
@@ -321,48 +324,66 @@ Règles appliquées à chaque lot :
   - restauration d'un export dans un compte vide (Réglages › Sauvegarde) à la place de « importer en nouveau compte ».
 - **Blocage à lever par toi** : ton compte `oussama` doit être activé une fois (commande ci-dessus) pour être accessible.
 - **Ajout du 12/10/2026** : changement de l'e-mail de connexion dans Réglages (mot de passe exigé, adresse unique) ; 453 tests.
-- **Prochaines étapes** : reprises dans les lots 24 (e-mails, vérification), 27 (PostgreSQL) et 28 (HTTPS).
+- **Prochaines étapes** : reprises dans les lots 24 (e-mails, vérification), 30 (PostgreSQL) et 31 (HTTPS).
 
-## 4 bis. Lots 24 à 31 : finaliser le SaaS
+## 4 bis. Lots 24 à 34 : finaliser le SaaS
 
-Décidés le 12/10/2026 après l'étude de marché (`docs/etude/Etude-marche-2026-10.html`, positionnement dans `produit.md (Plan)` § 15). Les lots 24 à 28 sont les prérequis du lancement en bêta fermée. Le périmètre fonctionnel est clos à la fin du lot 25 : rien d'autre n'entre avant le lancement sans nouvelle décision.
+Décidés le 12/10/2026 après l'étude de marché (`docs/etude/Etude-marche-2026-10.html`, positionnement dans `produit.md (Plan)` § 15). Les lots 24 à 31 sont les prérequis du lancement en bêta fermée. Le périmètre fonctionnel est clos à la fin du lot 28 : rien d'autre n'entre avant le lancement sans nouvelle décision.
+
+> Numérotation : l'étude parle des lots 24 à 31. Le 15/10/2026, les lots 25 à 27 ont été insérés à ta demande ; les lots de l'étude 25 à 31 sont devenus 28 à 34.
 
 ### Lot 24 — Comptes fiables et e-mails
 
-- **Statut** : 🟡 livré le 12/10/2026, en attente de validation · 467 tests · [Bilan du lot 24](#bilan-du-lot-24--comptes-fiables-et-e-mails). Reste à faire par toi : test d'envoi dans une vraie boîte (fournisseur et domaine à choisir), repris au lot 28.
+- **Statut** : 🟡 livré le 12/10/2026, en attente de validation · 467 tests · [Bilan du lot 24](#bilan-du-lot-24--comptes-fiables-et-e-mails). Reste à faire par toi : test d'envoi dans une vraie boîte (fournisseur et domaine à choisir), repris au lot 31.
 - **Contenu** : vérification de l'adresse e-mail à l'inscription (lien à usage unique, renvoi, bandeau tant que non vérifiée) ; changement d'e-mail appliqué seulement après le clic dans le lien envoyé à la nouvelle adresse ; envoi par un fournisseur transactionnel via `SMTP_URL` (gabarits HTML et texte, SPF, DKIM, DMARC) ; purge des sessions et liens expirés.
 - **Dépend de** : lot 23. **Effort** : 3 à 4 jours.
 - **Validation** : parcours complets avec une vraie boîte de réception ; lien expiré ou réutilisé refusé ; e-mails hors spam sur Gmail et Outlook.
 
-### Lot 25 — Projection pluriannuelle et endettement
+### Lot 25 — Épargne synchronisée
+
+- **Statut** : 🟡 livré le 15/10/2026, en attente de validation · [Bilan du lot 25](#bilan-du-lot-25--épargne-synchronisée).
+- **Problème** : le versement mensuel d'un objectif (ex. 4 000 DH pour la moto) comptait déjà dans le bilan et le cumul, mais Mon plan › Épargne ne montrait que le réel ; sans compte d'épargne déclaré, aucun versement ne pouvait être noté et l'épargne déjà mise de côté (9 000 DH) était signalée « en trop » ; après une dépense ou une charge, les pages Objectifs et Épargne ne se recalculaient pas.
+- **Livré** : plan d'épargne du mois (prévu, versé, reste à verser) dans Mon plan › Épargne, avec « Noter » pré-rempli ; compte non déclaré = solde inconnu (plus d'alerte « en trop », invitation à déclarer le compte, solde proposé) ; alertes « versement prévu » et « compte d'épargne à déclarer » ; toute écriture recharge toutes les vues du compte.
+
+### Lot 26 — Objectifs : vue annuelle
+
+- **Statut** : 🟡 livré le 15/10/2026, en attente de validation · [Bilan du lot 26](#bilan-du-lot-26--objectifs--vue-annuelle).
+- **Livré** : le calendrier de l'année quitte la page Objectifs (il reste dans la page Année) ; à sa place, une vue unique : indicateurs (progression globale, épargné, reste, objectifs à risque), trajectoire de l'année (réel puis projection réaliste), fin d'année par scénario, prochaines actions (versements à noter, leviers chiffrés), liste par priorité enrichie de la fin d'année ; chaque objectif reste cliquable vers son détail.
+
+### Lot 27 — Aujourd'hui : tableau de bord
+
+- **Statut** : 🟡 livré le 15/10/2026, en attente de validation · [Bilan du lot 27](#bilan-du-lot-27--aujourdhui--tableau-de-bord).
+- **Livré** : indicateurs du mois (revenus reçus, dépensé, épargne, objectifs), « À faire » numéroté (le versement prévu s'ouvre pré-rempli), « Où part ton argent » (postes du plus lourd au plus léger, part des revenus, rythme des enveloppes), « À surveiller » (enveloppes dépassées ou trop rapides, grosses dépenses du mois) ; composants premium inspirés de Lightswind (carte lumineuse, anneau de progression, tuile d'indicateur).
+
+### Lot 28 — Projection pluriannuelle et endettement
 
 - **Contenu** : projection de l'épargne à 1, 3, 5 et 10 ans par scénario, avec fourchette au-delà de 24 mois, fin des dettes, hausse de salaire annuelle facultative ; taux d'endettement (mensualités ÷ revenus garantis) avec seuil réglable, 40 % par défaut ; modèles d'événements de l'année pour les ponctuels (Ramadan, Aïd al-Adha, rentrée, vacances, 13e mois), montant toujours saisi par l'utilisateur.
 - **Dépend de** : moteur existant. **Effort** : 4 à 5 jours.
 - **Validation** : projection à 12 mois identique à l'actuelle ; cas chiffrés ; le réel n'est jamais modifié.
 
-### Lot 26 — Exactitude des calculs et parcours
+### Lot 29 — Exactitude des calculs et parcours
 
 - **Contenu** : cas de référence chiffrés à la main (reste à dépenser, semaine, cumul, objectif, scénario, endettement) ; propriétés étendues ; 6 parcours Playwright (inscription → onboarding, dépense, paie confirmée, objectif, simulation, clôture) ; accessibilité ; responsive 375 et 1342 px.
-- **Dépend de** : lot 25. **Effort** : 3 à 4 jours. Reprend le reste du lot 21 (Playwright).
+- **Dépend de** : lot 28. **Effort** : 3 à 4 jours. Reprend le reste du lot 21 (Playwright).
 - **Validation** : tous les cas au centime ; parcours verts.
 
-### Lot 27 — PostgreSQL, sécurité, PWA, légal
+### Lot 30 — PostgreSQL, sécurité, PWA, légal
 
 - **Contenu** : passage à PostgreSQL (migration de base, tests serveur sur PostgreSQL, reprise des données SQLite dont le compte `oussama`) ; build compilé et interface servie derrière un proxy ; variables d'environnement documentées ; CSP et en-têtes vérifiés ; journaux sans données financières ; manifeste et icônes (PWA) ; pages Conditions et Confidentialité, acceptation à l'inscription ; dossier de déclaration CNDP.
-- **Dépend de** : lot 26. **Effort** : 4 à 6 jours.
+- **Dépend de** : lot 29. **Effort** : 4 à 6 jours.
 - **Validation** : tous les tests sur PostgreSQL ; comptage par table identique après reprise ; installation sur Android et iPhone.
 
-### Lot 28 — Mise en ligne en bêta fermée
+### Lot 31 — Mise en ligne en bêta fermée
 
 - **Contenu** : serveur et base, nom de domaine, HTTPS, sauvegardes quotidiennes avec restauration testée, surveillance de disponibilité et des erreurs, procédure de déploiement et de retour arrière ; 10 à 20 testeurs.
-- **Dépend de** : lot 27 ; décision d'hébergement (produit.md (Plan) § 14). **Effort** : 2 à 3 jours, plus les démarches.
+- **Dépend de** : lot 30 ; décision d'hébergement (produit.md (Plan) § 14). **Effort** : 2 à 3 jours, plus les démarches.
 - **Validation** : critères « prêt à commercialiser » (produit.md (Plan) § 15.5) sauf l'abonnement.
 
-### Lots 29 et suivants — après le lancement
+### Lots 32 et suivants — après le lancement
 
-- **29 Abonnement payant** : CMI récurrent ou revendeur, essai gratuit, prix testé en bêta.
-- **30 Arabe et darija** : extraction des textes, écriture de droite à gauche.
-- **31 Import de relevés** : CSV, puis SMS bancaires collés.
+- **32 Abonnement payant** : CMI récurrent ou revendeur, essai gratuit, prix testé en bêta.
+- **33 Arabe et darija** : extraction des textes, écriture de droite à gauche.
+- **34 Import de relevés** : CSV, puis SMS bancaires collés.
 - **Selon les retours** : rappels par e-mail, double authentification, budget partagé du foyer, assistant, net depuis le brut, jours fériés.
 
 ## 5. Points reportés, rangés par lot
@@ -391,9 +412,9 @@ Tout ce qu'un lot livré a laissé de côté, et le lot qui doit le reprendre.
 | Suspendre ou archiver un élément de Mon plan (aujourd'hui : choisir un dernier mois, ou supprimer) | lot 6 | 21 (proposé, à confirmer) |
 | Aperçu de l'effet avant de changer de mode de période (ux-ui.md (UX) § 5.12) | lot 3 | 21 (proposé, à confirmer) |
 | Jours fériés (seul le week-end décale la paie) | lot 4 | après le lancement (selon les retours) |
-| Parcours de bout en bout avec Playwright | lot 21 | 26 |
-| Vérification de l'e-mail, envoi réel des e-mails | lot 23 | ✅ fait au lot 24 (test en vraie boîte reporté au lot 28) |
-| PostgreSQL, HTTPS | lot 23 | 27, 28 |
+| Parcours de bout en bout avec Playwright | lot 21 | 29 |
+| Vérification de l'e-mail, envoi réel des e-mails | lot 23 | ✅ fait au lot 24 (test en vraie boîte reporté au lot 31) |
+| PostgreSQL, HTTPS | lot 23 | 30, 31 |
 
 ## 6. Historique des commits
 
@@ -445,8 +466,9 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 | `3715fc6` | Lot 22 : mot de passe par profil local |
 | `336fb65`, `f159872` | Page Objectif : simulation avec le cumul de fin de mois |
 | `f629ca1`, `2bf9195` | Lot 23 : nettoyage, authentification et multi-utilisateur |
-| — (à commiter) | Changement d'e-mail dans Réglages ; étude de marché et plan des lots 24 à 31 ; lot 24 : confirmation de l'adresse et e-mails |
-| — (à commiter) | Documentation réunie dans `docs/` (`produit.md`, `ux-ui.md`, `lots.md`) ; `README.md` seul à la racine |
+| `0535bd8` | Changement d'e-mail dans Réglages ; étude de marché et plan des lots 24 à 31 ; lot 24 : confirmation de l'adresse et e-mails |
+| `d5ee35d`, `fa1fe9e` | Documentation réunie dans `docs/` (`produit.md`, `ux-ui.md`, `lots.md`) ; `README.md` seul à la racine |
+| — (à commiter) | `CLAUDE.md` et `docs/decisions/` ; lots 25 à 27 : épargne synchronisée, objectifs en vue annuelle, tableau de bord Aujourd'hui |
 
 ## 7. Questions ouvertes
 
@@ -456,8 +478,8 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 4. Où placer l'**aperçu de l'effet** d'un changement de mode de période ? Proposition : lot 21.
 5. Faut-il gérer les **jours fériés** pour la date de paie ? Aujourd'hui, seul le week-end la décale. → reporté après le lancement.
 6. Questions 1 à 4 : hors du périmètre de lancement fixé le 12/10/2026 ; reprises après la bêta selon les retours.
-7. **Hébergement** au Maroc ou à l'étranger (autorisation CNDP) : à trancher avant le lot 28.
-8. **Encaissement** CMI ou revendeur : à trancher avant le lot 29.
+7. **Hébergement** au Maroc ou à l'étranger (autorisation CNDP) : à trancher avant le lot 31.
+8. **Encaissement** CMI ou revendeur : à trancher avant le lot 32.
 
 ## 8. Bilans détaillés des lots
 
@@ -2447,3 +2469,49 @@ Inscription → bandeau sur la mise en route → « Renvoyer le lien » (204) �
 
 - Blocage des fonctions tant que l'adresse n'est pas confirmée : écarté (voir règles).
 - Rappels par e-mail, double authentification : après le lancement.
+
+### Bilan du lot 25 — Épargne synchronisée
+
+> Livré le 15/10/2026, à valider.
+
+#### Diagnostic
+
+- Le versement mensuel de l'objectif Moto (4 000 DH) était bien enregistré (`Objectif.versementMensuel`) et déjà compté par le moteur : épargne prévue du mois (`epargneDuMois`), bilan, cumul de fin de mois, projections. Aucune donnée n'était perdue.
+- Mon plan › Épargne n'affichait que le réel (comptes et mouvements). Sans compte d'épargne déclaré, le solde valait 0, les 9 000 DH déjà mis de côté (`montantInitial`) apparaissaient « réservés en trop », et le bouton « + Verser » était désactivé : le versement prévu ne pouvait jamais devenir réel.
+- Après une écriture (dépense, charge, revenu, salaire), seules quelques vues étaient rechargées : Objectifs, Épargne, simulateur ou Aujourd'hui pouvaient afficher des chiffres anciens.
+
+#### Règles
+
+- Sans compte déclaré, le solde réel est **inconnu**, pas nul : `EtatEpargne.declare = false`, pas de dépassement ; l'épargne des objectifs reste comptée. Alerte « Compte d'épargne à déclarer » ; le formulaire propose comme solde l'épargne déjà réservée, à confirmer par l'utilisateur.
+- Le plan du mois (versement mensuel de chaque objectif, versé, reste à verser) vient de la même fonction que le bilan et le cumul (`epargneDuMois`). Un versement noté le rend réel ; rien n'est supposé versé automatiquement.
+- Alerte « Versement « X » à faire » tant que le versement prévu du mois n'est pas noté (sauf mois clôturé).
+- L'achat d'un objectif consomme toujours son épargne (mouvement `achat`, jamais une dépense) : comportement inchangé, vérifié.
+- Toute écriture financière recharge toutes les vues du compte (`ui/src/lib/actualisation.ts`).
+
+#### Tests
+
+- Moteur : compte non déclaré (solde inconnu, pas de dépassement), alertes `epargneNonDeclaree` et `versementPrevu`, rien pour un mois clôturé. Partage : textes des deux alertes.
+- Serveur : parcours complet sans compte → compte déclaré → versement noté ; mêmes chiffres dans l'épargne, l'objectif et le bilan du mois.
+- Interface : plan du mois et « Noter » pré-rempli ; invitation à déclarer le compte avec le solde proposé.
+- Navigateur (compte « Essai » supprimé ensuite) : Moto 9 000 DH + 4 000 DH par mois → compte déclaré à 9 000 DH → versement noté → épargne 13 000 DH partout.
+
+### Bilan du lot 26 — Objectifs : vue annuelle
+
+> Livré le 15/10/2026, à valider.
+
+- **Moteur** : `anneeDesObjectifs` (`packages/moteur/src/objectifsAnnee.ts`) assemble l'année à partir de l'analyse déjà faite pour la page (mêmes projections, même répartition) : épargné réel à la fin des mois passés, jonction aujourd'hui, projection réaliste jusqu'en décembre ; totaux (cible, épargné, restant, progression), objectifs à risque (date non tenue en réaliste), versé depuis janvier, fin d'année par scénario, et par objectif début d'année, aujourd'hui, fin d'année et mois atteint dans l'année. La courbe commence au mois du premier objectif si celui-ci est né dans l'année.
+- **API** : `GET /objectifs` renvoie `annee` (une seule analyse pour la liste et la vue annuelle).
+- **Interface** : la vue « Calendrier de l'année » est retirée (elle reste dans la page Année) ; indicateurs en tuiles, carte « Année » avec trajectoire et chiffres, « Prochaines actions » (alertes d'épargne et leviers chiffrés), liste par priorité avec la fin d'année de chaque objectif ; la carte de chaque objectif garde son lien vers le détail, ses boutons de priorité et son menu.
+- **Tests** : moteur (passé réel, futur projeté, objectif créé en cours d'année, pause, cohérence avec les projections de la page, à risque, aucun objectif), serveur (vue annuelle = liste), interface (indicateurs, carte de l'année, actions filtrées, versement pré-rempli, lien du détail).
+
+### Bilan du lot 27 — Aujourd'hui : tableau de bord
+
+> Livré le 15/10/2026, à valider.
+
+- **Moteur** : `tableauDeBord` (`packages/moteur/src/aujourdhui.ts`) part du bilan du mois : un poste par charge (fixe, enveloppe, ponctuel, dette, hors plan), prévu et réel, part des revenus prévus, consommation et rythme des enveloppes (dépassée, ou plus de 10 points d'avance sur le mois écoulé) ; les 5 plus grosses dépenses réelles du mois à ce jour.
+- **API** : `GET /aujourdhui` renvoie aussi `tableau`, l'état de l'épargne et un résumé des objectifs (mêmes chiffres que la vue annuelle).
+- **Interface** : rangée d'indicateurs (revenus reçus, dépensé avec anneau, épargne du mois, objectifs), carte du jour (reste du mois et de la semaine), « À faire » numéroté (paie confirmée sur place, versement prévu pré-rempli), « Où part ton argent » (5 postes, puis les autres), 7 prochains jours ; à droite « À surveiller » (enveloppes et grosses dépenses), suggestions, objectif prioritaire. Sur téléphone, les indicateurs passent à deux par ligne.
+- **Composants** (`ui/src/components/premium/`) : `CarteLumineuse` (halo qui suit le pointeur, adapté de Glowing Cards de Lightswind UI, licence MIT), `AnneauProgression`, `TuileIndicateur`. Le compteur animé des montants existait déjà (`Montant anime`, équivalent du Count Up de Lightswind). Aucune dépendance ajoutée.
+- **Tests** : moteur (ordre et part des postes, enveloppes à surveiller, grosses dépenses jamais futures, mois vide), serveur (postes, grosses dépenses, résumé des objectifs), interface (indicateurs, postes et « voir les autres », à surveiller, versement pré-rempli).
+- **Vérifié** à 1342 px et 375 px, sans défilement horizontal.
+

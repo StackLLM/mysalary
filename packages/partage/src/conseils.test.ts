@@ -65,6 +65,15 @@ describe('alertes rédigées', () => {
       'Dépassé d’environ 1 510 DH. C’est le dernier jour de la semaine. Pour rester dans le budget flexible du mois : environ 71 DH par jour pendant 17 jours.',
     )
   })
+
+  it('épargne : compte à déclarer, versement prévu à noter', () => {
+    const declarer = redigerAlerte({ cle: 'r', type: 'epargneNonDeclaree', reserve: c(900_000) })
+    expect(n(declarer.message)).toBe('Tes objectifs ont 9 000 DH de côté, mais aucun compte d’épargne n’est déclaré. Indique son solde réel pour suivre tes versements.')
+    expect(declarer.action).toEqual({ libelle: 'Déclarer mon compte', chemin: '/plan?onglet=epargne' })
+    const versement = redigerAlerte({ cle: 'v', type: 'versementPrevu', objectifId: 'o', libelle: 'Moto', reste: c(400_000), mois: mois('2026-10') })
+    expect(n(versement.titre)).toBe('Versement « Moto » à faire')
+    expect(n(versement.message)).toBe('4 000 DH prévus ce mois-ci pour « Moto ». Note le versement quand il est fait.')
+  })
 })
 
 describe('recommandations rédigées (R24, R25)', () => {

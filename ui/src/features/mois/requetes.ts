@@ -1,5 +1,6 @@
 import type { AnneeDto, BilanDto, CumulDto, SaisieCloture, SemainesDto, SuiviAnnuelDto } from '@mysalary/partage'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
+import { useActualiserDonnees } from '../../lib/actualisation'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
 import { useUtilisateurCourant } from '../compte/requetes'
@@ -42,10 +43,9 @@ export function useSemaines(cle: string | null) {
   })
 }
 
+/** Toute écriture recharge toutes les vues du compte (lib/actualisation). */
 function useInvalider() {
-  const client = useQueryClient()
-  const { mois, depenses } = useCles()
-  return () => Promise.all([mois, depenses].map((queryKey) => client.invalidateQueries({ queryKey })))
+  return useActualiserDonnees()
 }
 
 export function useCloturer() {

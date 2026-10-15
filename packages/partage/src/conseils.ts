@@ -1,7 +1,7 @@
-import type { Alerte, Confiance, DateCivile, EvenementJour, IndicateursDuMois, Recommandation, Risque, SuiviSemaine } from '@mysalary/moteur'
+import type { Alerte, Confiance, DateCivile, EtatEpargne, EvenementJour, IndicateursDuMois, Recommandation, Risque, SuiviSemaine, TableauDeBord } from '@mysalary/moteur'
 import { deMois, formaterDate, formaterMois, formaterMontant } from './format'
 
-export type { Alerte, Confiance, EcartPlan, IndicateurObjectif, IndicateursDuMois, PartVariable, Recommandation, ResteADepenser, ResteSemaine, Taux } from '@mysalary/moteur'
+export type { Alerte, Confiance, EcartPlan, PosteDuMois, TableauDeBord, IndicateurObjectif, IndicateursDuMois, PartVariable, Recommandation, ResteADepenser, ResteSemaine, Taux } from '@mysalary/moteur'
 
 /**
  * Alertes et recommandations rédigées (produit.md (Plan) § 7.5 ; produit.md (Contexte) R24–R26).
@@ -55,6 +55,22 @@ export interface AujourdhuiDto {
   prochainsJours: EvenementJour[]
   /** Le premier jour d'une semaine : bilan de la semaine qui vient de finir. */
   semainePassee: SuiviSemaine | null
+  /** Postes du mois (poids, rythme des enveloppes) et plus grosses dépenses (lot 27). */
+  tableau: TableauDeBord
+  /** Épargne déclarée (solde, réservé, disponible). */
+  epargne: EtatEpargne
+  /** Tous les objectifs en cours ensemble (lot 27) ; `null` sans objectif en cours. */
+  objectifs: ResumeObjectifsDto | null
+}
+
+/** Résumé des objectifs en cours pour le tableau de bord : mêmes chiffres que la vue annuelle de la page Objectifs. */
+export interface ResumeObjectifsDto {
+  enCours: number
+  cible: number
+  epargne: number
+  progression: number
+  /** Libellés des objectifs dont la date souhaitée n'est pas tenue (scénario réaliste). */
+  aRisque: string[]
 }
 
 export const CONFIANCES: Record<Confiance, { libelle: string; explication: string }> = {
@@ -137,6 +153,20 @@ export function redigerAlerte(a: Alerte): AlerteDto {
         titre: 'Épargne à réajuster',
         message: `Tes objectifs réservent ${dh(a.depassement)} de plus que ton épargne déclarée. Mets à jour un solde, ou le montant déjà mis de côté d’un objectif.`,
         action: { libelle: 'Ouvrir l’épargne', chemin: '/plan?onglet=epargne' },
+      }
+    case 'epargneNonDeclaree':
+      return {
+        ...a,
+        titre: 'Compte d’épargne à déclarer',
+        message: `Tes objectifs ont ${dh(a.reserve)} de côté, mais aucun compte d’épargne n’est déclaré. Indique son solde réel pour suivre tes versements.`,
+        action: { libelle: 'Déclarer mon compte', chemin: '/plan?onglet=epargne' },
+      }
+    case 'versementPrevu':
+      return {
+        ...a,
+        titre: `Versement ${nom(a.libelle)} à faire`,
+        message: `${dh(a.reste)} prévus ce mois-ci pour ${nom(a.libelle)}. Note le versement quand il est fait.`,
+        action: { libelle: 'Noter le versement', chemin: '/plan?onglet=epargne' },
       }
   }
 }

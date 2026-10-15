@@ -79,13 +79,15 @@ export interface CompteSuivi extends CompteEpargne {
 
 export interface EtatEpargne {
   comptes: CompteSuivi[]
+  /** Au moins un compte déclaré : sans compte, le solde réel est inconnu (pas nul). */
+  declare: boolean
   /** Somme des soldes actuels (réel). */
   solde: Centimes
   /** Épargné des objectifs actifs ou en pause. */
   reserve: Centimes
   /** Solde − réservé, jamais négatif (R14). */
   disponible: Centimes
-  /** Réservé au-delà du solde : à réajuster (alerte). 0 sinon. */
+  /** Réservé au-delà du solde déclaré : à réajuster (alerte). 0 sinon, et 0 tant qu'aucun compte n'est déclaré. */
   depassement: Centimes
 }
 
@@ -97,12 +99,14 @@ export function etatEpargne({ comptes = [], mouvementsEpargne = [], objectifs = 
   const solde = additionner(...suivis.map((c) => c.soldeActuel))
   const reserveTotal = additionner(...objectifs.filter(reserve).map((o) => epargneObjectif(o, mouvementsEpargne)))
   const ecart = soustraire(solde, reserveTotal)
+  const declare = comptes.length > 0
   return {
     comptes: suivis,
+    declare,
     solde,
     reserve: reserveTotal,
     disponible: centimes(Math.max(0, ecart)),
-    depassement: centimes(Math.max(0, -ecart)),
+    depassement: declare ? centimes(Math.max(0, -ecart)) : centimes(0),
   }
 }
 

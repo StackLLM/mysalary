@@ -36,7 +36,7 @@ export function useModifierReglages() {
     onError: (_erreur, _modif, contexte) => {
       if (contexte?.avant) client.setQueryData(cle, contexte.avant)
     },
-    // Mode de période, début de semaine et report changent le découpage des mois et des semaines.
-    onSettled: () => Promise.all([cle, [CLE_COMPTE, id, 'mois'], [CLE_COMPTE, id, 'depenses']].map((queryKey) => client.invalidateQueries({ queryKey }))),
+    // Mode de période, semaines, règles des scénarios, solde de départ : presque toutes les vues en dépendent.
+    onSettled: () => client.invalidateQueries({ queryKey: [CLE_COMPTE, id] }),
   })
 }

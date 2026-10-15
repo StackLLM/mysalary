@@ -47,7 +47,7 @@ beforeEach(() => {
     if (chemin.startsWith('/salaire/paies')) return { aujourdhui: '2026-10-12', paies: [] }
     if (chemin === '/categories') return categories
     if (chemin === '/charges' || chemin === '/ponctuels' || chemin === '/dettes' || chemin === '/revenus/sources') return []
-    if (chemin === '/epargne') return { aujourdhui: '2026-10-12', etat: { comptes: [] }, mouvements: [], objectifs: [] }
+    if (chemin === '/epargne') return { aujourdhui: '2026-10-12', etat: { comptes: [], declare: false }, planMois: { lignes: [], prevue: 0, reelle: 0 }, mouvements: [], objectifs: [] }
     if (chemin === '/objectifs') return { objectifs: [], capacite: { prudent: 0, realiste: 150_000, ambitieux: 0 }, comptes: [], regles: {} }
     if (chemin === '/mois/2026-10/bilan') return { mois: { cle: '2026-10', debut: '2026-09-27', fin: '2026-10-26' }, totaux: { revenusPrevus: 1_000_000, chargesPrevues: 560_000 } }
     throw new Error(`Route non simulée : ${chemin}`)

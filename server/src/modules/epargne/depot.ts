@@ -1,4 +1,6 @@
 import {
+  analyser,
+  anneeDesObjectifs,
   centimes,
   cibleFondsSecurite,
   epargneObjectif,
@@ -55,10 +57,14 @@ async function mouvementsDto(prisma: PrismaClient, utilisateurId: string, object
 // --- Épargne ---
 
 export async function lireEpargne(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile): Promise<EpargneDto> {
-  const [{ epargne }, mouvements] = await Promise.all([chargerCalendrier(prisma, utilisateurId, aujourdhui), mouvementsDto(prisma, utilisateurId)])
+  const [{ calendrier, epargne }, mouvements] = await Promise.all([chargerCalendrier(prisma, utilisateurId, aujourdhui), mouvementsDto(prisma, utilisateurId)])
+  const courant = calendrier.moisCourant()
+  // Même source que le bilan du mois et le cumul : le versement mensuel de chaque objectif, et ce qui a été versé.
+  const duMois = calendrier.epargneDuMois(courant.cle)
   return {
     aujourdhui,
     etat: etatEpargne(epargne),
+    planMois: { cle: courant.cle, debut: courant.debut, fin: courant.fin, ...duMois },
     mouvements,
     objectifs: epargne.objectifs
       .filter(reserve)
@@ -150,9 +156,11 @@ export async function lister(prisma: PrismaClient, utilisateurId: string, aujour
     prisma.charge.findMany({ where: { utilisateurId } }),
     comptesCourts(prisma, utilisateurId),
   ])
-  const suivi = suiviDesObjectifs(calendrier, epargne, aujourdhui, { regles })
+  // Une seule analyse : la liste et la vue annuelle reposent sur les mêmes projections.
+  const analyse = analyser(calendrier, epargne, aujourdhui, { regles })
+  const suivi = analyse.suivi
   const essentiel = essentielMensuel(charges.map(versCharge), aujourdhui, suivi.moisCourant)
-  return { ...suivi, aujourdhui, fondsSecurite: essentiel > 0 ? cibleFondsSecurite(essentiel) : null, comptes, regles }
+  return { ...suivi, aujourdhui, fondsSecurite: essentiel > 0 ? cibleFondsSecurite(essentiel) : null, comptes, regles, annee: anneeDesObjectifs(calendrier, epargne, analyse) }
 }
 
 export async function detail(prisma: PrismaClient, utilisateurId: string, id: string, aujourdhui: DateCivile): Promise<ObjectifDetailDto> {

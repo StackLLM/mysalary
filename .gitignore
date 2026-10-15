@@ -17,3 +17,6 @@ coverage/
 
 # Local editor and agent settings
 .claude/
+
+# Notes locales de l'agent
+CLAUDE.local.md

@@ -17,8 +17,11 @@ import { useUtilisateurCourant } from '../compte/requetes'
 import { useMoisCourant } from '../salaire/requetes'
 import { lireMontant, versSaisie } from '../salaire/saisie'
 import { useEnregistrerDepense, useRattachements, useSupprimerDepense } from './requetes'
-import { ContexteSaisieRapide, useSaisieRapide } from './contexteSaisieRapide'
+import { ContexteSaisieRapide, useSaisieRapide, type ContexteSaisie } from './contexteSaisieRapide'
 import { categoriesFrequentes, cleDe, HORS_PLAN, lienPropose, optionsLien, versLien, type CleLien, type OptionLien } from './saisie'
+
+
+type OptionsVersement = Parameters<ContexteSaisie['ouvrirVersement']>[0]
 
 export { useSaisieRapide }
 
@@ -35,11 +38,11 @@ type Mode = 'depense' | 'epargne'
  * (jamais une dépense, R11). Elle n'existe que lorsqu'un compte est ouvert.
  */
 export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
-  const [etat, setEtat] = useState<{ mode: Mode; depense?: DepenseDto; date?: string; objectifId?: string; cle: number } | null>(null)
+  const [etat, setEtat] = useState<{ mode: Mode; depense?: DepenseDto; date?: string; objectifId?: string; montant?: number; cle: number } | null>(null)
   // Toujours appelé (règle des hooks) : `useUtilisateurCourant` ne rend un compte que si un id est choisi.
   const actif = Boolean(useUtilisateurCourant())
   const ouvrir = useCallback((depense?: DepenseDto, options?: { date?: string }) => setEtat({ mode: 'depense', depense, date: options?.date, cle: Date.now() }), [])
-  const ouvrirVersement = useCallback((options?: { objectifId?: string }) => setEtat({ mode: 'epargne', objectifId: options?.objectifId, cle: Date.now() }), [])
+  const ouvrirVersement = useCallback((options?: OptionsVersement) => setEtat({ mode: 'epargne', objectifId: options?.objectifId, montant: options?.montant, cle: Date.now() }), [])
 
   const naviguer = useNavigate()
   useEffect(() => {
@@ -63,7 +66,7 @@ export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
   const valeur = useMemo(
     () => ({
       ouvrir: (d?: DepenseDto, options?: { date?: string }) => (actif ? ouvrir(d, options) : toast('Ouvre d’abord ton compte.')),
-      ouvrirVersement: (options?: { objectifId?: string }) => (actif ? ouvrirVersement(options) : toast('Ouvre d’abord ton compte.')),
+      ouvrirVersement: (options?: OptionsVersement) => (actif ? ouvrirVersement(options) : toast('Ouvre d’abord ton compte.')),
     }),
     [actif, ouvrir, ouvrirVersement],
   )
@@ -92,7 +95,7 @@ export function FournisseurSaisieRapide({ children }: { children: ReactNode }) {
             </div>
           )}
           {etat?.mode === 'epargne' ? (
-            <FormulaireVersement key={etat.cle} objectifId={etat.objectifId} onTermine={() => setEtat(null)} />
+            <FormulaireVersement key={etat.cle} objectifId={etat.objectifId} montant={etat.montant} onTermine={() => setEtat(null)} />
           ) : (
             etat && <FormulaireDepense key={etat.cle} initiale={etat.depense} dateProposee={etat.date} onTermine={() => setEtat(null)} onAutre={() => ouvrir()} />
           )}

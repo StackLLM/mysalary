@@ -21,7 +21,7 @@ import { useSaisieRapide } from '../depenses/SaisieRapide'
 import { libelleJour } from '../depenses/saisie'
 import { lireMontant, versSaisie } from '../salaire/saisie'
 import { useEnregistrerCompte, useEpargne, useObjectifs, useSupprimerCompte, useSupprimerMouvement } from './requetes'
-import { groupesMouvements, LIBELLES_MOUVEMENT } from './saisie'
+import { groupesMouvements, LIBELLES_MOUVEMENT, lignesPrevues } from './saisie'
 
 const GRILLE = 'grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_352px] xl:gap-12'
 
@@ -52,15 +52,20 @@ export function OngletEpargne() {
 }
 
 function Epargne({ epargne }: { epargne: EpargneDto }) {
-  const { etat, aujourdhui } = epargne
+  const { etat, aujourdhui, planMois } = epargne
   const { ouvrirVersement } = useSaisieRapide()
   const objectifs = useObjectifs()
   const supprimerMouvement = useSupprimerMouvement()
   const supprimerCompte = useSupprimerCompte()
-  const [edition, setEdition] = useState<{ compte?: CompteSuiviDto } | null>(null)
+  const [edition, setEdition] = useState<{ compte?: CompteSuiviDto; soldePropose?: number } | null>(null)
   const [aSupprimer, setASupprimer] = useState<MouvementEpargneDto | null>(null)
   const reserves = (objectifs.data?.objectifs ?? []).filter((o) => o.statut === 'actif' || o.statut === 'pause')
   const groupes = groupesMouvements(epargne.mouvements)
+  const prevus = lignesPrevues(planMois)
+  const resteAVerser = prevus.reduce((t, l) => t + l.reste, 0)
+  // Sans compte déclaré, un versement n'a nulle part où aller : on propose d'abord de déclarer le compte.
+  const declarer = () => setEdition({ soldePropose: etat.reserve })
+  const noter = (objectifId: string, reste: number) => (etat.declare ? ouvrirVersement({ objectifId, montant: reste }) : declarer())
 
   return (
     <div className={GRILLE}>
@@ -79,19 +84,37 @@ function Epargne({ epargne }: { epargne: EpargneDto }) {
             gauche={{
               titre: 'Solde',
               lignes: [
-                { valeur: <Montant valeur={etat.solde} /> },
+                { valeur: etat.declare ? <Montant valeur={etat.solde} /> : 'Non déclaré' },
                 { libelle: 'Réservé aux objectifs', valeur: <Montant valeur={etat.reserve} /> },
                 { libelle: 'Disponible', valeur: <Montant valeur={etat.disponible} /> },
               ],
             }}
             droite={{
-              titre: 'Comptes',
+              titre: 'Prévu ce mois-ci',
               lignes:
-                etat.comptes.length === 0
-                  ? [{ valeur: 'Aucun compte déclaré' }]
-                  : etat.comptes.slice(0, 3).map((c, i) => (i === 0 ? { valeur: <Montant valeur={c.soldeActuel} /> } : { libelle: c.libelle, valeur: <Montant valeur={c.soldeActuel} /> })),
+                planMois.prevue === 0
+                  ? [{ valeur: 'Aucun versement prévu' }]
+                  : [
+                      { valeur: <Montant valeur={planMois.prevue} /> },
+                      { libelle: 'Déjà versé', valeur: <Montant valeur={planMois.prevue - resteAVerser} /> },
+                      { libelle: 'Reste à verser', valeur: <Montant valeur={resteAVerser} /> },
+                    ],
             }}
           />
+
+          {!etat.declare && etat.reserve > 0 && (
+            <div role="alert" className="mt-5 flex flex-col gap-3 rounded-champ bg-attention-fond px-4 py-4 text-texte-sm sm:flex-row sm:items-center">
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-attention">Aucun compte d’épargne déclaré.</p>
+                <p className="mt-1 text-encre-2">
+                  Tes objectifs ont <Montant valeur={etat.reserve} className="font-semibold" /> de côté. Déclare le compte qui les contient pour noter tes versements.
+                </p>
+              </div>
+              <Bouton taille="sm" className="shrink-0" onClick={declarer}>
+                Déclarer mon compte
+              </Bouton>
+            </div>
+          )}
 
           {etat.depassement > 0 && (
             <div role="alert" className="mt-5 rounded-champ bg-alerte-fond px-4 py-3 text-texte-sm text-alerte">
@@ -99,6 +122,42 @@ function Epargne({ epargne }: { epargne: EpargneDto }) {
               <p className="mt-1 text-encre-2">Réajuste : déclare le solde réel de ton compte, ou baisse ce qui est déjà mis de côté sur un objectif.</p>
             </div>
           )}
+
+          <section className="mt-8" aria-label="Versements prévus ce mois-ci">
+            <TitreSection
+              titre="Versements prévus"
+              sousTitre={
+                <>
+                  Du {formaterDate(planMois.debut, 'court')} au {formaterDate(planMois.fin, 'court')} : le versement mensuel de chaque objectif. Il devient <span className="font-semibold text-encre-2">réel</span> quand tu le notes.
+                </>
+              }
+            />
+            {prevus.length === 0 ? (
+              <p className="mt-5 text-texte-sm text-gris">Aucun versement mensuel choisi. Fixe-le sur un objectif pour le suivre ici.</p>
+            ) : (
+              <ul className="mt-5 flex flex-col gap-2">
+                {prevus.map((l) => (
+                  <li key={l.objectifId} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-champ border border-filet bg-white px-4 py-3">
+                    <span className="min-w-0 flex-1">
+                      <Link to={`/objectifs/${l.objectifId}`} className="block truncate text-texte font-semibold text-encre hover:text-lien">
+                        {l.libelle}
+                      </Link>
+                      <span className="block text-texte-sm text-gris">
+                        Prévu <Montant valeur={l.prevu} /> · versé <Montant valeur={l.reel} />
+                      </span>
+                    </span>
+                    {l.reste === 0 ? (
+                      <span className="rounded-pilule bg-positif-fond px-3 py-1 text-mention text-positif">Fait</span>
+                    ) : (
+                      <Bouton variante="puce" taille="sm" aria-label={`Noter le versement de ${formaterMontant(l.reste)} pour ${l.libelle}`} onClick={() => noter(l.objectifId, l.reste)}>
+                        Noter <Montant valeur={l.reste} />
+                      </Bouton>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
           <section className="mt-8">
             <TitreSection
@@ -224,7 +283,13 @@ function Epargne({ epargne }: { epargne: EpargneDto }) {
                 ) : (
                   reserves.map((o) => (
                     <Link key={o.id} to={`/objectifs/${o.id}`} className="flex items-baseline justify-between gap-3 text-texte hover:text-lien">
-                      <span className="truncate font-medium text-encre">{o.libelle}</span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium text-encre">{o.libelle}</span>
+                        <span className="block truncate text-mention text-gris">
+                          {o.montantInitial > 0 ? <>dont <Montant valeur={o.montantInitial} /> déjà de côté au départ</> : 'versements notés'}
+                          {o.versementMensuel ? <> · <Montant valeur={o.versementMensuel} />/mois prévus</> : null}
+                        </span>
+                      </span>
                       <Montant valeur={o.epargne} className="shrink-0 font-semibold text-encre" />
                     </Link>
                   ))
@@ -233,7 +298,7 @@ function Epargne({ epargne }: { epargne: EpargneDto }) {
             </div>
             <BlocTotaux
               lignes={[
-                { libelle: 'Solde', valeur: <Montant valeur={etat.solde} />, fort: true },
+                { libelle: 'Solde', valeur: etat.declare ? <Montant valeur={etat.solde} /> : 'Non déclaré', fort: true },
                 { libelle: 'Réservé', valeur: <Montant valeur={etat.reserve} /> },
                 ...(etat.depassement > 0 ? [{ libelle: 'Réservé en trop', valeur: <Montant valeur={etat.depassement} className="text-alerte" /> }] : []),
               ]}
@@ -266,7 +331,7 @@ function Epargne({ epargne }: { epargne: EpargneDto }) {
         titre={edition?.compte ? `Déclarer le solde de ${edition.compte.libelle}` : 'Nouveau compte d’épargne'}
         description="Le montant réellement présent sur le compte à cette date."
       >
-        {edition && <FormulaireCompte key={edition.compte?.id ?? 'nouveau'} compte={edition.compte} aujourdhui={aujourdhui} onTermine={() => setEdition(null)} />}
+        {edition && <FormulaireCompte key={edition.compte?.id ?? 'nouveau'} compte={edition.compte} soldePropose={edition.soldePropose} aujourdhui={aujourdhui} onTermine={() => setEdition(null)} />}
       </Panneau>
 
       <Confirmation
@@ -291,10 +356,10 @@ function Epargne({ epargne }: { epargne: EpargneDto }) {
   )
 }
 
-function FormulaireCompte({ compte, aujourdhui, onTermine }: { compte?: CompteSuiviDto; aujourdhui: string; onTermine: () => void }) {
+function FormulaireCompte({ compte, soldePropose, aujourdhui, onTermine }: { compte?: CompteSuiviDto; soldePropose?: number; aujourdhui: string; onTermine: () => void }) {
   const enregistrer = useEnregistrerCompte()
   const [libelle, setLibelle] = useState(compte?.libelle ?? '')
-  const [solde, setSolde] = useState(compte ? versSaisie(compte.soldeActuel) : '')
+  const [solde, setSolde] = useState(compte ? versSaisie(compte.soldeActuel) : soldePropose ? versSaisie(soldePropose) : '')
   const [auLe, setAuLe] = useState(compte ? dateDuJour() : aujourdhui)
   const [erreurs, setErreurs] = useState<Record<string, string>>({})
 

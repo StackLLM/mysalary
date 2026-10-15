@@ -10,7 +10,8 @@ import type {
   SaisiePaiementDette,
   SaisiePonctuel,
 } from '@mysalary/partage'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { useActualiserDonnees } from '../../lib/actualisation'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
 import { useUtilisateurCourant } from '../compte/requetes'
@@ -33,10 +34,9 @@ export const usePonctuels = () => useLecture<PonctuelDto[]>('ponctuels', '/ponct
 export const useDettes = () => useLecture<DetteDto[]>('dettes', '/dettes')
 export const useResumeCharges = () => useLecture<ResumeChargesDto>('resume', '/charges/resume')
 
+/** Toute écriture recharge toutes les vues du compte (lib/actualisation). */
 function useInvalider() {
-  const client = useQueryClient()
-  const { charges, mois } = useCles()
-  return () => Promise.all([charges, mois].map((queryKey) => client.invalidateQueries({ queryKey })))
+  return useActualiserDonnees()
 }
 
 /** Création (POST) ou modification (PUT /:id) d'une ressource, selon la présence d'un `id`. */

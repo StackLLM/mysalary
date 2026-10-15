@@ -8,7 +8,8 @@ import type {
   SaisieObjectif,
   SaisieRealisation,
 } from '@mysalary/partage'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
+import { useActualiserDonnees } from '../../lib/actualisation'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
 import { useUtilisateurCourant } from '../compte/requetes'
@@ -51,10 +52,9 @@ export function useApercuObjectif(saisie: SaisieObjectif | null, remplace?: stri
   })
 }
 
+/** Toute écriture recharge toutes les vues du compte (lib/actualisation). */
 function useInvalider() {
-  const client = useQueryClient()
-  const { epargne, objectifs, mois } = useCles()
-  return () => Promise.all([epargne, objectifs, mois].map((queryKey) => client.invalidateQueries({ queryKey })))
+  return useActualiserDonnees()
 }
 
 function useEcriture<S, R>(appel: (saisie: S) => Promise<R>) {

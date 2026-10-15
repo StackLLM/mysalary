@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../../lib/api'
 import { rendre } from '../../test/outils'
-import { PageObjectifs } from '../objectifs/PageObjectifs'
 import { CalendrierAnnee } from './CalendrierAnnee'
 import { caseJour, echelleCumul, jalonsDuMois, jauge, joursEntete, montantLigne, moisCourt } from './saisie'
 
@@ -171,11 +170,5 @@ describe('Calendrier de l’année', () => {
     expect(await screen.findByText('Impossible de calculer l’année 2027.')).toBeInTheDocument()
     expect(vi.mocked(api.lire)).toHaveBeenCalledWith('/annee/2027')
     expect(screen.getByRole('button', { name: 'Cette année' })).toBeInTheDocument()
-  })
-
-  it('Objectifs › « Calendrier de l’année » : la vue et l’année viennent de l’adresse', async () => {
-    rendre(<PageObjectifs />, { route: '/objectifs?vue=calendrier&annee=2026', compte: 'u1' })
-    expect(await screen.findByRole('heading', { name: 'Calendrier 2026' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Calendrier de l’année' })).toHaveAttribute('aria-selected', 'true')
   })
 })

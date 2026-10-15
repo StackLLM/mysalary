@@ -15,7 +15,7 @@ export function BandeauEmail() {
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3 text-texte-sm text-attention lg:px-14">
         <MailWarning className="h-4 w-4 shrink-0" aria-hidden />
         <p className="min-w-0 flex-1">
-          Confirme ton adresse <b className="break-all font-semibold">{email}</b> : elle te permet de retrouver ton compte si tu oublies ton mot de passe.
+          Confirme ton adresse <b className="font-semibold [overflow-wrap:anywhere]">{email}</b> : elle te permet de retrouver ton compte si tu oublies ton mot de passe.
         </p>
         <Bouton
           variante="blanc"

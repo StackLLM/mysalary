@@ -155,7 +155,9 @@ describe('alertes (cloche)', () => {
   it('échéance en retard, enveloppe dépassée, semaine dépassée ; rien pour un mois clôturé', () => {
     const { calendrier, donnees } = cadre()
     const liste = alertes(calendrier, donnees, { aujourdhui: AUJOURDHUI })
-    expect(types(liste)).toEqual(['echeanceEnRetard', 'enveloppeDepassee', 'semaineDepassee'])
+    expect(types(liste)).toEqual(['echeanceEnRetard', 'enveloppeDepassee', 'semaineDepassee', 'versementPrevu'])
+    // Permis : 1 000 DH par mois choisis, rien encore versé en janvier.
+    expect(trouver(liste, 'versementPrevu')).toEqual({ cle: 'versement:Permis:2027-01', type: 'versementPrevu', objectifId: 'Permis', libelle: 'Permis', reste: 100_000, mois: '2027-01' })
     expect(trouver(liste, 'echeanceEnRetard')).toMatchObject({ origine: 'fixe', libelle: 'Internet', date: '2027-01-08', reste: 30_000 })
     expect(trouver(liste, 'enveloppeDepassee')).toMatchObject({ libelle: 'Courses', depassement: 30_000 })
     // Reste flexible du mois : 3 500 − 2 300 = 1 200 DH sur 17 jours.
@@ -174,6 +176,13 @@ describe('alertes (cloche)', () => {
     expect(alertes(revenu.calendrier, revenu.donnees, { aujourdhui: d('2027-02-15') })).toContainEqual(
       expect.objectContaining({ type: 'revenuEnRetard', libelle: 'Cours', datePrevue: '2027-02-10', montant: 100_000 }),
     )
+  })
+
+  it('épargne d’objectif sans compte déclaré : à déclarer, jamais « en trop » (le solde réel est inconnu)', () => {
+    const { calendrier, donnees } = cadre()
+    const liste = alertes(calendrier, { ...donnees, comptes: [] }, { aujourdhui: AUJOURDHUI })
+    expect(trouver(liste, 'epargneNonDeclaree')).toEqual({ cle: 'reserve', type: 'epargneNonDeclaree', reserve: 200_000 })
+    expect(types(liste)).not.toContain('reserveDepasse')
   })
 
   it('objectifs au-delà de l’épargne déclarée (R14)', () => {

@@ -106,6 +106,12 @@ describe('épargne : solde, réservé, disponible (R12–R14)', () => {
     expect(epargneObjectif(moto, [...mouvements, achat])).toBe(350_000)
   })
 
+  it('sans compte déclaré : solde inconnu, rien « en trop », l’épargné des objectifs reste compté', () => {
+    const e = etatEpargne({ comptes: [], mouvementsEpargne: [], objectifs: [{ ...moto, montantInitial: centimes(900_000) }] })
+    expect(e).toMatchObject({ declare: false, solde: 0, reserve: 900_000, disponible: 0, depassement: 0 })
+    expect(etatEpargne({ comptes, mouvementsEpargne: mouvements, objectifs: [] }).declare).toBe(true)
+  })
+
   it('fonds de sécurité : 3 à 6 mois de charges essentielles', () => {
     expect(cibleFondsSecurite(centimes(400_000))).toEqual({ min: 1_200_000, max: 2_400_000, base: 400_000 })
   })

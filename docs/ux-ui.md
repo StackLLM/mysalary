@@ -260,6 +260,13 @@ Format pour chaque page : objectif · données · actions · relations · état 
   4. Épargne du mois : prévue vs réelle.
   5. Objectif prioritaire : progression, date estimée, risque.
   6. Prochains 7 jours (extrait du calendrier).
+- **Depuis le lot 27 (tableau de bord)**, dans l'ordre :
+  1. Rangée d'indicateurs : revenus reçus (sur prévus), dépensé (anneau : part des charges prévues, part du mois écoulé), épargne du mois (sur prévue, taux), objectifs (progression globale, objectifs à risque). Deux par ligne sur téléphone.
+  2. Carte du jour : bonjour, mois en cours, reste à dépenser ce mois et cette semaine (bandeau), détail du calcul, semaine en cours, semaine passée le premier jour, actions rapides.
+  3. « À faire » numéroté : paie à confirmer (sur place), échéances, enveloppes dépassées, versement d'épargne prévu (ouvre le versement pré-rempli), compte d'épargne à déclarer.
+  4. « Où part ton argent » : les 5 postes les plus lourds du mois (part des revenus prévus ; pour une enveloppe, barre de consommation avec le repère du mois écoulé), puis « Voir les N autres postes ».
+  5. 7 prochains jours.
+  6. À droite : « À surveiller » (enveloppes dépassées ou dépensées plus vite que le mois, grosses dépenses du mois), suggestions, objectif prioritaire.
   7. 1 à 3 recommandations.
 - **Actions** : confirmer, ajouter une dépense, ouvrir un objectif, ouvrir le mois.
 - **Relations** : Mois, Objectifs, Calendrier, Simulateur.
@@ -308,6 +315,7 @@ Format pour chaque page : objectif · données · actions · relations · état 
 - **État vide** : illustration sobre + « Crée ton premier objectif » + exemples de types.
 - **Erreurs** : réservé > solde déclaré → alerte « Tes objectifs réservent plus que ton épargne déclarée » + action réajuster.
 - **Cas particuliers** : objectifs réalisés → section repliée « Réalisés ».
+- **Depuis le lot 26 (vue annuelle)** : la vue « Calendrier de l'année » est retirée (elle reste dans la page Année). La page montre, dans l'ordre : indicateurs (progression globale, déjà épargné sur la cible, reste à épargner et versé depuis janvier, objectifs à risque) ; carte « Année » (trajectoire de l'épargne de tous les objectifs : réel puis projection réaliste, cible ; versé depuis janvier, fin d'année prévue avec fourchette prudent–ambitieux, capacité du mois) ; liste « En cours » par priorité, chaque carte avec la fin d'année projetée et le mois atteint dans l'année ; à droite « Prochaines actions » (versements à noter, épargne à déclarer ou réajuster, leviers chiffrés), épargne, fonds de sécurité. Cliquer sur un objectif ouvre toujours son détail.
 
 #### 5.8 Objectif (détail)
 - **Objectif** : savoir quand et comment l'atteindre.
@@ -342,6 +350,7 @@ Format pour chaque page : objectif · données · actions · relations · état 
 - **Relations** : impacte Mois, Semaines, Calendrier, Objectifs, Simulateur.
 - **État vide** : par onglet, avec suggestions.
 - **Cas particuliers** : modification d'une charge → choix « à partir de maintenant » ou « depuis le début ». Le passé clôturé n'est jamais modifié. Dette soldée → passe en « Terminées ».
+- **Épargne (depuis le lot 25)** : bandeau solde / réservé / disponible et « prévu ce mois-ci » (prévu, déjà versé, reste à verser) ; « Versements prévus » : le versement mensuel de chaque objectif sur le mois en cours, « Fait » ou « Noter » (versement pré-rempli) ; sans compte déclaré, le solde est « Non déclaré » et une invitation propose de déclarer le compte avec l'épargne déjà réservée ; puis comptes, mouvements, réservé par objectif (dont déjà de côté au départ, versement mensuel prévu).
 
 #### 5.12 Réglages
 - **Contenu** : profil, devise, mode de période (cycle de paie / calendaire), règle jour non ouvré, début de semaine, report hebdo, catégories, règles des scénarios, animations on / off, export / import, sauvegarde, réinitialisation du compte.
@@ -647,6 +656,15 @@ Tous visibles sur la vitrine (`/vitrine`). Noms en français (règle de la skill
 
 Composants MySalary dans le même style : `Montant`, `Kpi`, `BadgeNature`, `BadgeRisque`, `BadgeExemple`, `BarreProgression`, `Tableau`, `Onglets`, `Pilule`, `Panneau`, `Notifications`, graphiques.
 
+Composants des tableaux de bord (lot 27, `ui/src/components/premium/`), inspirés de [Lightswind UI](https://lightswind.com/) (licence MIT) et ramenés à la charte : pas de nouvelle couleur, pas de nouvelle dépendance.
+
+| Composant | Rôle | Origine |
+|---|---|---|
+| `CarteLumineuse` | Carte blanche ; au survol, un halo sauge suit le pointeur. Désactivé si les animations sont coupées ou au toucher. | Glowing Cards (Lightswind), adapté |
+| `AnneauProgression` | Anneau de progression (rôle `progressbar`), contenu au centre, tracé animé à l'arrivée. | Création, dans l'esprit des widgets d'analytics Lightswind |
+| `TuileIndicateur` | Indicateur en tuile : icône ou anneau, libellé, nature (projection), valeur forte, détail. Deux par ligne sur téléphone (visuel masqué). | Création, sur `CarteLumineuse` |
+| `Montant` avec `anime` | Compteur qui monte jusqu'à la valeur (déjà présent depuis le lot 2). | Équivalent de Count Up (Lightswind) |
+
 ---
 
 ### 8. Graphiques
@@ -657,7 +675,7 @@ Recharts, habillé par un thème commun.
 |---|---|
 | Rythme de dépense du mois | Aire cumulée réelle + ligne prévue pointillée |
 | Revenus / dépenses / épargne par mois | Barres groupées fines, rayon haut 6 px |
-| Trajectoire d'objectif | Aire réelle pleine + aire projetée hachurée + cible pointillée + 3 scénarios en lignes fines |
+| Trajectoire d'objectif | Tracé SVG sur mesure (sans bibliothèque), page Objectifs et page d'un objectif : courbe réelle lissée (halo sauge, tracée à l'ouverture) sur voile dégradé, projection en pointillé sous voile hachuré, cible en étiquette noire, point « Aujourd'hui » lumineux avec son montant, survol avec repère et infobulle. Courbe monotone : aucune bosse inventée. |
 | Répartition des dépenses | Barres horizontales triées (pas de camembert) |
 | KPI | Sparkline sans axes |
 

@@ -1,5 +1,5 @@
-import { alertes, indicateurs, prochainsJours, recommandations, semainePassee, type CleMois, type DateCivile } from '@mysalary/moteur'
-import { redigerAlerte, redigerRecommandation, type AujourdhuiDto, type ConseilsDto, type IndicateursDto } from '@mysalary/partage'
+import { alertes, analyser, anneeDesObjectifs, etatEpargne, indicateurs, prochainsJours, recommandations, semainePassee, tableauDeBord, type Calendrier, type CleMois, type DateCivile, type DonneesObjectifs, type ReglesScenarios } from '@mysalary/moteur'
+import { redigerAlerte, redigerRecommandation, type AujourdhuiDto, type ConseilsDto, type IndicateursDto, type ResumeObjectifsDto } from '@mysalary/partage'
 import type { PrismaClient } from '@prisma/client'
 import { versCharge } from '../charges/conversion'
 import { essentielMensuel } from '../charges/depot'
@@ -33,7 +33,19 @@ export async function lireAujourdhui(prisma: PrismaClient, utilisateurId: string
     recommandations: c.recommandations.slice(0, 3),
     prochainsJours: prochainsJours(calendrier, aujourdhui),
     semainePassee: semainePassee(calendrier, aujourdhui, { debutSemaine, report: reportHebdo }),
+    tableau: tableauDeBord(calendrier, aujourdhui),
+    epargne: etatEpargne(epargne),
+    objectifs: resumeObjectifs(calendrier, epargne, aujourdhui, regles),
   }
+}
+
+/** Mêmes chiffres que la vue annuelle de la page Objectifs (même analyse, même projection). */
+function resumeObjectifs(calendrier: Calendrier, donnees: DonneesObjectifs, aujourdhui: DateCivile, regles: ReglesScenarios): ResumeObjectifsDto | null {
+  const analyse = analyser(calendrier, donnees, aujourdhui, { regles })
+  const annee = anneeDesObjectifs(calendrier, donnees, analyse)
+  if (annee.enCours === 0) return null
+  const noms = new Map(donnees.objectifs.map((o) => [o.id, o.libelle]))
+  return { enCours: annee.enCours, cible: annee.cible, epargne: annee.epargne, progression: annee.progression, aRisque: annee.aRisque.map((id) => noms.get(id)!) }
 }
 
 /** Calendrier chargé une fois, puis alertes et recommandations rédigées. */
