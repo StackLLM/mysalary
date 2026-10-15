@@ -71,7 +71,7 @@ const bilan = (modif: Partial<BilanDto> = {}) =>
     rythme: [{ date: '2027-01-20', prevu: 100_000, reel: 140_000 }],
     cloture: null,
     journal: [],
-    cumul: { cle: '2027-01', nature: 'enCours', premier: false, report: 150_000, revenus: 1_000_000, charges: 650_000, epargne: 50_000, reste: 300_000, cumul: 450_000, dontReel: null },
+    cumul: { cle: '2027-01', nature: 'enCours', premier: false, report: 150_000, revenus: 1_000_000, charges: 650_000, epargne: 50_000, epargneConfirmee: 50_000, epargneAConfirmer: 0, reste: 300_000, cumul: 450_000, cumulApresPrevu: 450_000, dontReel: null },
     ...modif,
   }) as unknown as BilanDto
 let bilanCourant = bilan()
@@ -267,10 +267,12 @@ describe('Mois › Vue d’ensemble', () => {
     expect(espaces(screen.getByText(/^Dépensé sur 7 000/, { selector: 'p, span, div' }).closest('div')!.textContent)).toMatch(/1 400.*À confirmer \(date passée\).*3 500.*À venir.*2 100/)
     expect(espaces(screen.getByText('Reste du mois, avant épargne').closest('div')!.textContent)).toMatch(/3 000.*Revenus prévus.*10 000.*Charges prévues.*7 000/)
     expect(espaces(screen.getByRole('note').textContent)).toMatch(/Ce reste est calculé sans l’épargne/)
+    expect(screen.queryByText(/À épargner/)).not.toBeInTheDocument()
     // Cumul (lot 13) : le reste de décembre arrive en janvier, le cumul de fin de janvier est une estimation.
     const cumul = screen.getByRole('region', { name: 'Cumul de mois en mois' })
     const texte = cumul.textContent!.replace(/\s+/g, ' ')
-    for (const morceau of [/^Report de décembre\+1 500/, /Reste du mois\+3 000/, /Cumul fin de mois4 500/, /Ce qui restait à la fin de décembre est reporté ici\./, /\(estimation\)/]) expect(texte).toMatch(morceau)
+    // Report + revenus − charges − épargne confirmée = cumul : 1 500 + 10 000 − 6 500 − 500 = 4 500.
+    for (const morceau of [/^Report de décembre1 500/, /Revenus\+10 000/, /Charges−6 500/, /Épargne confirmée−500/, /= Cumul fin de mois4 500/, /Ce qui restait à la fin de décembre est reporté ici\./, /\(estimation\)/]) expect(texte).toMatch(morceau)
     fireEvent.click(screen.getByRole('button', { name: 'Marquer Loyer payé' }))
     await waitFor(() =>
       expect(api.creer).toHaveBeenCalledWith('/depenses', {

@@ -60,6 +60,8 @@ export interface TableauDeBord {
   restePrevu: Centimes
   /** Consommé des charges et reste à payer, comme dans le bilan du mois. */
   synthese: SyntheseCharges
+  /** Épargne prévue pas encore versée : à confirmer dans Épargne, jamais retirée du reste avant. */
+  epargneAConfirmer: Centimes
   /** Toutes les charges du mois, de la plus lourde à la plus légère. */
   postes: PosteDuMois[]
   /** Les 5 plus grosses dépenses réelles du mois, à ce jour. */
@@ -97,5 +99,6 @@ export function tableauDeBord(calendrier: Calendrier, aujourdhui: DateCivile): T
     .sortiesEntre(mois.debut, jusquA)
     .depenses.sort((a, b) => b.montant - a.montant || (a.date < b.date ? 1 : -1))
     .slice(0, 5)
-  return { avancement, revenusPrevus: totaux.revenusPrevus, restePrevu: totaux.restePrevu, synthese: syntheseCharges(lignes), postes, grossesDepenses }
+  const epargneAConfirmer = additionner(...lignes.filter((l) => l.famille === 'epargne' && l.prevu !== null).map((l) => centimes(Math.max(0, l.prevu! - (l.reel ?? 0)))))
+  return { avancement, revenusPrevus: totaux.revenusPrevus, restePrevu: totaux.restePrevu, synthese: syntheseCharges(lignes), epargneAConfirmer, postes, grossesDepenses }
 }

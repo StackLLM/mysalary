@@ -143,7 +143,8 @@ function ResumeAnnee({ annee, mois, resume }: { annee: number; mois: MoisCumul[]
             ...(depart ? [{ libelle: premier.premier ? 'Au départ (solde déclaré)' : `Au départ (report de ${annee - 1})`, valeur: <Montant valeur={depart} /> }] : []),
             { libelle: 'Revenus', valeur: <Montant valeur={resume.revenus} /> },
             { libelle: 'Charges', valeur: <Montant valeur={resume.charges} /> },
-            { libelle: 'Épargne', valeur: <Montant valeur={resume.epargne} /> },
+            { libelle: 'Épargne confirmée', valeur: <Montant valeur={resume.epargne} /> },
+            ...(resume.epargneAConfirmer > 0 ? [{ libelle: 'À épargner, à confirmer (non retiré)', valeur: <Montant valeur={resume.epargneAConfirmer} /> }] : []),
           ],
         }}
       />
@@ -269,7 +270,14 @@ function CarteMois({
               <span className="font-semibold text-sauge-700">Reste</span>
               <Montant valeur={m.apresCharges} className={cn('font-bold tabular-nums', m.apresCharges < 0 ? 'text-alerte' : 'text-encre', prevu && 'italic')} />
             </span>
-            <LigneCarte libelle="Épargne" signe="−" valeur={m.epargne} prevu={prevu} />
+            {m.report !== null && m.report !== 0 && <LigneCarte libelle={m.premier ? 'Solde de départ' : 'Report'} signe="+" valeur={m.report} prevu={false} />}
+            <LigneCarte libelle="Épargne confirmée" signe="−" valeur={m.epargneConfirmee} prevu={prevu} />
+            {m.epargneAConfirmer > 0 && (
+              <span className="flex items-baseline justify-between gap-3 text-mention italic text-gris">
+                <span>À épargner (à confirmer)</span>
+                <Montant valeur={m.epargneAConfirmer} />
+              </span>
+            )}
           </span>
         )}
       </span>

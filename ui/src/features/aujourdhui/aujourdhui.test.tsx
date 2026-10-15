@@ -69,6 +69,7 @@ const journee = (modif: Partial<AujourdhuiDto> = {}) =>
       revenusPrevus: 1_000_000,
       restePrevu: 200_000,
       synthese: { consomme: 580_000, horsPlan: 0, resteAPayer: 220_000, aConfirmer: 100_000, aVenir: 120_000 },
+      epargneAConfirmer: 50_000,
       postes: [
         { cle: 'fixe:loyer', famille: 'fixe', libelle: 'Loyer', prevu: 350_000, reel: 350_000, part: 0.35, consommation: null, surveillance: null },
         { cle: 'enveloppe:courses', famille: 'enveloppe', libelle: 'Courses', prevu: 200_000, reel: 180_000, part: 0.2, consommation: 0.9, surveillance: 'rythme' },
@@ -135,7 +136,9 @@ describe('Aujourd’hui', () => {
     expect(screen.getByText('Lundi 11 janvier 2027', { selector: 'div' })).toBeInTheDocument()
     // Le montant du héros est un compteur animé : on attend sa valeur finale.
     await waitFor(() => expect(visible(screen.getByText('Reste du mois, avant épargne').closest('section')!)).toContain('2 000DHRevenus prévus : 10 000DHCharges prévues : 8 000DH'))
-    expect(espaces(screen.getByRole('note').textContent)).toMatch(/Ce reste est calculé sans l’épargne\..*1 000.*d’épargne prévus ce mois-ci ne sont pas retirés\./)
+    const note = screen.getByRole('note')
+    expect(espaces(note.textContent)).toMatch(/Ce reste est calculé sans l’épargne\..*Tu as prévu d’épargner.*500.*à toi de le confirmer dans Épargne, et seulement alors il est retiré/)
+    expect(within(note).getByRole('link', { name: 'Confirmer dans Épargne' })).toHaveAttribute('href', '/plan?onglet=epargne')
     expect(visible(screen.getByText('Cette semaine, il reste').closest('div')!)).toContain('600DHPar jour, sur 7 jours : 85,71DH')
     expect(espaces(screen.getByRole('region', { name: 'Semaine passée' }).textContent)).toContain('300 DH dépensés sur 700 DH : 400 DH de côté.')
 

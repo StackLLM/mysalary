@@ -108,7 +108,7 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
           {bilan.estimation && (
             <p className="mt-5 rounded-champ bg-teinte px-4 py-3 text-texte-sm text-encre-2">
               <span className="font-semibold">Estimation de fin de mois : {plus(bilan.estimation.resteFinDeMois)}
-              <Montant valeur={bilan.estimation.resteFinDeMois} /></span> de reste, si les revenus attendus (<Montant valeur={bilan.estimation.revenusAttendus} />) arrivent et que
+              <Montant valeur={bilan.estimation.resteFinDeMois} /></span> de reste avant épargne, si les revenus attendus (<Montant valeur={bilan.estimation.revenusAttendus} />) arrivent et que
               les charges encore prévues (<Montant valeur={bilan.estimation.chargesAttendues} />) sortent comme prévu.
             </p>
           )}
@@ -234,7 +234,7 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
             />
           </div>
 
-          <MentionSansEpargne className="mt-6" epargnePrevue={bilan.epargne ? bilan.epargne.prevue : null} />
+          <MentionSansEpargne className="mt-6" aConfirmer={bilan.cumul.nature === 'avant' ? null : bilan.cumul.epargneAConfirmer} />
         </Carte>
       </motion.div>
 
@@ -403,29 +403,45 @@ function BandeCumul({ cumul }: { cumul: MoisCumul }) {
   }
   const nature = NATURES_CUMUL[cumul.nature]
   const precedent = deMois(moisPrecedent(cumul.cle), { annee: false })
+  // Le cumul se lit de gauche à droite : report + revenus − charges − épargne confirmée = cumul.
   const cases = [
-    { cle: 'report', libelle: cumul.premier ? 'Solde de départ' : `Report ${precedent}`, valeur: cumul.report, signe: true },
-    { cle: 'reste', libelle: 'Reste du mois', valeur: cumul.reste, signe: true },
-    { cle: 'cumul', libelle: 'Cumul fin de mois', valeur: cumul.cumul, signe: false },
+    { cle: 'report', libelle: cumul.premier ? 'Solde de départ' : `Report ${precedent}`, valeur: cumul.report, signe: '' },
+    { cle: 'revenus', libelle: 'Revenus', valeur: cumul.revenus, signe: '+' },
+    { cle: 'charges', libelle: 'Charges', valeur: cumul.charges, signe: '−' },
+    { cle: 'epargne', libelle: 'Épargne confirmée', valeur: cumul.epargneConfirmee, signe: '−' },
   ]
   return (
     <section aria-label="Cumul de mois en mois" className="mt-5 rounded-bouton bg-interne p-4 shadow-bouton sm:p-5">
-      <div className="grid grid-cols-3 gap-3">
-        {cases.map((c, i) => (
-          <div key={c.cle} className={cn('min-w-0', i === 2 && 'text-right')}>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        {cases.map((c) => (
+          <div key={c.cle} className="min-w-0">
             <span className="block truncate text-mention text-gris" title={c.libelle}>
               {c.libelle}
             </span>
-            <span className={cn('block tabular-nums', i === 2 ? 'text-titre font-bold' : 'text-texte font-semibold', c.valeur < 0 ? 'text-alerte' : 'text-encre')}>
-              {c.signe ? plus(c.valeur) : ''}
+            <span className={cn('block text-texte font-semibold tabular-nums', c.valeur < 0 ? 'text-alerte' : 'text-encre')}>
+              {c.valeur === 0 ? '' : c.signe}
               <Montant valeur={c.valeur} />
             </span>
           </div>
         ))}
+        <div className="col-span-2 min-w-0 sm:col-span-1 sm:text-right">
+          <span className="block truncate text-mention text-gris">= Cumul fin de mois</span>
+          <span className={cn('block text-titre font-bold tabular-nums', cumul.cumul < 0 ? 'text-alerte' : 'text-encre')}>
+            <Montant valeur={cumul.cumul} />
+          </span>
+        </div>
       </div>
+      {cumul.epargneAConfirmer > 0 && (
+        <p className="mt-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-champ border border-filet bg-white px-4 py-2.5 text-texte-sm">
+          <span className="text-gris">
+            <span className="font-semibold text-encre-2">À épargner</span> (prévu, à confirmer dans Épargne) : pas encore retiré
+          </span>
+          <Montant valeur={cumul.epargneAConfirmer} className="font-bold italic text-encre-2" />
+        </p>
+      )}
       <p className="mt-3 text-mention text-gris">
         {cumul.premier ? 'Premier mois du cumul : il part du solde déclaré dans les Réglages (0 sinon). ' : `Ce qui restait à la fin ${precedent} est reporté ici. `}
-        Revenus − charges − épargne versée, ajoutés au report{nature ? ` (${nature})` : ''}. Solde de départ :{' '}
+        Seule l’épargne que tu as confirmée est retirée{nature ? ` (${nature})` : ''}. Solde de départ :{' '}
         <Link to="/reglages" className="font-semibold text-lien hover:underline">
           Réglages
         </Link>

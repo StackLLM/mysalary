@@ -357,7 +357,7 @@ function Simulation({ detail, simulation }: { detail: ObjectifDetailDto; simulat
       <div className="mt-7">
         <GraphiqueTrajectoire points={trajectoire.points} cible={o.montantCible} aujourdhui={trajectoire.aujourdhui} libelle={`Épargne de ${o.libelle} : réelle, puis simulée avec le cumul`} />
         <p className="mt-2 text-mention text-gris">
-          Réel en plein, simulé hachuré. Cumul de fin de mois = revenus − charges − épargne prévue, mois après mois (scénario réaliste). Il suppose que tout ce cumul va à cet objectif.
+          Réel en plein, simulé hachuré. Reste de fin de mois = revenus − charges − versements prévus, mois après mois (scénario réaliste). Il suppose que tout ce cumul va à cet objectif.
         </p>
       </div>
     </section>
@@ -396,12 +396,12 @@ function ResultatMois({ m, o }: { m: MoisSimulation; o: SuiviObjectif }) {
         {m.versements > 0 && ligne('Versements prévus', <Montant valeur={m.versements} />, '+ ')}
         {ligne(
           <>
-            Cumul fin {moisCourt(m.cle)} <span className="text-mention">({m.nature === 'enCours' ? 'estimation' : 'prévu'})</span>
+            Reste fin {moisCourt(m.cle)}, versements prévus retirés <span className="text-mention">({m.nature === 'enCours' ? 'estimation' : 'prévu'})</span>
           </>,
           m.cumul < 0 ? '0 DH' : <Montant valeur={m.cumul} />,
           '+ ',
         )}
-        {m.cumul < 0 && <p className="text-mention text-alerte">Cumul négatif ({formaterMontant(m.cumul)}) : rien à ajouter.</p>}
+        {m.cumul < 0 && <p className="text-mention text-alerte">Reste négatif ({formaterMontant(m.cumul)}) : rien à ajouter.</p>}
         <div className="mt-1 flex items-baseline justify-between gap-3 border-t border-filet pt-3">
           <dt className="font-semibold text-encre">Épargne simulée</dt>
           <dd className="font-semibold tabular-nums text-encre">

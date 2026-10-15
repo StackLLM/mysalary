@@ -276,6 +276,7 @@ Format pour chaque page : objectif · données · actions · relations · état 
 
 #### 5.3 Mois
 - **Objectif** : comparer prévu et réel sur une période.
+- **Cumul (15/10/2026)** : se lit en entier, report + revenus − charges − épargne confirmée = cumul fin de mois. L'épargne prévue pas encore versée est affichée à part (« À épargner, à confirmer dans Épargne ») et n'est pas retirée. Même lecture dans Année › Calendrier (carte du mois : reste, report, épargne confirmée, à épargner, cumul), dans la fenêtre d'un mois et dans le tableau des paies (colonne Épargne = confirmée). Dans Objectifs, la simulation s'appelle « reste après versements prévus » : c'est un autre calcul.
 - **Données** : bandeau « Dépensé » (avec « à confirmer (date passée) » et « à venir ») et « Reste du mois, avant épargne », puis le cumul ; en bas, les totaux (reçu, dépensé, reste à payer, épargne) et « Reste du mois, sans épargne » avec sa mention. Identique pour tous les mois (passés, en cours, à venir). Tableau prévu / réel / écart par ligne, graphique de rythme cumulé (réel vs ligne prévue), onglets Semaines et Dépenses.
 - **Actions** : changer de période, confirmer une ligne, ajouter une dépense, modifier une dépense, clôturer / rouvrir. **Tout marquer payé** (carte « À confirmer », mois non clôturé) : après confirmation, note en une fois toutes les charges fixes et ponctuels en retard, chacun à sa date prévue ; un seul « Annuler » les retire.
 - **Relations** : Aujourd'hui, Année, Mon plan (modifier la source d'une ligne prévue), Calendrier.

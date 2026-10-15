@@ -138,7 +138,7 @@ function Journee({ donnees }: { donnees: AujourdhuiDto }) {
                   Tes charges prévues dépassent tes revenus de {formaterMontant(-tableau.restePrevu)}.
                 </p>
               )}
-              <MentionSansEpargne className="mt-5" epargnePrevue={k.tauxEpargne.epargnePrevue} />
+              <MentionSansEpargne className="mt-5" aConfirmer={tableau.epargneAConfirmer} />
 
               {semaine && (
                 <div className="mt-5">

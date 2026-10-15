@@ -66,7 +66,7 @@ export function simulationCumul(calendrier: Calendrier, donnees: DonneesObjectif
     const ligne = calendrier.epargneDuMois(m.cle).lignes.find((l) => l.objectifId === id)
     // Mois en cours : seul ce qui reste à verser ; le déjà versé est dans l'épargne actuelle.
     versements += m.cle === courant ? Math.max(0, (ligne?.prevu ?? 0) - (ligne?.reel ?? 0)) : (ligne?.prevu ?? 0)
-    const cumul = m.cumul ?? centimes(0)
+    const cumul = m.cumulApresPrevu ?? centimes(0)
     const simulee = epargne + versements + Math.max(0, cumul)
     return {
       cle: m.cle,

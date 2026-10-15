@@ -93,9 +93,10 @@ const depenses = [
 describe('cumul de mois en mois (lot 13)', () => {
   it('le reste de chaque mois s’ajoute au suivant : réel, puis réel + prévu restant, puis prévu', () => {
     const [decembre, janvier, fevrier] = cumulDesMois(calendrier(depenses), m('2026-12'), m('2027-02'), { aujourdhui: AUJOURDHUI })
-    // Décembre (réel) : 10 000 − (3 500 + 1 800) − 1 000 d'épargne versée = 3 700 DH.
-    expect(decembre).toMatchObject({ nature: 'reel', premier: true, report: 0, revenus: 1_000_000, charges: 530_000, apresCharges: 470_000, epargne: 100_000, reste: 370_000, cumul: 370_000, dontReel: null })
-    // Janvier (en cours) : 10 000 − (4 000 sortis + 1 500 de courses encore prévues) − 1 000 de versement prévu = 3 500 DH.
+    // Décembre (réel) : 10 000 − (3 500 + 1 800) − 1 000 d'épargne versée (confirmée) = 3 700 DH.
+    expect(decembre).toMatchObject({ nature: 'reel', premier: true, report: 0, revenus: 1_000_000, charges: 530_000, apresCharges: 470_000, epargne: 100_000, epargneConfirmee: 100_000, epargneAConfirmer: 0, reste: 370_000, cumul: 370_000, cumulApresPrevu: 370_000, dontReel: null })
+    // Janvier (en cours) : 10 000 − (4 000 sortis + 1 500 de courses encore prévues) = 4 500 DH. Le versement prévu de 1 000 DH
+    // n'est pas confirmé : il n'est pas retiré, il reste « à confirmer ».
     expect(janvier).toMatchObject({
       nature: 'enCours',
       premier: false,
@@ -103,17 +104,30 @@ describe('cumul de mois en mois (lot 13)', () => {
       revenus: 1_000_000,
       charges: 550_000,
       epargne: 100_000,
-      reste: 350_000,
-      cumul: 720_000,
+      epargneConfirmee: 0,
+      epargneAConfirmer: 100_000,
+      reste: 450_000,
+      cumul: 820_000,
+      cumulApresPrevu: 720_000,
       dontReel: { revenus: 1_000_000, charges: 400_000, epargne: 0 },
     })
-    // Février (prévu, réaliste) : 10 000 + 1 000 de cours probables − 5 500 − 1 000 = 4 500 DH.
-    expect(fevrier).toMatchObject({ nature: 'prevu', report: 720_000, revenus: 1_100_000, charges: 550_000, epargne: 100_000, reste: 450_000, cumul: 1_170_000 })
+    // Février (prévu, réaliste) : 10 000 + 1 000 de cours probables − 5 500 = 5 500 DH ; 1 000 DH d'épargne à confirmer.
+    expect(fevrier).toMatchObject({ nature: 'prevu', report: 820_000, revenus: 1_100_000, charges: 550_000, epargne: 100_000, epargneConfirmee: 0, epargneAConfirmer: 100_000, reste: 550_000, cumul: 1_370_000, cumulApresPrevu: 1_170_000 })
+  })
+
+  it('l’épargne n’est retirée du cumul qu’une fois versée : revenus − charges − épargne confirmée', () => {
+    const [, janvier] = cumulDesMois(calendrier(depenses), m('2026-12'), m('2027-01'), { aujourdhui: AUJOURDHUI })
+    expect(janvier!.report! + janvier!.revenus - janvier!.charges - janvier!.epargneConfirmee).toBe(janvier!.cumul)
+    // Le versement de janvier fait (1 000 DH le 8) : il est retiré, et il n'est plus « à confirmer ».
+    const fait: MouvementEpargne = { ...versement, id: 'v2', date: d('2027-01-08') }
+    const apres = creerCalendrier({ mode: 'cyclePaie', contrats: [contrat], paies: [paie('2026-12', '2026-11-27'), paie('2027-01', '2026-12-27')], sources: [cours], charges: [charge('Loyer', 'fixe', 350_000), charge('Courses', 'enveloppe', 200_000)], depenses, objectifs: [moto], mouvementsEpargne: [versement, fait], aujourdhui: AUJOURDHUI })
+    const [, janvierFait] = cumulDesMois(apres, m('2026-12'), m('2027-01'), { aujourdhui: AUJOURDHUI })
+    expect(janvierFait).toMatchObject({ epargneConfirmee: 100_000, epargneAConfirmer: 0, reste: 350_000, cumul: 720_000 })
   })
 
   it('la règle du scénario décide des revenus futurs retenus', () => {
     const [fevrier] = cumulDesMois(calendrier(depenses), m('2027-02'), m('2027-02'), { aujourdhui: AUJOURDHUI, regle: REGLES_SCENARIOS_DEFAUT.prudent })
-    expect(fevrier).toMatchObject({ revenus: 1_000_000, report: 720_000, cumul: 1_070_000 })
+    expect(fevrier).toMatchObject({ revenus: 1_000_000, report: 820_000, cumul: 1_270_000, cumulApresPrevu: 1_070_000 })
   })
 
   it('point de départ : solde déclaré, sinon le mois de la première donnée réelle ; rien avant', () => {
@@ -126,10 +140,10 @@ describe('cumul de mois en mois (lot 13)', () => {
     const avecDepart = cumulDesMois(c, m('2026-12'), m('2027-01'), { aujourdhui: AUJOURDHUI, depart: { mois: m('2027-01'), solde: centimes(200_000) } })
     expect(avecDepart.map((x) => [x.cle, x.nature, x.report, x.cumul])).toEqual([
       ['2026-12', 'avant', null, null],
-      ['2027-01', 'enCours', 200_000, 550_000],
+      ['2027-01', 'enCours', 200_000, 650_000],
     ])
     // Un solde à découvert est permis.
-    expect(cumulDesMois(c, m('2027-01'), m('2027-01'), { aujourdhui: AUJOURDHUI, depart: { mois: m('2027-01'), solde: centimes(-500_000) } })[0]!.cumul).toBe(-150_000)
+    expect(cumulDesMois(c, m('2027-01'), m('2027-01'), { aujourdhui: AUJOURDHUI, depart: { mois: m('2027-01'), solde: centimes(-500_000) } })[0]!.cumul).toBe(-50_000)
   })
 
   it('sans aucune donnée réelle : le cumul part du mois en cours, à zéro', () => {
@@ -144,15 +158,16 @@ describe('cumul de mois en mois (lot 13)', () => {
     expect(resumeCumul(mois)).toEqual({
       revenus: 3_100_000,
       charges: 1_630_000,
-      epargne: 300_000,
-      reste: 1_170_000,
-      cumulFin: 1_170_000,
+      epargne: 100_000,
+      epargneAConfirmer: 200_000,
+      reste: 1_370_000,
+      cumulFin: 1_370_000,
       plusBas: { cle: '2026-12', cumul: 370_000 },
       negatifs: [],
       natures: { reel: 1, enCours: 1, prevu: 1 },
     })
     const decouvert = cumulDesMois(calendrier(depenses), m('2027-01'), m('2027-02'), { aujourdhui: AUJOURDHUI, depart: { mois: m('2027-01'), solde: centimes(-500_000) } })
-    expect(resumeCumul(decouvert)).toMatchObject({ cumulFin: 300_000, plusBas: { cle: '2027-01', cumul: -150_000 }, negatifs: ['2027-01'] })
+    expect(resumeCumul(decouvert)).toMatchObject({ cumulFin: 500_000, plusBas: { cle: '2027-01', cumul: -50_000 }, negatifs: ['2027-01'] })
     expect(resumeCumul(mois.slice(0, 1))).toMatchObject({ revenus: 0, cumulFin: null, plusBas: null })
   })
 })

@@ -91,7 +91,7 @@ export function FenetreMois({ mois: m, jalons, onFermer, precedent, suivant }: P
           {SECTIONS.map((s) => {
             const familles: readonly string[] = s.familles
             const liste = lignes.filter((l) => familles.includes(l.famille))
-            const total = s.cle === 'revenus' ? m.revenus : s.cle === 'charges' ? m.charges : m.epargne
+            const total = s.cle === 'revenus' ? m.revenus : s.cle === 'charges' ? m.charges : m.epargneConfirmee
             return (
               <section key={s.cle} aria-label={s.titre} className={cn('min-w-0', s.cle === 'charges' && 'md:row-span-2')}>
                 <h3 className="mb-2 flex items-baseline justify-between gap-3 border-b border-filet pb-2">
@@ -106,6 +106,11 @@ export function FenetreMois({ mois: m, jalons, onFermer, precedent, suivant }: P
                       <LigneFenetre key={l.cle} ligne={l} aVenir={m.statut === 'aVenir'} sousTitre={s.cle === 'charges' && liste[i - 1]?.famille !== l.famille ? FAMILLES[l.famille] : null} />
                     ))}
                   </ul>
+                )}
+                {s.cle === 'epargne' && m.epargneAConfirmer > 0 && (
+                  <p className="mt-2 text-mention text-gris">
+                    À épargner : <Montant valeur={m.epargneAConfirmer} /> prévus. Pas encore retirés du cumul : tu les confirmes dans Épargne.
+                  </p>
                 )}
                 {s.cle === 'charges' && m.nature === 'enCours' && (
                   <p className="mt-2 text-mention text-gris">Le total compte ce qui est déjà sorti et ce qui reste prévu d’ici la fin du mois.</p>
@@ -125,7 +130,7 @@ function Calcul({ mois: m }: { mois: MoisCumul }) {
     { cle: 'report', libelle: m.premier ? 'Solde de départ' : `Report ${deMois(moisPrecedent(m.cle), { annee: false })}`, signe: '', valeur: m.report!, reel: null },
     { cle: 'revenus', libelle: 'Revenus', signe: '+', valeur: m.revenus, reel: m.dontReel?.revenus ?? null },
     { cle: 'charges', libelle: 'Charges', signe: '−', valeur: m.charges, reel: m.dontReel?.charges ?? null },
-    { cle: 'epargne', libelle: 'Épargne', signe: '−', valeur: m.epargne, reel: m.dontReel?.epargne ?? null },
+    { cle: 'epargne', libelle: 'Épargne confirmée', signe: '−', valeur: m.epargneConfirmee, reel: m.dontReel?.epargne ?? null },
   ]
   return (
     <section aria-label="Calcul du cumul" className="mt-5">

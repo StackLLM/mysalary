@@ -164,6 +164,7 @@ Les scénarios s'appuient dessus :
 - R11. L'épargne et les versements aux objectifs ne sont **jamais** des dépenses.
 
 #### Épargne
+- **R-épargne confirmée (15/10/2026)** : l'épargne n'est retirée du reste et du cumul qu'une fois **confirmée par l'utilisateur dans Épargne** (versement noté). Le versement prévu non confirmé est montré à part (« À épargner, à confirmer dans Épargne ») et n'est jamais supposé fait. Vaut pour tous les mois. La simulation des objectifs garde son propre calcul (« reste après versements prévus »), qui retire les versements prévus pour ne pas les compter deux fois.
 - R12. **Solde déclaré** : ce que l'utilisateur a réellement de côté.
 - R13. **Réservé** : la part attribuée aux objectifs.
 - R14. **Disponible** = solde déclaré − réservé. Ne peut pas être négatif ; sinon une alerte demande de réajuster.

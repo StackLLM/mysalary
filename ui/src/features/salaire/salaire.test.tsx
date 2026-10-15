@@ -68,7 +68,7 @@ function serveur(versions: VersionContratDto[]) {
     if (chemin === '/salaire/contrats') return versions
     if (chemin === '/mois/courant') return moisCourant
     if (chemin.startsWith('/salaire/paies')) return { aujourdhui: '2027-01-28', paies: versions.length ? [fevrier] : [] }
-    if (chemin.startsWith('/cumul')) return { aujourdhui: '2027-01-28', debut: '2027-01', depart: null, mois: [{ cle: '2027-02', nature: 'prevu', premier: false, report: 450_000, revenus: 1_000_000, charges: 300_000, epargne: 200_000, reste: 500_000, cumul: 950_000 }] }
+    if (chemin.startsWith('/cumul')) return { aujourdhui: '2027-01-28', debut: '2027-01', depart: null, mois: [{ cle: '2027-02', nature: 'prevu', premier: false, report: 450_000, revenus: 1_000_000, charges: 300_000, epargne: 200_000, epargneConfirmee: 200_000, epargneAConfirmer: 0, reste: 500_000, cumul: 950_000 }] }
     throw new Error(`Route non simulée : ${chemin}`)
   })
 }
@@ -111,7 +111,7 @@ describe('Mon plan › Salaire', () => {
     expect(screen.getByTitle('Versements aux objectifs (jamais une charge)').parentElement!.textContent).toBe('Mois financéRevenusChargesÉpargneCumul fin de moisStatut')
     const rangee = ligne.parentElement!
     await waitFor(() => expect(rangee.textContent!.replace(/\s+/g, ' ')).toContain('10 000 DH3 0003 000 DH2 0002 000 DH9 5009 500 DHEn retard · 1 j27 janv.'))
-    expect(within(rangee).getByTitle(/^Cumul du mois précédent 4\s500\sDH \+ revenus 10\s000\sDH − charges 3\s000\sDH − épargne 2\s000\sDH = 9\s500\sDH\. \(prévu\)$/)).toBeInTheDocument()
+    expect(within(rangee).getByTitle(/^Cumul du mois précédent 4\s500\sDH \+ revenus 10\s000\sDH − charges 3\s000\sDH − épargne confirmée 2\s000\sDH = 9\s500\sDH\. \(prévu\)$/)).toBeInTheDocument()
     expect(within(rangee).getByTitle(/^Revenus 10\s000\sDH : paie prévue 10\s000\sDH\. \(prévu\)$/)).toBeInTheDocument()
     expect(screen.getByText('Attendue depuis hier')).toBeInTheDocument()
 

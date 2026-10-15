@@ -4,6 +4,7 @@ import { centimes } from './argent'
 import type { Charge } from './charges'
 import { lireCleMois as m, lireDate as d } from './dates'
 import type { Depense } from './depenses'
+import type { MouvementEpargne, Objectif } from './epargne'
 import { creerCalendrier } from './periodes'
 import type { PaieEnregistree, VersionContrat } from './salaire'
 
@@ -54,6 +55,21 @@ function tableau(liste = depenses) {
   const calendrier = creerCalendrier({ mode: 'cyclePaie', contrats: [contrat], paies: [paie], sources: [], charges, depenses: liste, aujourdhui: d('2027-01-10') })
   return tableauDeBord(calendrier, d('2027-01-10'))
 }
+
+const moto: Objectif = { id: 'moto', libelle: 'Moto', type: 'moto', montantCible: centimes(8_000_000), montantInitial: centimes(0), dateCible: null, priorite: 1, versementMensuel: centimes(100_000), statut: 'actif', realiseLe: null, creeLe: d('2026-11-01') }
+const versement = (montant: number): MouvementEpargne => ({ id: 'v', compteId: 'cih', objectifId: 'moto', type: 'versement', date: d('2027-01-08'), montant: centimes(montant), libelle: '' })
+
+describe('épargne à confirmer (mois en cours)', () => {
+  const avec = (mouvements: MouvementEpargne[]) =>
+    tableauDeBord(creerCalendrier({ mode: 'cyclePaie', contrats: [contrat], paies: [paie], sources: [], charges, depenses, objectifs: [moto], mouvementsEpargne: mouvements, aujourdhui: d('2027-01-10') }), d('2027-01-10'))
+
+  it('le versement prévu reste à confirmer tant qu’il n’est pas fait ; le reste du mois n’en est pas diminué', () => {
+    expect(avec([]).epargneAConfirmer).toBe(100_000)
+    expect(avec([versement(40_000)]).epargneAConfirmer).toBe(60_000)
+    expect(avec([versement(100_000)]).epargneAConfirmer).toBe(0)
+    expect(avec([]).restePrevu).toBe(avec([versement(100_000)]).restePrevu)
+  })
+})
 
 describe('tableau de bord du mois (lot 27)', () => {
   it('postes du plus lourd au plus léger, avec leur part des revenus prévus', () => {

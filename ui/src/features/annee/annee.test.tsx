@@ -23,15 +23,15 @@ function visible(element: Element) {
 
 // Salaire 10 000 DH le 27 ; suivi depuis septembre 2026 ; aujourd'hui : 10 oct. 2026.
 const mois = (cle: string, modif: Record<string, unknown>): MoisCumul =>
-  ({ cle, debut: `${cle}-01`, fin: `${cle}-28`, statut: 'aVenir', nature: 'prevu', premier: false, report: 0, revenus: 1_000_000, charges: 560_000, apresCharges: 440_000, epargne: 100_000, reste: 340_000, cumul: 0, dontReel: null, ...modif }) as unknown as MoisCumul
+  ({ cle, debut: `${cle}-01`, fin: `${cle}-28`, statut: 'aVenir', nature: 'prevu', premier: false, report: 0, revenus: 1_000_000, charges: 560_000, apresCharges: 440_000, epargne: 100_000, epargneConfirmee: 0, epargneAConfirmer: 100_000, reste: 440_000, cumul: 0, cumulApresPrevu: 0, dontReel: null, ...modif }) as unknown as MoisCumul
 
-const avant = (cle: string) => mois(cle, { statut: 'passe', nature: 'avant', report: null, cumul: null, revenus: 0, charges: 0, apresCharges: 0, epargne: 0, reste: 0 })
+const avant = (cle: string) => mois(cle, { statut: 'passe', nature: 'avant', report: null, cumul: null, revenus: 0, charges: 0, apresCharges: 0, epargne: 0, epargneConfirmee: 0, epargneAConfirmer: 0, reste: 0 })
 const annee2026: MoisCumul[] = [
   ...['01', '02', '03', '04', '05', '06', '07', '08'].map((m) => avant(`2026-${m}`)),
-  mois('2026-09', { statut: 'passe', nature: 'reel', premier: true, report: 0, charges: 510_000, apresCharges: 490_000, epargne: 0, reste: 490_000, cumul: 490_000 }),
-  mois('2026-10', { debut: '2026-09-26', fin: '2026-10-26', statut: 'enCours', nature: 'enCours', report: 490_000, charges: 680_000, apresCharges: 320_000, reste: 220_000, cumul: 710_000, dontReel: { revenus: 1_000_000, charges: 440_000, epargne: 0 } }),
-  mois('2026-11', { report: 710_000, cumul: 1_050_000 }),
-  mois('2026-12', { report: 1_050_000, cumul: 1_390_000 }),
+  mois('2026-09', { statut: 'passe', nature: 'reel', premier: true, report: 0, charges: 510_000, apresCharges: 490_000, epargne: 0, epargneAConfirmer: 0, reste: 490_000, cumul: 490_000 }),
+  mois('2026-10', { debut: '2026-09-26', fin: '2026-10-26', statut: 'enCours', nature: 'enCours', report: 490_000, charges: 680_000, apresCharges: 320_000, reste: 320_000, cumul: 810_000, dontReel: { revenus: 1_000_000, charges: 440_000, epargne: 0 } }),
+  mois('2026-11', { report: 810_000, cumul: 1_250_000 }),
+  mois('2026-12', { report: 1_250_000, cumul: 1_690_000 }),
 ]
 const annee2026Dto = {
   aujourdhui: '2026-10-10',
@@ -47,7 +47,7 @@ const annee2026Dto = {
   debut: '2026-09',
   depart: null,
   mois: annee2026,
-  resume: { revenus: 4_000_000, charges: 2_310_000, epargne: 300_000, reste: 1_390_000, cumulFin: 1_390_000, plusBas: { cle: '2026-09', cumul: 490_000 }, negatifs: [], natures: { reel: 1, enCours: 1, prevu: 2 } },
+  resume: { revenus: 4_000_000, charges: 2_310_000, epargne: 0, epargneAConfirmer: 300_000, reste: 1_690_000, cumulFin: 1_690_000, plusBas: { cle: '2026-09', cumul: 490_000 }, negatifs: [], natures: { reel: 1, enCours: 1, prevu: 2 } },
 } as unknown as AnneeDto
 
 const objectif = (modif: Record<string, unknown>) =>
@@ -128,11 +128,12 @@ describe('Calendrier de l’année', () => {
     expect(espaces(cartes[0]!.getAttribute('aria-label'))).toBe('Janvier 2026 : avant le suivi. Voir le détail.')
     expect(cartes.slice(8).map((c) => espaces(c.getAttribute('aria-label')))).toEqual([
       'Septembre 2026 : reste après charges 4 900 DH, cumul fin de mois 4 900 DH, réel. Voir le détail.',
-      'Octobre 2026 : reste après charges 3 200 DH, cumul fin de mois 7 100 DH, en cours. Voir le détail.',
-      'Novembre 2026 : reste après charges 4 400 DH, cumul fin de mois 10 500 DH, prévu. Voir le détail.',
-      'Décembre 2026 : reste après charges 4 400 DH, cumul fin de mois 13 900 DH, prévu. Voir le détail.',
+      'Octobre 2026 : reste après charges 3 200 DH, cumul fin de mois 8 100 DH, en cours. Voir le détail.',
+      'Novembre 2026 : reste après charges 4 400 DH, cumul fin de mois 12 500 DH, prévu. Voir le détail.',
+      'Décembre 2026 : reste après charges 4 400 DH, cumul fin de mois 16 900 DH, prévu. Voir le détail.',
     ])
-    expect(visible(cartes[9]!)).toContain('Revenus+10 000DHCharges−6 800DHReste3 200DHÉpargne−1 000DHCumul fin de mois7 100DH')
+    // Le calcul se lit en entier : reste + report − épargne confirmée = cumul ; l'épargne prévue est dite « à confirmer ».
+    expect(visible(cartes[9]!)).toContain('Revenus+10 000DHCharges−6 800DHReste3 200DHReport+4 900DHÉpargne confirmée0DHÀ épargner (à confirmer)1 000DHCumul fin de mois8 100DH')
     // Grille d'octobre : la paie du 26 sept., le loyer payé le 5 oct.
     expect(espaces(cartes[9]!.querySelector('[title^="26 sept. 2026"]')?.getAttribute('title'))).toContain('Salaire +10 000 DH')
     expect(espaces(cartes[9]!.querySelector('[title^="5 oct. 2026"]')?.getAttribute('title'))).toContain('Loyer −3 500 DH')
@@ -142,7 +143,7 @@ describe('Calendrier de l’année', () => {
 
     const graphique = screen.getByRole('region', { name: 'Cumul fin de mois sur l’année' })
     expect(within(graphique).getAllByRole('button')).toHaveLength(12)
-    fireEvent.click(within(graphique).getByRole('button', { name: /^Octobre 2026 : 7.100.DH \(estimation\)$/ }))
+    fireEvent.click(within(graphique).getByRole('button', { name: /^Octobre 2026 : 8.100.DH \(estimation\)$/ }))
     expect(await screen.findByRole('dialog', { name: 'octobre 2026' })).toBeInTheDocument()
   })
 
@@ -151,7 +152,7 @@ describe('Calendrier de l’année', () => {
     fireEvent.click(await screen.findByRole('button', { name: /^Octobre 2026 : reste/ }))
     const fenetre = await screen.findByRole('dialog', { name: 'octobre 2026' })
     const calcul = within(fenetre).getByRole('region', { name: 'Calcul du cumul' })
-    expect(visible(calcul)).toBe('Report de septembre4 900DHRevenus+10 000DHdont 10 000DH réelsCharges−6 800DHdont 4 400DH réelsÉpargne−1 000DHdont 0DH réelsReste après charges (revenus − charges)3 200DH= Cumul fin de mois (estimation)7 100DH')
+    expect(visible(calcul)).toBe('Report de septembre4 900DHRevenus+10 000DHdont 10 000DH réelsCharges−6 800DHdont 4 400DH réelsÉpargne confirmée0DHdont 0DH réelsReste après charges (revenus − charges)3 200DH= Cumul fin de mois (estimation)8 100DH')
     const charges = await within(fenetre).findByRole('region', { name: 'Charges' })
     expect(visible(charges)).toContain('Loyer5 oct. · Payé3 500DH')
     expect(visible(charges)).toContain('CoursesEn cours900DHsur 1 500 DH prévus')
@@ -161,7 +162,9 @@ describe('Calendrier de l’année', () => {
     const novembre = await screen.findByRole('dialog', { name: 'novembre 2026' })
     expect(espaces(within(novembre).getByRole('region', { name: 'Objectifs' }).textContent)).toBe('Objectifs« Voyage » : date souhaitée')
     // Mois à venir : chaque ligne montre son prévu.
-    expect(visible((await within(novembre).findByRole('region', { name: 'Épargne' })))).toBe('Épargne1 000DHMotoPrévu1 000DH')
+    const epargne = visible(await within(novembre).findByRole('region', { name: 'Épargne' }))
+    expect(epargne).toContain('MotoPrévu1 000DH')
+    expect(epargne).toContain('À épargner : 1 000DH prévus. Pas encore retirés du cumul : tu les confirmes dans Épargne.')
   })
 
   it('année suivante : le calendrier recharge la plage de l’année', async () => {

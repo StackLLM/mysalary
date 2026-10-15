@@ -88,16 +88,16 @@ export const moisAbrege = (cle: string) => {
 }
 
 /**
- * Ligne « cumul » d'une paie (lot 13) : revenus − charges − épargne du mois, ajoutés au cumul du mois précédent.
+ * Ligne « cumul » d'une paie (lot 13) : revenus − charges − épargne confirmée du mois, ajoutés au cumul du mois précédent.
  * L'infobulle détaille le calcul ; la paie elle-même (prévue ou reçue) reste lisible dans les revenus.
  */
-export function detailCumul(c: Pick<MoisCumul, 'premier' | 'report' | 'revenus' | 'charges' | 'epargne' | 'reste' | 'cumul'>, paie: Pick<PaieDto, 'totalPrevu' | 'totalRecu'>) {
+export function detailCumul(c: Pick<MoisCumul, 'premier' | 'report' | 'revenus' | 'charges' | 'epargneConfirmee' | 'epargneAConfirmer' | 'reste' | 'cumul'>, paie: Pick<PaieDto, 'totalPrevu' | 'totalRecu'>) {
   const m = formaterMontant
   const paieTexte = paie.totalRecu !== null ? `paie reçue ${m(paie.totalRecu)}` : `paie prévue ${m(paie.totalPrevu)}`
   const autres = c.revenus - (paie.totalRecu ?? paie.totalPrevu)
   return {
     revenus: `Revenus ${m(c.revenus)} : ${paieTexte}${autres !== 0 ? `, autres revenus ${m(autres)}` : ''}.`,
-    cumul: `${c.premier ? 'Solde de départ' : 'Cumul du mois précédent'} ${m(c.report ?? 0)} + revenus ${m(c.revenus)} − charges ${m(c.charges)} − épargne ${m(c.epargne)} = ${m(c.cumul ?? 0)}.`,
+    cumul: `${c.premier ? 'Solde de départ' : 'Cumul du mois précédent'} ${m(c.report ?? 0)} + revenus ${m(c.revenus)} − charges ${m(c.charges)} − épargne confirmée ${m(c.epargneConfirmee)} = ${m(c.cumul ?? 0)}.${c.epargneAConfirmer > 0 ? ` L’épargne prévue (${m(c.epargneAConfirmer)}) n’est retirée qu’une fois confirmée dans Épargne.` : ''}`,
   }
 }
 

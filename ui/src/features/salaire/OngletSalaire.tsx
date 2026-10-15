@@ -490,8 +490,8 @@ function LigneCumul({ paie, cumul, chargement }: { paie: PaieDto; cumul: MoisCum
       <Cellule className="justify-end px-3" titre={`Charges ${formaterMontant(cumul.charges)}${suffixe}`}>
         <Montant valeur={cumul.charges} sansDevise className={cn(style, 'pr-0.5')} />
       </Cellule>
-      <Cellule className="justify-end px-3" titre={`Épargne ${formaterMontant(cumul.epargne)}${suffixe}`}>
-        <Montant valeur={cumul.epargne} sansDevise className={cn(style, 'pr-0.5')} />
+      <Cellule className="justify-end px-3" titre={`Épargne confirmée ${formaterMontant(cumul.epargneConfirmee)}${cumul.epargneAConfirmer > 0 ? `. À épargner, à confirmer dans Épargne : ${formaterMontant(cumul.epargneAConfirmer)}` : ''}${suffixe}`}>
+        <Montant valeur={cumul.epargneConfirmee} sansDevise className={cn(style, 'pr-0.5')} />
       </Cellule>
       <Cellule className="justify-end px-3" titre={detail.cumul + suffixe}>
         <Montant valeur={cumul.cumul} sansDevise className={cn(style, 'pr-0.5', cumul.cumul < 0 && 'text-alerte')} />
