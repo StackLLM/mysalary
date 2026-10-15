@@ -14,20 +14,9 @@ export function texteEcart(montant: number, part: number | null) {
 
 export type LigneIndicateur = { cle: string; libelle: string; valeur: string; detail: string; base: string; ton?: 'alerte' | 'positif' }
 
-/** Lignes de la carte « Indicateurs » d'un mois, dans l'ordre des questions (ux-ui.md (UX) § 1). */
+/** Lignes de la carte « Indicateurs » d'un mois, dans l'ordre des questions (ux-ui.md (UX) § 1). Le « reste à dépenser » n'y est plus : voir « Reste du mois, avant épargne ». */
 export function lignesIndicateurs(k: IndicateursDto): LigneIndicateur[] {
   const lignes: LigneIndicateur[] = []
-  const r = k.resteADepenser
-  if (r) {
-    lignes.push({
-      cle: 'reste',
-      libelle: 'Reste à dépenser',
-      valeur: formaterMontant(r.montant),
-      detail: `${r.montant > 0 ? `${formaterMontant(r.parJour)} par jour · ` : ''}${r.joursRestants} jour${r.joursRestants > 1 ? 's' : ''} restant${r.joursRestants > 1 ? 's' : ''}${r.nature === 'prevu' ? ' · prévu' : ''}`,
-      base: `${r.nature === 'prevu' ? 'Paie prévue' : 'Revenus reçus'} (${formaterMontant(r.revenus)}) − sorties (${formaterMontant(r.sorties)}) − charges datées encore à payer (${formaterMontant(r.engagements)}) − épargne prévue pas encore versée (${formaterMontant(r.epargneRestante)}).`,
-      ton: r.montant < 0 ? 'alerte' : undefined,
-    })
-  }
   const s = k.resteSemaine
   if (s) {
     lignes.push({

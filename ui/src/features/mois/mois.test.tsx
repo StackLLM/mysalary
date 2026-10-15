@@ -64,6 +64,7 @@ const bilan = (modif: Partial<BilanDto> = {}) =>
       { cle: 'dette:d1:1', famille: 'dette', libelle: 'Prêt voiture', date: '2027-01-10', prevu: 100_000, reel: 100_000, ecart: 0, statut: 'confirme', cible: { type: 'dette', id: 'd1' } },
     ],
     totaux: totauxBilan,
+    synthese: { consomme: 140_000, resteAPayer: 350_000 },
     estimation: { revenusAttendus: 0, chargesAttendues: 560_000, resteFinDeMois: 300_000 },
     aConfirmer: [],
     rythme: [{ date: '2027-01-20', prevu: 100_000, reel: 140_000 }],
@@ -259,6 +260,12 @@ describe('Mois › Vue d’ensemble', () => {
     expect(within(revenus).getByText('Reçu')).toBeInTheDocument()
     expect(within(screen.getByRole('region', { name: 'Enveloppes' })).getByText('En cours')).toBeInTheDocument()
     expect(screen.getByText(/Estimation de fin de mois/)).toBeInTheDocument()
+    // Dépensé (charges consommées), reste à payer, reste du mois avant épargne : plus de « reste réel ».
+    const espaces = (t: string | null) => (t ?? '').replace(/[\u202f\u00a0\s]+/g, ' ')
+    expect(screen.queryByText('Reste réel')).not.toBeInTheDocument()
+    expect(espaces(screen.getByText('Dépensé', { selector: 'p, span, div' }).closest('div')!.textContent)).toMatch(/1 400.*Reste à payer.*3 500/)
+    expect(espaces(screen.getByText('Reste du mois, avant épargne').closest('div')!.textContent)).toMatch(/3 000.*Revenus prévus.*10 000.*Charges prévues.*7 000/)
+    expect(espaces(screen.getByRole('note').textContent)).toMatch(/Ce reste est calculé sans l’épargne/)
     // Cumul (lot 13) : le reste de décembre arrive en janvier, le cumul de fin de janvier est une estimation.
     const cumul = screen.getByRole('region', { name: 'Cumul de mois en mois' })
     const texte = cumul.textContent!.replace(/\s+/g, ' ')

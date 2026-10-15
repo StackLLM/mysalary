@@ -10,6 +10,7 @@ import { CarteBandeau } from '../../components/CarteBandeau'
 import { Confirmation } from '../../components/Confirmation'
 import { BlocTotaux } from '../../components/Elements'
 import { GraphiqueRythme } from '../../components/graphiques/GraphiqueRythme'
+import { MentionSansEpargne } from '../../components/MentionSansEpargne'
 import { Montant } from '../../components/Montant'
 import { ErreurApi } from '../../lib/api'
 import { elementApparition } from '../../lib/animations'
@@ -68,17 +69,16 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
           <CarteBandeau
             className="mt-7"
             gauche={{
-              titre: 'Reste réel',
+              titre: 'Dépensé',
               lignes: [
-                { valeur: <Montant valeur={totaux.resteReel} /> },
-                { libelle: 'Revenus reçus', valeur: <Montant valeur={totaux.revenusReels} /> },
-                { libelle: 'Sorties réelles', valeur: <Montant valeur={totaux.sortiesReelles} /> },
+                { valeur: <Montant valeur={bilan.synthese.consomme} className="text-montant" /> },
+                { libelle: 'Reste à payer', valeur: <Montant valeur={bilan.synthese.resteAPayer} /> },
               ],
             }}
             droite={{
-              titre: 'Reste prévu',
+              titre: 'Reste du mois, avant épargne',
               lignes: [
-                { valeur: <Montant valeur={totaux.restePrevu} /> },
+                { valeur: <Montant valeur={totaux.restePrevu} className="text-montant" /> },
                 { libelle: 'Revenus prévus', valeur: <Montant valeur={totaux.revenusPrevus} /> },
                 { libelle: 'Charges prévues', valeur: <Montant valeur={totaux.chargesPrevues} /> },
               ],
@@ -192,8 +192,8 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
             <BlocTotaux
               lignes={[
                 { libelle: 'Revenus reçus', valeur: <Montant valeur={totaux.revenusReels} />, fort: true },
-                { libelle: 'Sorties réelles', valeur: <Montant valeur={totaux.sortiesReelles} /> },
-                { libelle: 'Reste prévu', valeur: <Montant valeur={totaux.restePrevu} /> },
+                { libelle: 'Dépensé (charges consommées)', valeur: <Montant valeur={bilan.synthese.consomme} /> },
+                { libelle: 'Reste à payer', valeur: <Montant valeur={bilan.synthese.resteAPayer} /> },
                 // L'épargne n'est pas une sortie (R11) : elle est montrée à part, prévue et réelle.
                 ...(bilan.epargne
                   ? [
@@ -211,9 +211,11 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
                     ]
                   : []),
               ]}
-              total={{ libelle: `Reste réel en ${court}`, valeur: <Montant valeur={totaux.resteReel} /> }}
+              total={{ libelle: `Reste ${deMois(mois.cle, { annee: false })}, sans épargne`, valeur: <Montant valeur={totaux.restePrevu} /> }}
             />
           </div>
+
+          <MentionSansEpargne className="mt-6" epargnePrevue={bilan.epargne ? bilan.epargne.prevue : null} />
         </Carte>
       </motion.div>
 
@@ -270,7 +272,7 @@ export function OngletEnsemble({ bilan, changerMois }: { bilan: BilanDto; change
         description={
           bilan.aConfirmer.length > 0
             ? `${bilan.aConfirmer.length} ligne${bilan.aConfirmer.length > 1 ? 's ne sont' : ' n’est'} pas confirmée${bilan.aConfirmer.length > 1 ? 's' : ''} : ${bilan.aConfirmer.map((l) => l.libelle).join(', ')}. Le bilan sera figé tel quel, avec cette mention. Tu pourras rouvrir le mois.`
-            : `Reste réel : ${formaterMontant(totaux.resteReel)}. Le bilan sera figé et le mois passera en lecture seule. Tu pourras le rouvrir.`
+            : `Dépensé : ${formaterMontant(bilan.synthese.consomme)}, reste à payer : ${formaterMontant(bilan.synthese.resteAPayer)}. Le bilan sera figé et le mois passera en lecture seule. Tu pourras le rouvrir.`
         }
         libelleConfirmer={bilan.aConfirmer.length > 0 ? 'Clôturer quand même' : 'Clôturer'}
         ton="principal"

@@ -54,6 +54,9 @@ describe('page Aujourd’hui (lot 16)', () => {
       ['Courses', 310_000, 30_000],
       ['Internet', 25_000, 0],
     ])
+    // Consommé : les 300 DH de courses. Reste à payer : loyer 3 500 et internet 250 (les enveloppes se dépensent librement).
+    expect(a.tableau.synthese).toEqual({ consomme: 30_000, resteAPayer: 375_000 })
+    expect(a.tableau.restePrevu).toBe(315_000)
     expect(a.tableau.grossesDepenses.map((d) => [d.date, d.montant])).toEqual([['2027-01-06', 30_000]])
     expect(a.epargne).toMatchObject({ declare: false, solde: 0 })
     expect(a.objectifs).toBeNull()

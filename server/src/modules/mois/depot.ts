@@ -1,4 +1,4 @@
-import { bilanDuMois, calendrierDuMois, cumulDesMois, debutCumul, evenementsDuMois, lireCleMois, resumeCumul, rythmeDuMois, suiviAnnuel, suiviDesSemaines, type CleMois, type DateCivile, type SuiviDesSemaines } from '@mysalary/moteur'
+import { bilanDuMois, calendrierDuMois, cumulDesMois, debutCumul, evenementsDuMois, lireCleMois, resumeCumul, rythmeDuMois, suiviAnnuel, suiviDesSemaines, syntheseCharges, type CleMois, type DateCivile, type SuiviDesSemaines } from '@mysalary/moteur'
 import { CODES_ERREUR, formaterMois, type AnneeDto, type BilanDto, type CalendrierMoisDto, type CumulDto, type EvenementCloture, type SemainesDto, type SuiviAnnuelDto } from '@mysalary/partage'
 import type { PrismaClient } from '@prisma/client'
 import { ErreurApi } from '../../lib/erreurs'
@@ -6,7 +6,8 @@ import { chargerCalendrier } from '../salaire/depot'
 
 // Toute lecture ou écriture est filtrée par utilisateurId (isolation, produit.md (Plan) § 5.7).
 
-type Instantane = Omit<BilanDto, 'aujourdhui' | 'cloture' | 'journal' | 'cumul'>
+// La synthèse n'est pas figée : elle est recalculée depuis les lignes à chaque lecture (les anciens bilans figés n'en ont pas).
+type Instantane = Omit<BilanDto, 'aujourdhui' | 'cloture' | 'journal' | 'cumul' | 'synthese'>
 
 const regle = (message: string) => new ErreurApi(422, CODES_ERREUR.REGLE_METIER, message)
 
@@ -41,6 +42,7 @@ export async function bilan(prisma: PrismaClient, utilisateurId: string, aujourd
     aujourdhui,
     cloture: cloture ? { le: cloture.clotureLe.toISOString(), forcee: cloture.forcee, nonConfirmees: cloture.nonConfirmees } : null,
     journal: evenements,
+    synthese: syntheseCharges(contenu.lignes),
     cumul: suite.mois[0]!,
   }
 }

@@ -56,13 +56,12 @@ describe('règles d’affichage des indicateurs', () => {
     expect(texteRetard({ dateCible: null, retardMois: null } as never)).toBe('projection · sans date souhaitée')
   })
 
-  it('les huit KPI dans l’ordre des questions, chacun avec sa base de calcul', () => {
+  it('les sept KPI dans l’ordre des questions, chacun avec sa base de calcul', () => {
     const lignes = lignesIndicateurs(indicateurs)
-    expect(lignes.map((l) => l.cle)).toEqual(['reste', 'semaine', 'epargne', 'charges', 'ecart', 'variable', 'progression', 'delai'])
-    expect(espaces(lignes[0]!.detail)).toBe('170,58 DH par jour · 17 jours restants')
-    expect(lignes[1]!.ton).toBe('alerte')
-    expect(espaces(lignes[4]!.base)).toBe('Sorties réelles à ce jour (5 800 DH) − prévu cumulé à ce jour (5 494 DH).')
-    expect(lignes[7]).toMatchObject({ valeur: 'novembre 2028', ton: 'alerte' })
+    expect(lignes.map((l) => l.cle)).toEqual(['semaine', 'epargne', 'charges', 'ecart', 'variable', 'progression', 'delai'])
+    expect(lignes[0]!.ton).toBe('alerte')
+    expect(espaces(lignes[3]!.base)).toBe('Sorties réelles à ce jour (5 800 DH) − prévu cumulé à ce jour (5 494 DH).')
+    expect(lignes[6]).toMatchObject({ valeur: 'novembre 2028', ton: 'alerte' })
   })
 })
 
@@ -95,7 +94,8 @@ describe('Cloche', () => {
 describe('carte Indicateurs et simulateur pré-rempli', () => {
   it('affiche chaque KPI ; « Sur quoi reposent ces calculs ? » déplie les bases', async () => {
     rendre(<CarteIndicateurs cle="2027-01" />, { route: '/mois', compte: 'u1' })
-    expect(await screen.findByText('Reste à dépenser')).toBeInTheDocument()
+    expect(await screen.findByText('Taux d’épargne')).toBeInTheDocument()
+    expect(screen.queryByText('Reste à dépenser')).not.toBeInTheDocument()
     expect(espaces(screen.getByText('Taux de charges').closest('div')!.textContent)).toBe('Taux de chargesprévu 73 %58 %')
     fireEvent.click(screen.getByRole('button', { name: 'Sur quoi reposent ces calculs ?' }))
     expect(espaces(screen.getByRole('list', { name: 'Bases de calcul' }).textContent)).toContain('Part variable du revenu : Primes et revenus variables (16 000 DH)')

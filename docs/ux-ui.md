@@ -254,7 +254,7 @@ Format pour chaque page : objectif · données · actions · relations · état 
 #### 5.2 Aujourd'hui
 - **Objectif** : où j'en suis, en 5 secondes.
 - **Données** (dans l'ordre) :
-  1. Carte héro : **reste à dépenser ce mois**, jours restants, montant par jour.
+  1. Carte héro : **reste du mois, avant épargne** (revenus prévus − charges prévues), avec la mention « Ce reste est calculé sans l'épargne » et le montant d'épargne prévu non retiré. Quatre chiffres au-dessus : reçu, dépensé (charges fixes, enveloppes, ponctuels, dettes consommés, plus le hors plan), reste à payer (charges fixes, ponctuels et dettes pas encore payés, sans les enveloppes), épargné. Plus de « reste à dépenser », de « par jour » ni de « reste réel » (supprimés le 15/10/2026).
   2. Reste flexible de la semaine + barre de rythme.
   3. Actions attendues : salaire à confirmer, charges du jour, échéance de dette.
   4. Épargne du mois : prévue vs réelle.
@@ -276,7 +276,7 @@ Format pour chaque page : objectif · données · actions · relations · état 
 
 #### 5.3 Mois
 - **Objectif** : comparer prévu et réel sur une période.
-- **Données** : en-tête (reste, épargne, écart), tableau prévu / réel / écart par ligne, graphique de rythme cumulé (réel vs ligne prévue), onglets Semaines et Dépenses.
+- **Données** : bandeau « Dépensé » (avec le reste à payer) et « Reste du mois, avant épargne », puis le cumul ; en bas, les totaux (reçu, dépensé, reste à payer, épargne) et « Reste du mois, sans épargne » avec sa mention. Identique pour tous les mois (passés, en cours, à venir). Tableau prévu / réel / écart par ligne, graphique de rythme cumulé (réel vs ligne prévue), onglets Semaines et Dépenses.
 - **Actions** : changer de période, confirmer une ligne, ajouter une dépense, modifier une dépense, clôturer / rouvrir.
 - **Relations** : Aujourd'hui, Année, Mon plan (modifier la source d'une ligne prévue), Calendrier.
 - **État vide** : aucune dépense → « Aucune dépense notée sur cette période » + ajouter. Période future → prévisions seules, bandeau « Mois à venir ».

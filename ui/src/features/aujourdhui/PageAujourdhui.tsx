@@ -1,6 +1,6 @@
 import { formaterDate, formaterMois, formaterMontant, type AlerteDto, type AujourdhuiDto } from '@mysalary/partage'
 import { motion } from 'framer-motion'
-import { AlertTriangle, CalendarClock, CheckCircle2, PiggyBank, Receipt, TrendingUp, Wallet } from 'lucide-react'
+import { AlertTriangle, CalendarClock, CheckCircle2, Hourglass, PiggyBank, Receipt, TrendingUp, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BadgeNature } from '../../components/Badges'
@@ -10,6 +10,7 @@ import { Carte, TitreSection } from '../../components/Carte'
 import { CarteBandeau } from '../../components/CarteBandeau'
 import { Identite } from '../../components/Elements'
 import { FilAriane } from '../../components/FilAriane'
+import { MentionSansEpargne } from '../../components/MentionSansEpargne'
 import { Montant } from '../../components/Montant'
 import { TuileIndicateur } from '../../components/premium/TuileIndicateur'
 import { conteneurCascade, elementApparition } from '../../lib/animations'
@@ -66,7 +67,7 @@ function EtatVide() {
   return (
     <Carte espacement="large" className="max-w-2xl">
       <h1 className="text-titre text-encre">Ajoute ton salaire pour voir ton reste du mois.</h1>
-      <p className="mt-2 text-texte text-gris">Avec ton salaire et son jour de paie, MySalary calcule ce qu’il te reste à dépenser chaque jour, chaque semaine et chaque mois.</p>
+      <p className="mt-2 text-texte text-gris">Avec ton salaire et son jour de paie, MySalary calcule ce que tu dépenses, ce qu’il te reste à payer et le reste de ton mois.</p>
       <Link to="/plan" className={styleBouton({ className: 'mt-6' })}>
         Ajouter mon salaire
       </Link>
@@ -80,7 +81,6 @@ function Journee({ donnees }: { donnees: AujourdhuiDto }) {
   const [paieOuverte, setPaieOuverte] = useState<string | null>(null)
   const [revenuOuvert, setRevenuOuvert] = useState(false)
   const { aujourdhui, indicateurs: k, tableau } = donnees
-  const reste = k.resteADepenser
   const semaine = k.resteSemaine
   const prenom = utilisateur?.prenom ?? ''
 
@@ -115,13 +115,12 @@ function Journee({ donnees }: { donnees: AujourdhuiDto }) {
               <CarteBandeau
                 className="mt-7"
                 gauche={{
-                  titre: reste?.nature === 'prevu' ? 'Tu peux encore dépenser (prévu)' : 'Tu peux encore dépenser',
-                  lignes: reste
-                    ? [
-                        { valeur: <Montant valeur={reste.montant} anime className={cn('text-montant', reste.montant < 0 && 'text-peche-clair')} /> },
-                        { libelle: `Soit, pendant ${reste.joursRestants} jour${reste.joursRestants > 1 ? 's' : ''}, par jour`, valeur: <Montant valeur={reste.parJour} /> },
-                      ]
-                    : [{ valeur: '—' }],
+                  titre: 'Reste du mois, avant épargne',
+                  lignes: [
+                    { valeur: <Montant valeur={tableau.restePrevu} anime className={cn('text-montant', tableau.restePrevu < 0 && 'text-peche-clair')} /> },
+                    { libelle: 'Revenus prévus', valeur: <Montant valeur={tableau.revenusPrevus} /> },
+                    { libelle: 'Charges prévues', valeur: <Montant valeur={k.tauxCharges.chargesPrevues} /> },
+                  ],
                 }}
                 droite={{
                   titre: 'Cette semaine, il reste',
@@ -134,14 +133,12 @@ function Journee({ donnees }: { donnees: AujourdhuiDto }) {
                 }}
               />
 
-              {reste && (
-                <p className={cn('mt-5 rounded-champ px-4 py-3 text-texte-sm', reste.montant < 0 ? 'bg-alerte-fond text-alerte' : 'bg-teinte text-encre-2')}>
-                  {reste.montant < 0 && <span className="font-semibold">Le mois est dépassé de {formaterMontant(-reste.montant)}. </span>}
-                  D’où vient ce chiffre : revenus du mois {formaterMontant(reste.revenus)}, moins ce que tu as déjà sorti {formaterMontant(reste.sorties)}, moins ce qu’il reste à payer{' '}
-                  {formaterMontant(reste.engagements)}, moins l’épargne à verser {formaterMontant(reste.epargneRestante)}.
-                  {reste.nature === 'prevu' && reste.montant >= 0 && ' La paie du mois est comptée comme prévue tant qu’elle n’est pas confirmée.'}
+              {tableau.restePrevu < 0 && (
+                <p role="alert" className="mt-5 rounded-champ bg-alerte-fond px-4 py-3 text-texte-sm font-semibold text-alerte">
+                  Tes charges prévues dépassent tes revenus de {formaterMontant(-tableau.restePrevu)}.
                 </p>
               )}
+              <MentionSansEpargne className="mt-5" epargnePrevue={k.tauxEpargne.epargnePrevue} />
 
               {semaine && (
                 <div className="mt-5">
@@ -243,11 +240,12 @@ function Journee({ donnees }: { donnees: AujourdhuiDto }) {
   )
 }
 
-/** Trois chiffres du mois, en mots simples : reçu, dépensé, épargné (le réel ; le prévu en petit). Chacun vient du moteur. */
+/** Quatre chiffres du mois, en mots simples : reçu, dépensé (charges consommées), reste à payer, épargné. Chacun vient du moteur. */
 function Indicateurs({ donnees }: { donnees: AujourdhuiDto }) {
   const { tauxEpargne: e, tauxCharges: c } = donnees.indicateurs
+  const { synthese } = donnees.tableau
   return (
-    <motion.section variants={elementApparition} aria-label="Indicateurs du mois" className="grid grid-cols-3 gap-2 sm:gap-4">
+    <motion.section variants={elementApparition} aria-label="Indicateurs du mois" className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
       <TuileIndicateur
         libelle="Reçu"
         icone={<Wallet className="h-5 w-5" aria-hidden />}
@@ -257,9 +255,16 @@ function Indicateurs({ donnees }: { donnees: AujourdhuiDto }) {
       <TuileIndicateur
         libelle="Dépensé"
         icone={<Receipt className="h-5 w-5" aria-hidden />}
-        ton={c.sortiesReelles > c.chargesPrevues ? 'alerte' : 'neutre'}
-        valeur={<Montant valeur={c.sortiesReelles} anime />}
-        detail={<>sur <Montant valeur={c.chargesPrevues} /> prévus</>}
+        ton={synthese.consomme > c.chargesPrevues ? 'alerte' : 'neutre'}
+        valeur={<Montant valeur={synthese.consomme} anime />}
+        detail={<>sur <Montant valeur={c.chargesPrevues} /> de charges prévues</>}
+      />
+      <TuileIndicateur
+        libelle="Reste à payer"
+        icone={<Hourglass className="h-5 w-5" aria-hidden />}
+        ton={synthese.resteAPayer > 0 ? 'attention' : 'positif'}
+        valeur={<Montant valeur={synthese.resteAPayer} anime />}
+        detail="Charges fixes, ponctuels et dettes, sans les enveloppes"
       />
       <TuileIndicateur
         libelle="Épargné"

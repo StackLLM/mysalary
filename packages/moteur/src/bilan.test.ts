@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { centimes } from './argent'
-import { bilanDuMois, rythmeDuMois } from './bilan'
+import { bilanDuMois, rythmeDuMois, syntheseCharges } from './bilan'
 import type { Charge } from './charges'
 import { lireCleMois as m, lireDate as d } from './dates'
 import type { Depense } from './depenses'
@@ -122,6 +122,17 @@ describe('bilan d’un mois en cours', () => {
   it('la somme des lignes de charges réelles vaut les sorties réelles', () => {
     const charges = bilan.lignes.filter((l) => l.famille !== 'revenu')
     expect(charges.reduce((s, l) => s + (l.reel ?? 0), 0)).toBe(bilan.totaux.sortiesReelles)
+  })
+
+  it('synthèse : consommé des charges (fixes, enveloppes, ponctuels, dettes) et reste à payer sans les enveloppes', () => {
+    // Loyer 3 600 + courses 2 000 + prêt 1 000 + hors plan 150 ; pas le loyer de février payé d'avance, pas l'épargne.
+    expect(syntheseCharges(bilan.lignes)).toEqual({ consomme: 675_000, resteAPayer: 240_000 })
+    expect(syntheseCharges([])).toEqual({ consomme: 0, resteAPayer: 0 })
+  })
+
+  it('synthèse : un ponctuel payé en partie ne laisse à payer que le manque', () => {
+    const lignes = [{ famille: 'ponctuel' as const, prevu: centimes(20_000), reel: centimes(14_000), statut: 'partiel' as const }]
+    expect(syntheseCharges(lignes)).toEqual({ consomme: 14_000, resteAPayer: 6_000 })
   })
 
   it('le mois suivant voit son loyer déjà payé', () => {

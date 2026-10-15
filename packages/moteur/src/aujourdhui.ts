@@ -1,6 +1,6 @@
 import { evenementsDuMois, type EvenementJour } from './annee'
 import { additionner, centimes, type Centimes } from './argent'
-import { bilanDuMois } from './bilan'
+import { bilanDuMois, syntheseCharges, type SyntheseCharges } from './bilan'
 import { ajouterJours, decalerMois, ecartJours, jourSemaine, type DateCivile } from './dates'
 import type { Calendrier, DepenseImputee } from './periodes'
 import { suiviDesSemaines, type SuiviSemaine } from './semaines'
@@ -56,6 +56,10 @@ export interface TableauDeBord {
   /** Part du mois écoulée (jour en cours compris), de 0 à 1. */
   avancement: number
   revenusPrevus: Centimes
+  /** Revenus prévus − charges prévues : le reste du mois, avant épargne. */
+  restePrevu: Centimes
+  /** Consommé des charges et reste à payer, comme dans le bilan du mois. */
+  synthese: SyntheseCharges
   /** Toutes les charges du mois, de la plus lourde à la plus légère. */
   postes: PosteDuMois[]
   /** Les 5 plus grosses dépenses réelles du mois, à ce jour. */
@@ -93,5 +97,5 @@ export function tableauDeBord(calendrier: Calendrier, aujourdhui: DateCivile): T
     .sortiesEntre(mois.debut, jusquA)
     .depenses.sort((a, b) => b.montant - a.montant || (a.date < b.date ? 1 : -1))
     .slice(0, 5)
-  return { avancement, revenusPrevus: totaux.revenusPrevus, postes, grossesDepenses }
+  return { avancement, revenusPrevus: totaux.revenusPrevus, restePrevu: totaux.restePrevu, synthese: syntheseCharges(lignes), postes, grossesDepenses }
 }

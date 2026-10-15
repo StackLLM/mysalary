@@ -57,6 +57,30 @@ export interface TotauxBilan {
   ecart: Centimes | null
 }
 
+/**
+ * Ce que les charges du mois ont consommé, et ce qu'il reste à payer (lot 29 prod : pour tous les mois).
+ * - `consomme` : réel des charges fixes, enveloppes, ponctuels et échéances de dettes, plus les dépenses hors plan (jamais cachées).
+ *   L'épargne et les paiements d'un autre mois n'en font pas partie.
+ * - `resteAPayer` : ce qui est daté et pas encore payé (fixes, ponctuels, échéances), sans les enveloppes, qui se dépensent librement.
+ */
+export interface SyntheseCharges {
+  consomme: Centimes
+  resteAPayer: Centimes
+}
+
+const FAMILLES_CONSOMMEES: FamilleBilan[] = ['fixe', 'enveloppe', 'ponctuel', 'dette', 'horsPlan']
+const FAMILLES_A_PAYER: FamilleBilan[] = ['fixe', 'ponctuel', 'dette']
+
+export function syntheseCharges(lignes: Pick<LigneBilan, 'famille' | 'prevu' | 'reel' | 'statut'>[]): SyntheseCharges {
+  const consomme = additionner(...lignes.filter((l) => FAMILLES_CONSOMMEES.includes(l.famille)).map((l) => l.reel ?? centimes(0)))
+  const resteAPayer = additionner(
+    ...lignes
+      .filter((l) => FAMILLES_A_PAYER.includes(l.famille) && l.statut !== 'confirme')
+      .map((l) => centimes(Math.max(0, (l.prevu ?? 0) - (l.reel ?? 0)))),
+  )
+  return { consomme, resteAPayer }
+}
+
 export interface BilanDuMois {
   mois: MoisBudgetaire
   lignes: LigneBilan[]

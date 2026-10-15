@@ -67,6 +67,8 @@ const journee = (modif: Partial<AujourdhuiDto> = {}) =>
     tableau: {
       avancement: 16 / 31,
       revenusPrevus: 1_000_000,
+      restePrevu: 200_000,
+      synthese: { consomme: 580_000, resteAPayer: 30_000 },
       postes: [
         { cle: 'fixe:loyer', famille: 'fixe', libelle: 'Loyer', prevu: 350_000, reel: 350_000, part: 0.35, consommation: null, surveillance: null },
         { cle: 'enveloppe:courses', famille: 'enveloppe', libelle: 'Courses', prevu: 200_000, reel: 180_000, part: 0.2, consommation: 0.9, surveillance: 'rythme' },
@@ -132,7 +134,8 @@ describe('Aujourd’hui', () => {
     expect(await screen.findByText('Bonjour Oussama')).toBeInTheDocument()
     expect(screen.getByText('Lundi 11 janvier 2027', { selector: 'div' })).toBeInTheDocument()
     // Le montant du héros est un compteur animé : on attend sa valeur finale.
-    await waitFor(() => expect(visible(screen.getByText('Tu peux encore dépenser').closest('section')!)).toContain('2 900DHSoit, pendant 16 jours, par jour : 181,25DH'))
+    await waitFor(() => expect(visible(screen.getByText('Reste du mois, avant épargne').closest('section')!)).toContain('2 000DHRevenus prévus : 10 000DHCharges prévues : 8 000DH'))
+    expect(espaces(screen.getByRole('note').textContent)).toMatch(/Ce reste est calculé sans l’épargne\..*1 000.*d’épargne prévus ce mois-ci ne sont pas retirés\./)
     expect(visible(screen.getByText('Cette semaine, il reste').closest('div')!)).toContain('600DHPar jour, sur 7 jours : 85,71DH')
     expect(espaces(screen.getByRole('region', { name: 'Semaine passée' }).textContent)).toContain('300 DH dépensés sur 700 DH : 400 DH de côté.')
 
@@ -147,8 +150,10 @@ describe('Aujourd’hui', () => {
 
     const kpi = screen.getByRole('region', { name: 'Indicateurs du mois' })
     await waitFor(() => expect(visible(kpi)).toContain('Reçu10 000DHsur 10 000DH prévus'))
-    expect(visible(kpi)).toContain('Dépensé5 800DHsur 8 000DH prévus')
+    expect(visible(kpi)).toContain('Dépensé5 800DHsur 8 000DH de charges prévues')
+    expect(visible(kpi)).toContain('Reste à payer300DHCharges fixes, ponctuels et dettes, sans les enveloppes')
     expect(visible(kpi)).toContain('Épargné500DHsur 1 000DH prévus')
+    expect(screen.queryByText('Tu peux encore dépenser')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Ouvrir l’objectif' })).toHaveAttribute('href', '/objectifs/moto')
     expect(screen.getByText('Suggestions')).toBeInTheDocument()
   })
@@ -187,11 +192,11 @@ describe('Aujourd’hui', () => {
     expect(within(panneau).getByRole('button', { name: 'Confirmer' })).toBeInTheDocument()
   })
 
-  it('reste négatif : montant et phrase d’alerte', async () => {
+  it('reste du mois négatif : phrase d’alerte', async () => {
     const base = journee()
-    donnees = { ...base, indicateurs: { ...base.indicateurs, resteADepenser: { ...base.indicateurs.resteADepenser!, montant: -50_000, parJour: 0 } } } as unknown as AujourdhuiDto
+    donnees = { ...base, tableau: { ...base.tableau, restePrevu: -50_000 } } as unknown as AujourdhuiDto
     ouvrir()
-    expect(await screen.findByText(/Le mois est dépassé de 500/)).toBeInTheDocument()
+    expect(await screen.findByText(/Tes charges prévues dépassent tes revenus de 500/)).toBeInTheDocument()
   })
 
   it('sans salaire : état vide qui mène à Mon plan', async () => {
