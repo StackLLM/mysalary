@@ -56,6 +56,7 @@ describe('charges du mois', () => {
     expect(resume.duMois.totaux).toEqual({ fixe: 10_000, enveloppe: 200_000, ponctuel: 55_000, dette: 200_000, total: 465_000 })
     expect(resume.parGroupe).toEqual({ essentiel: 215_000, flexible: 50_000, engagement: 200_000 })
     expect(resume.equivalentMensuel).toEqual({ fixe: 10_000, enveloppe: 200_000, essentiel: 10_000 })
+    expect(resume.ponctuelsAVenir).toBe(55_000)
     expect(resume.prochaines.map((l: { libelle: string }) => l.libelle)).toEqual(['Téléphone', 'Prêt', 'Assurance', 'Téléphone', 'Prêt'])
     expect(resume.detteRestante).toBe(850_000)
 

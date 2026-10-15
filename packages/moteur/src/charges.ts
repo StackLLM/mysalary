@@ -103,6 +103,11 @@ export function equivalentMensuelCharge(charge: Pick<Charge, 'nature' | 'montant
   return centimes(Math.round((charge.montant * parAn) / 12))
 }
 
+/** Total des ponctuels encore à venir (date d'aujourd'hui comprise), tous mois confondus. */
+export function totalPonctuelsAVenir(ponctuels: Pick<Ponctuel, 'montant' | 'date'>[], aujourdhui: DateCivile): Centimes {
+  return additionner(...ponctuels.filter((p) => p.date >= aujourdhui).map((p) => p.montant))
+}
+
 // --- Dettes ---
 
 export interface Echeance {

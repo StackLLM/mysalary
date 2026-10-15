@@ -62,7 +62,7 @@ export function PageAnnee() {
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h2 className="text-titre text-encre">Année {annee}</h2>
-            <p className="mt-1 text-texte-sm text-gris">Revenus, dépenses et épargne des douze mois, le réel à date et le projeté séparés.</p>
+            <p className="mt-1 text-texte-sm text-gris">Ce que tu reçois, ce que tu dépenses et ce que tu épargnes, sur les douze mois.</p>
           </div>
           <div className="flex items-center gap-2">
             {anneeCourante !== null && anneeCourante !== annee && (
@@ -100,8 +100,8 @@ export function PageAnnee() {
   )
 }
 
-/** Un total d'année : le grand chiffre, puis le réel à date et le projeté restant, jamais mélangés sans le dire. */
-function CarteTotal({ titre, total, etat, couleur }: { titre: string; total: TotalAnnuel; etat: SuiviAnnuelDto['etat']; couleur: string }) {
+/** Un total d'année : le grand chiffre, puis ce qui est déjà fait et ce qui reste prévu, dit en mots simples. */
+function CarteTotal({ titre, mots, total, etat, couleur }: { titre: string; mots: { deja: string; reste: string }; total: TotalAnnuel; etat: SuiviAnnuelDto['etat']; couleur: string }) {
   return (
     <div className="rounded-bouton bg-interne p-5 shadow-bouton">
       <p className="flex items-center gap-2 text-texte-sm text-gris">
@@ -114,13 +114,13 @@ function CarteTotal({ titre, total, etat, couleur }: { titre: string; total: Tot
       <dl className="mt-3 flex flex-col gap-1 text-texte-sm">
         {etat !== 'future' && (
           <div className="flex justify-between gap-3">
-            <dt className="text-gris">{etat === 'passee' ? 'Réel' : 'Réel à date'}</dt>
+            <dt className="text-gris">{mots.deja}</dt>
             <dd className="chiffres font-semibold text-encre">{formaterMontant(total.reel)}</dd>
           </div>
         )}
         {etat !== 'passee' && (
           <div className="flex justify-between gap-3">
-            <dt className="text-gris">{etat === 'future' ? 'Projeté' : 'Projeté restant'}</dt>
+            <dt className="text-gris">{etat === 'future' ? 'Prévu' : mots.reste}</dt>
             <dd className="chiffres italic text-encre-2">{formaterMontant(total.projete)}</dd>
           </div>
         )}
@@ -150,9 +150,9 @@ function Synthese({ donnees }: { donnees: SuiviAnnuelDto }) {
       ) : (
         <>
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            <CarteTotal titre="Revenus" total={donnees.revenus} etat={donnees.etat} couleur="#3A74B8" />
-            <CarteTotal titre="Dépenses" total={donnees.charges} etat={donnees.etat} couleur="#D08A2E" />
-            <CarteTotal titre="Épargne" total={donnees.epargne} etat={donnees.etat} couleur="#9C4F8C" />
+            <CarteTotal titre="Revenus de l’année" mots={{ deja: 'Déjà reçu', reste: 'Encore attendu' }} total={donnees.revenus} etat={donnees.etat} couleur="#3A74B8" />
+            <CarteTotal titre="Dépenses de l’année" mots={{ deja: 'Déjà dépensé', reste: 'Encore prévu' }} total={donnees.charges} etat={donnees.etat} couleur="#D08A2E" />
+            <CarteTotal titre="Épargne de l’année" mots={{ deja: 'Déjà épargné', reste: 'Encore prévue' }} total={donnees.epargne} etat={donnees.etat} couleur="#9C4F8C" />
           </div>
 
           <section className="mt-8" aria-label="Mois par mois">
@@ -203,8 +203,8 @@ function Synthese({ donnees }: { donnees: SuiviAnnuelDto }) {
         <>
           <Separateur className="my-8" />
           <div className="grid gap-8 md:grid-cols-2 md:gap-12">
-            <section aria-label="Mois les plus coûteux">
-              <h3 className="text-titre text-encre">Mois les plus coûteux</h3>
+            <section aria-label="Mois les plus chers">
+              <h3 className="text-titre text-encre">Tes mois les plus chers</h3>
               {donnees.couteux.length === 0 ? (
                 <p className="mt-3 text-texte-sm text-gris">Aucun mois suivi cette année.</p>
               ) : (
@@ -225,20 +225,11 @@ function Synthese({ donnees }: { donnees: SuiviAnnuelDto }) {
               )}
             </section>
 
-            <section aria-label="Part variable et épargne cumulée" className="flex flex-col gap-6">
+            <section aria-label="Part variable du revenu" className="flex flex-col gap-6">
               <div>
-                <h3 className="text-titre text-encre">Part variable du revenu</h3>
+                <h3 className="text-titre text-encre">Part de ton revenu qui varie</h3>
                 <p className="mt-2 text-texte-sm text-gris">{phrasePartVariable(donnees.partVariable)}</p>
                 {donnees.partVariable.part !== null && <BarreProgression className="mt-3" valeur={donnees.partVariable.part} libelle={`Part variable : ${Math.round(donnees.partVariable.part * 100)} %`} />}
-              </div>
-              <div>
-                <h3 className="text-titre text-encre">Épargne cumulée</h3>
-                <p className="mt-2 text-texte-sm text-gris">
-                  <span className="text-montant text-encre">
-                    <Montant valeur={donnees.epargneCumulee} />
-                  </span>{' '}
-                  {donnees.etat === 'passee' ? 'mis de côté sur l’année.' : donnees.etat === 'future' ? 'prévus sur l’année (projection).' : 'sur l’année, réel à date puis prévu.'}
-                </p>
               </div>
             </section>
           </div>

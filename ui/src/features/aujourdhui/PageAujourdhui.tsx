@@ -1,6 +1,6 @@
 import { formaterDate, formaterMois, formaterMontant, type AlerteDto, type AujourdhuiDto } from '@mysalary/partage'
 import { motion } from 'framer-motion'
-import { AlertTriangle, CalendarClock, CheckCircle2, PiggyBank, Target, TrendingUp, Wallet } from 'lucide-react'
+import { AlertTriangle, CalendarClock, CheckCircle2, PiggyBank, Receipt, TrendingUp, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BadgeNature } from '../../components/Badges'
@@ -11,12 +11,11 @@ import { CarteBandeau } from '../../components/CarteBandeau'
 import { Identite } from '../../components/Elements'
 import { FilAriane } from '../../components/FilAriane'
 import { Montant } from '../../components/Montant'
-import { AnneauProgression } from '../../components/premium/AnneauProgression'
 import { TuileIndicateur } from '../../components/premium/TuileIndicateur'
 import { conteneurCascade, elementApparition } from '../../lib/animations'
 import { cn } from '../../lib/cn'
 import { ListeRecommandations } from '../conseils/Conseils'
-import { pourcentage, texteRetard } from '../conseils/saisie'
+import { texteRetard } from '../conseils/saisie'
 import { IconeCategorie } from '../charges/IconeCategorie'
 import { useCategories } from '../charges/requetes'
 import { part } from '../charges/saisie'
@@ -116,22 +115,20 @@ function Journee({ donnees }: { donnees: AujourdhuiDto }) {
               <CarteBandeau
                 className="mt-7"
                 gauche={{
-                  titre: reste?.nature === 'prevu' ? 'Reste à dépenser ce mois (prévu)' : 'Reste à dépenser ce mois',
+                  titre: reste?.nature === 'prevu' ? 'Tu peux encore dépenser (prévu)' : 'Tu peux encore dépenser',
                   lignes: reste
                     ? [
                         { valeur: <Montant valeur={reste.montant} anime className={cn('text-montant', reste.montant < 0 && 'text-peche-clair')} /> },
-                        { libelle: 'Par jour', valeur: <Montant valeur={reste.parJour} /> },
-                        { libelle: 'Jours restants', valeur: String(reste.joursRestants) },
+                        { libelle: `Soit, pendant ${reste.joursRestants} jour${reste.joursRestants > 1 ? 's' : ''}, par jour`, valeur: <Montant valeur={reste.parJour} /> },
                       ]
                     : [{ valeur: '—' }],
                 }}
                 droite={{
-                  titre: 'Cette semaine',
+                  titre: 'Cette semaine, il reste',
                   lignes: semaine
                     ? [
                         { valeur: <Montant valeur={semaine.reste} className={cn(semaine.reste < 0 && 'text-peche-clair')} /> },
-                        { libelle: 'Par jour', valeur: <Montant valeur={semaine.parJour} /> },
-                        { libelle: 'Jours restants', valeur: String(semaine.joursRestants) },
+                        { libelle: `Par jour, sur ${semaine.joursRestants} jour${semaine.joursRestants > 1 ? 's' : ''}`, valeur: <Montant valeur={semaine.parJour} /> },
                       ]
                     : [{ valeur: 'Pas d’enveloppe' }],
                 }}
@@ -139,17 +136,10 @@ function Journee({ donnees }: { donnees: AujourdhuiDto }) {
 
               {reste && (
                 <p className={cn('mt-5 rounded-champ px-4 py-3 text-texte-sm', reste.montant < 0 ? 'bg-alerte-fond text-alerte' : 'bg-teinte text-encre-2')}>
-                  {reste.montant < 0 ? (
-                    <>
-                      <span className="font-semibold">Le mois est dépassé de {formaterMontant(-reste.montant)}.</span> Revenus {formaterMontant(reste.revenus)} − sorties {formaterMontant(reste.sorties)} − charges
-                      encore à payer {formaterMontant(reste.engagements)} − épargne prévue {formaterMontant(reste.epargneRestante)}.
-                    </>
-                  ) : (
-                    <>
-                      Revenus {formaterMontant(reste.revenus)} − sorties {formaterMontant(reste.sorties)} − charges encore à payer {formaterMontant(reste.engagements)} − épargne prévue{' '}
-                      {formaterMontant(reste.epargneRestante)}.{reste.nature === 'prevu' && ' La paie du mois est comptée comme prévue tant qu’elle n’est pas confirmée.'}
-                    </>
-                  )}
+                  {reste.montant < 0 && <span className="font-semibold">Le mois est dépassé de {formaterMontant(-reste.montant)}. </span>}
+                  D’où vient ce chiffre : revenus du mois {formaterMontant(reste.revenus)}, moins ce que tu as déjà sorti {formaterMontant(reste.sorties)}, moins ce qu’il reste à payer{' '}
+                  {formaterMontant(reste.engagements)}, moins l’épargne à verser {formaterMontant(reste.epargneRestante)}.
+                  {reste.nature === 'prevu' && reste.montant >= 0 && ' La paie du mois est comptée comme prévue tant qu’elle n’est pas confirmée.'}
                 </p>
               )}
 
@@ -253,76 +243,30 @@ function Journee({ donnees }: { donnees: AujourdhuiDto }) {
   )
 }
 
-/** Quatre chiffres du mois : revenus, dépenses, épargne, objectifs. Chacun vient du moteur (indicateurs, objectifs). */
+/** Trois chiffres du mois, en mots simples : reçu, dépensé, épargné (le réel ; le prévu en petit). Chacun vient du moteur. */
 function Indicateurs({ donnees }: { donnees: AujourdhuiDto }) {
   const { tauxEpargne: e, tauxCharges: c } = donnees.indicateurs
-  const { avancement } = donnees.tableau
-  const o = donnees.objectifs
-  const depense = part(c.sortiesReelles, c.chargesPrevues)
   return (
-    <motion.section variants={elementApparition} aria-label="Indicateurs du mois" className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+    <motion.section variants={elementApparition} aria-label="Indicateurs du mois" className="grid grid-cols-3 gap-2 sm:gap-4">
       <TuileIndicateur
-        libelle="Revenus reçus"
+        libelle="Reçu"
         icone={<Wallet className="h-5 w-5" aria-hidden />}
         valeur={<Montant valeur={c.revenusReels} anime />}
         detail={<>sur <Montant valeur={c.revenusPrevus} /> prévus</>}
       />
       <TuileIndicateur
-        libelle="Dépensé ce mois"
-        visuel={
-          <AnneauProgression valeur={depense} libelle={`Dépensé : ${Math.round(depense * 100)} % des charges prévues`} taille={52} epaisseur={6}>
-            <span className="text-[11px] font-bold text-encre-2">{Math.round(depense * 100)}%</span>
-          </AnneauProgression>
-        }
-        icone={null}
+        libelle="Dépensé"
+        icone={<Receipt className="h-5 w-5" aria-hidden />}
         ton={c.sortiesReelles > c.chargesPrevues ? 'alerte' : 'neutre'}
         valeur={<Montant valeur={c.sortiesReelles} anime />}
-        detail={
-          <>
-            sur <Montant valeur={c.chargesPrevues} /> prévus · {Math.round(avancement * 100)} % du mois écoulé
-          </>
-        }
+        detail={<>sur <Montant valeur={c.chargesPrevues} /> prévus</>}
       />
       <TuileIndicateur
-        libelle="Épargne du mois"
+        libelle="Épargné"
         icone={<PiggyBank className="h-5 w-5" aria-hidden />}
         ton={e.epargnePrevue > 0 && e.epargneReelle >= e.epargnePrevue ? 'positif' : 'neutre'}
         valeur={<Montant valeur={e.epargneReelle} anime />}
-        detail={
-          e.epargnePrevue > 0 ? (
-            <>
-              sur <Montant valeur={e.epargnePrevue} /> prévus · taux {pourcentage(e.reel)}
-            </>
-          ) : (
-            'Aucun versement prévu ce mois-ci'
-          )
-        }
-      />
-      <TuileIndicateur
-        libelle="Objectifs"
-        nature={o ? 'projete' : 'reel'}
-        visuel={
-          o ? (
-            <AnneauProgression valeur={o.progression} libelle={`Objectifs : ${Math.round(o.progression * 100)} % de la cible`} taille={52} epaisseur={6}>
-              <Target className="h-5 w-5 text-sauge-700" aria-hidden />
-            </AnneauProgression>
-          ) : undefined
-        }
-        icone={<Target className="h-5 w-5" aria-hidden />}
-        valeur={o ? `${Math.round(o.progression * 100)} %` : 'Aucun'}
-        detail={
-          o ? (
-            o.aRisque.length > 0 ? (
-              <span className="text-alerte">À risque : {o.aRisque.join(', ')}</span>
-            ) : (
-              `${o.enCours} en cours · dates tenues`
-            )
-          ) : (
-            <Link to="/objectifs/nouveau" className="font-semibold text-lien hover:underline">
-              Créer un objectif
-            </Link>
-          )
-        }
+        detail={e.epargnePrevue > 0 ? <>sur <Montant valeur={e.epargnePrevue} /> prévus</> : 'Rien de prévu'}
       />
     </motion.section>
   )

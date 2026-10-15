@@ -306,6 +306,7 @@ Format pour chaque page : objectif · données · actions · relations · état 
 - **Relations** : Mois, Objectifs.
 - **État vide** : première année incomplète → mois passés sans données grisés, « Pas de données avant ton inscription ».
 - **Cas particuliers** : année future → entièrement projetée, bandeau explicite.
+- **Synthèse simplifiée (15/10/2026)** : trois totaux en mots simples (« Revenus de l'année : déjà reçu / encore attendu », « Dépenses de l'année : déjà dépensé / encore prévu », « Épargne de l'année : déjà épargné / encore prévue »), bandeau d'une phrase, « Tes mois les plus chers », « Part de ton revenu qui varie ». Le bloc « Épargne cumulée » est retiré : c'était le même chiffre que « Épargne de l'année ».
 
 #### 5.7 Objectifs (liste)
 - **Objectif** : voir tous les objectifs et leur ordre.
@@ -350,6 +351,7 @@ Format pour chaque page : objectif · données · actions · relations · état 
 - **Relations** : impacte Mois, Semaines, Calendrier, Objectifs, Simulateur.
 - **État vide** : par onglet, avec suggestions.
 - **Cas particuliers** : modification d'une charge → choix « à partir de maintenant » ou « depuis le début ». Le passé clôturé n'est jamais modifié. Dette soldée → passe en « Terminées ».
+- **Totaux des charges (15/10/2026)** : au bas de chaque section de Charges & enveloppes, une ligne de total : charges fixes (« Ce mois-ci » et « Par mois »), enveloppes (« Ce mois-ci »), ponctuels (« Ce mois-ci » et « Tous à venir »). En bas de page, un bandeau « Total des charges · [mois] » avec le détail fixes, enveloppes, ponctuels et, s'il y en a, échéances de dettes. Tous ces montants viennent du moteur (`ResumeChargesDto`).
 - **Épargne (depuis le lot 25)** : bandeau solde / réservé / disponible et « prévu ce mois-ci » (prévu, déjà versé, reste à verser) ; « Versements prévus » : le versement mensuel de chaque objectif sur le mois en cours, « Fait » ou « Noter » (versement pré-rempli) ; sans compte déclaré, le solde est « Non déclaré » et une invitation propose de déclarer le compte avec l'épargne déjà réservée ; puis comptes, mouvements, réservé par objectif (dont déjà de côté au départ, versement mensuel prévu).
 
 #### 5.12 Réglages

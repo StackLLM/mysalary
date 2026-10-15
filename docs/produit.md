@@ -415,7 +415,7 @@ Non-objectifs v1 : connexion bancaire, multi-devises, investissement boursier, b
 | Objectifs | Plusieurs objectifs, priorité, versements, date estimée, risque de retard, achat réalisé. Vue annuelle de tous les objectifs : indicateurs, trajectoire de l'année, fin d'année par scénario, prochaines actions (lot 26). |
 | Simulation | Scénarios prudent / réaliste / ambitieux, « et si » (prime, versement, réduction de dépense). |
 | Recommandations | Montant à épargner par mois / semaine, dépense à réduire, impact d'une prime, faisabilité. Alertes « versement prévu à noter » et « compte d'épargne à déclarer » (lot 25). |
-| Aujourd'hui | Tableau de bord du mois : indicateurs (revenus reçus, dépensé, épargne, objectifs), reste du mois et de la semaine, à faire, postes qui pèsent le plus, enveloppes à surveiller, grosses dépenses, 7 prochains jours (lot 27). |
+| Aujourd'hui | Tableau de bord du mois : trois chiffres (reçu, dépensé, épargné), « Tu peux encore dépenser » avec son calcul, reste de la semaine, à faire, postes qui pèsent le plus, enveloppes à surveiller, grosses dépenses, 7 prochains jours (lot 27). |
 | Calendrier | Salaire, primes, charges, échéances de dette, objectifs, événements futurs. |
 | Données | Export / import JSON, sauvegarde. |
 

@@ -132,8 +132,8 @@ describe('Aujourd’hui', () => {
     expect(await screen.findByText('Bonjour Oussama')).toBeInTheDocument()
     expect(screen.getByText('Lundi 11 janvier 2027', { selector: 'div' })).toBeInTheDocument()
     // Le montant du héros est un compteur animé : on attend sa valeur finale.
-    await waitFor(() => expect(visible(screen.getByText('Reste à dépenser ce mois').closest('section')!)).toContain('2 900DHPar jour : 181,25DHJours restants : 16'))
-    expect(visible(screen.getByText('Cette semaine').closest('div')!)).toContain('600DHPar jour : 85,71DHJours restants : 7')
+    await waitFor(() => expect(visible(screen.getByText('Tu peux encore dépenser').closest('section')!)).toContain('2 900DHSoit, pendant 16 jours, par jour : 181,25DH'))
+    expect(visible(screen.getByText('Cette semaine, il reste').closest('div')!)).toContain('600DHPar jour, sur 7 jours : 85,71DH')
     expect(espaces(screen.getByRole('region', { name: 'Semaine passée' }).textContent)).toContain('300 DH dépensés sur 700 DH : 400 DH de côté.')
 
     const aFaire = screen.getByRole('region', { name: 'À faire' })
@@ -146,11 +146,9 @@ describe('Aujourd’hui', () => {
     expect(within(jours).getByRole('link', { name: 'Voir l’année' })).toHaveAttribute('href', '/annee')
 
     const kpi = screen.getByRole('region', { name: 'Indicateurs du mois' })
-    await waitFor(() => expect(visible(kpi)).toContain('Revenus reçus10 000DHsur 10 000DH prévus'))
-    expect(visible(kpi)).toContain('Dépensé ce mois5 800DHsur 8 000DH prévus · 52 % du mois écoulé')
-    expect(visible(kpi)).toContain('Épargne du mois500DHsur 1 000DH prévus · taux 5 %')
-    expect(visible(kpi)).toContain('À risque : Voyage')
-    expect(within(kpi).getByRole('progressbar', { name: 'Objectifs : 9 % de la cible' })).toBeInTheDocument()
+    await waitFor(() => expect(visible(kpi)).toContain('Reçu10 000DHsur 10 000DH prévus'))
+    expect(visible(kpi)).toContain('Dépensé5 800DHsur 8 000DH prévus')
+    expect(visible(kpi)).toContain('Épargné500DHsur 1 000DH prévus')
     expect(screen.getByRole('link', { name: 'Ouvrir l’objectif' })).toHaveAttribute('href', '/objectifs/moto')
     expect(screen.getByText('Suggestions')).toBeInTheDocument()
   })

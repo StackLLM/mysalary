@@ -138,7 +138,7 @@ describe('Calendrier de l’année', () => {
     expect(espaces(cartes[9]!.querySelector('[title^="5 oct. 2026"]')?.getAttribute('title'))).toContain('Loyer −3 500 DH')
     expect(espaces(cartes[11]!.textContent)).toContain('Moto')
     expect(espaces(cartes[10]!.textContent)).toContain('Voyage')
-    expect(espaces(screen.getByText('Cumul fin décembre (prévu)').parentElement!.textContent)).toContain('Mois le plus bas : septembre · 4 900 DH')
+    expect(espaces(screen.getByText('Fin décembre, tu auras (prévu)').parentElement!.textContent)).toContain('Mois le plus bas : septembre · 4 900 DH')
 
     const graphique = screen.getByRole('region', { name: 'Cumul fin de mois sur l’année' })
     expect(within(graphique).getAllByRole('button')).toHaveLength(12)

@@ -8,7 +8,7 @@ import { Carte, Separateur, TitreSection } from '../../components/Carte'
 import { CarteBandeau } from '../../components/CarteBandeau'
 import { Cellule } from '../../components/Champ'
 import { Confirmation } from '../../components/Confirmation'
-import { BlocTotaux, Identite } from '../../components/Elements'
+import { Identite } from '../../components/Elements'
 import { IconePlusRond } from '../../components/icones'
 import { Menu } from '../../components/Menu'
 import { Montant } from '../../components/Montant'
@@ -182,6 +182,13 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
             onAjouter={() => setEdition({ type: 'fixe' })}
             entetes={['Charge', 'Quand', 'Catégorie', 'Montant', 'Par mois']}
             vide="Aucune charge fixe. Ajoute ton loyer, ton téléphone, tes abonnements."
+            pied={
+              <LigneTotal
+                libelle="Total des charges fixes"
+                colonne4={{ legende: 'Ce mois-ci', valeur: <Montant valeur={t.fixe} /> }}
+                colonne5={{ legende: 'Par mois', valeur: <Montant valeur={resume.equivalentMensuel.fixe} /> }}
+              />
+            }
           >
             {fixes.map((c) => (
               <li key={c.id} className={cn(COLONNES, !c.active && 'opacity-60')}>
@@ -211,6 +218,7 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
             onAjouter={() => setEdition({ type: 'enveloppe' })}
             entetes={['Enveloppe', 'Période', 'Catégorie', 'Budget du mois', 'Rythme']}
             vide="Aucune enveloppe. Elles servent au suivi de la semaine."
+            pied={<LigneTotal libelle="Total des enveloppes" colonne4={{ legende: 'Ce mois-ci', valeur: <Montant valeur={t.enveloppe} /> }} />}
           >
             {enveloppes.map((c) => (
               <li key={c.id} className={cn(COLONNES, !c.active && 'opacity-60')}>
@@ -246,6 +254,13 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
             onAjouter={() => setEdition({ type: 'ponctuel' })}
             entetes={['Dépense', 'Date', 'Catégorie', 'Montant', 'Certitude']}
             vide="Aucun ponctuel prévu."
+            pied={
+              <LigneTotal
+                libelle="Total des ponctuels"
+                colonne4={{ legende: 'Ce mois-ci', valeur: <Montant valeur={t.ponctuel} /> }}
+                colonne5={{ legende: 'Tous à venir', valeur: <Montant valeur={resume.ponctuelsAVenir} /> }}
+              />
+            }
           >
             {ponctuels.map((p) => (
               <li key={p.id} className={cn(COLONNES, p.passe && 'opacity-60')}>
@@ -263,34 +278,44 @@ function Charges({ resume, charges, ponctuels, categories }: ProprietesCharges) 
 
           <Separateur className="my-7" />
 
-          <div className="grid gap-8 md:grid-cols-2 md:gap-12">
-            <div className="min-w-0">
-              <h3 className="mb-4 text-titre text-encre">Répartition de {formaterMois(resume.mois.cle, { annee: false })}</h3>
-              <div className="flex flex-col gap-4 rounded-bouton bg-interne p-5 shadow-bouton">
-                {(['essentiel', 'flexible', 'engagement'] as const).map((g) => (
-                  <div key={g}>
-                    <div className="flex items-baseline justify-between gap-3 text-texte">
-                      <span className="font-medium text-encre">{GROUPES[g].libelle}</span>
-                      <Montant valeur={resume.parGroupe[g]} className="font-semibold text-encre" />
-                    </div>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-pilule bg-teinte" aria-hidden>
-                      <div className="h-full rounded-pilule bg-primaire" style={{ width: `${part(resume.parGroupe[g], totalGroupes) * 100}%` }} />
-                    </div>
+          <div className="min-w-0">
+            <h3 className="mb-4 text-titre text-encre">Répartition de {formaterMois(resume.mois.cle, { annee: false })}</h3>
+            <div className="flex flex-col gap-4 rounded-bouton bg-interne p-5 shadow-bouton">
+              {(['essentiel', 'flexible', 'engagement'] as const).map((g) => (
+                <div key={g}>
+                  <div className="flex items-baseline justify-between gap-3 text-texte">
+                    <span className="font-medium text-encre">{GROUPES[g].libelle}</span>
+                    <Montant valeur={resume.parGroupe[g]} className="font-semibold text-encre" />
                   </div>
-                ))}
-                <p className="text-mention text-gris">Les échéances de dettes comptent en « engagement ».</p>
-              </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-pilule bg-teinte" aria-hidden>
+                    <div className="h-full rounded-pilule bg-primaire" style={{ width: `${part(resume.parGroupe[g], totalGroupes) * 100}%` }} />
+                  </div>
+                </div>
+              ))}
+              <p className="text-mention text-gris">Les échéances de dettes comptent en « engagement ».</p>
             </div>
-            <BlocTotaux
-              lignes={[
-                { libelle: 'Charges fixes', valeur: <Montant valeur={t.fixe} />, fort: true },
-                { libelle: 'Enveloppes', valeur: <Montant valeur={t.enveloppe} /> },
-                { libelle: 'Ponctuels', valeur: <Montant valeur={t.ponctuel} /> },
-                { libelle: 'Échéances de dettes', valeur: <Montant valeur={t.dette} /> },
-              ]}
-              total={{ libelle: `Prévu en ${formaterMois(resume.mois.cle, { annee: false })}`, valeur: <Montant valeur={t.total} /> }}
-            />
           </div>
+
+          <section aria-label="Total des charges du mois" className="mt-8">
+            <CarteBandeau
+              gauche={{
+                titre: `Total des charges · ${formaterMois(resume.mois.cle, { annee: false })}`,
+                lignes: [
+                  { valeur: <Montant valeur={t.total} anime className="text-montant" /> },
+                  { libelle: 'Du', valeur: `${formaterDate(resume.mois.debut, 'court')} au ${formaterDate(resume.mois.fin, 'court')}` },
+                ],
+              }}
+              droite={{
+                titre: 'Dont',
+                lignes: [
+                  { libelle: 'Charges fixes', valeur: <Montant valeur={t.fixe} /> },
+                  { libelle: 'Enveloppes', valeur: <Montant valeur={t.enveloppe} /> },
+                  { libelle: 'Ponctuels', valeur: <Montant valeur={t.ponctuel} /> },
+                  ...(t.dette > 0 ? [{ libelle: 'Échéances de dettes', valeur: <Montant valeur={t.dette} /> }] : []),
+                ],
+              }}
+            />
+          </section>
         </Carte>
       </motion.div>
 
@@ -410,6 +435,7 @@ function Section({
   onAjouter,
   entetes,
   vide,
+  pied,
   children,
 }: {
   titre: string
@@ -417,6 +443,8 @@ function Section({
   onAjouter: () => void
   entetes: string[]
   vide: string
+  /** Ligne de total, en bas de la liste. */
+  pied: ReactNode
   children: ReactNode[]
 }) {
   return (
@@ -445,8 +473,27 @@ function Section({
               {children}
             </ul>
           )}
+          {pied}
         </div>
       </div>
     </section>
+  )
+}
+
+/** Total d'une section : le nom à gauche, puis les montants sous la colonne « Montant » et la dernière colonne. */
+function LigneTotal({ libelle, colonne4, colonne5 }: { libelle: string; colonne4: { legende: string; valeur: ReactNode }; colonne5?: { legende: string; valeur: ReactNode } }) {
+  const valeur = (c: { legende: string; valeur: ReactNode }) => (
+    <span className="flex min-w-0 flex-col px-3">
+      <span className="truncate text-mention text-gris">{c.legende}</span>
+      <span className="chiffres text-texte font-bold text-encre">{c.valeur}</span>
+    </span>
+  )
+  return (
+    <div className={cn(COLONNES, 'mt-4 rounded-bouton bg-interne px-4 py-3.5 shadow-bouton')} role="group" aria-label={libelle}>
+      <span className="col-span-3 text-texte font-semibold text-encre">{libelle}</span>
+      {valeur(colonne4)}
+      {colonne5 ? valeur(colonne5) : <span />}
+      <span />
+    </div>
   )
 }

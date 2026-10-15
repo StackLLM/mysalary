@@ -14,6 +14,7 @@ vi.mock('../../lib/api', async (original) => ({
   api: { lire: vi.fn(), creer: vi.fn(), modifier: vi.fn(), supprimer: vi.fn() },
 }))
 
+const espaces = (t: string | null) => (t ?? '').replace(/[\u202f\u00a0\s]+/g, ' ')
 const AUJOURDHUI = '2027-01-20' as DateCivile
 const compte: Utilisateur = { id: 'u1', prenom: 'Essai', devise: 'MAD', onboardingEtape: 0, onboardingTermine: false, email: 'test@exemple.test', emailVerifie: true, creeLe: '2026-10-07T10:00:00.000Z', derniereOuverture: null }
 
@@ -32,6 +33,7 @@ const resume = (totaux = zero) =>
     duMois: { lignes: [], totaux },
     parGroupe: { essentiel: totaux.fixe, flexible: totaux.enveloppe, engagement: totaux.dette },
     equivalentMensuel: { fixe: totaux.fixe, enveloppe: totaux.enveloppe, essentiel: totaux.fixe },
+    ponctuelsAVenir: totaux.ponctuel,
     prochaines: [],
     detteRestante: 0,
   }) as unknown as ResumeChargesDto
@@ -143,6 +145,18 @@ describe('Mon plan › Charges & enveloppes', () => {
         semaines: [],
       }),
     )
+  })
+
+  it('un total au bas de chaque section, et le total global des charges du mois', async () => {
+    serveur({ charges: [telephone], totaux: { fixe: 15_000, enveloppe: 40_000, ponctuel: 24_000, dette: 20_000, total: 99_000 } })
+    await ouvrirOnglet('Charges & enveloppes')
+    const fixes = await screen.findByRole('group', { name: 'Total des charges fixes' })
+    expect(espaces(fixes.textContent)).toMatch(/Ce mois-ci.*150.*Par mois.*150/)
+    expect(espaces(screen.getByRole('group', { name: 'Total des enveloppes' }).textContent)).toMatch(/Ce mois-ci.*400/)
+    expect(espaces(screen.getByRole('group', { name: 'Total des ponctuels' }).textContent)).toMatch(/Ce mois-ci.*240.*Tous à venir.*240/)
+    const global = screen.getByRole('region', { name: 'Total des charges du mois' })
+    expect(espaces(global.textContent)).toMatch(/Total des charges · janvier.*990/)
+    expect(espaces(global.textContent)).toMatch(/Charges fixes.*150.*Enveloppes.*400.*Ponctuels.*240.*Échéances de dettes.*200/)
   })
 
   it('ajoute une enveloppe et un ponctuel', async () => {

@@ -120,8 +120,8 @@ export function echelleCumul(mois: Pick<MoisCumul, 'cle' | 'cumul'>[]): { zero: 
 
 export const ETATS_ANNEE = {
   passee: { libelle: 'Année terminée', texte: 'Tout est réel : les mois sont terminés.' },
-  enCours: { libelle: 'Année en cours', texte: 'Réel jusqu’à aujourd’hui, puis prévu et projeté pour les mois qui restent. Les deux sont toujours séparés.' },
-  future: { libelle: 'Projection', texte: 'Cette année n’a pas commencé : tout est prévu ou projeté (scénario réaliste), rien n’est réel.' },
+  enCours: { libelle: 'Année en cours', texte: 'Les mois passés sont réels, les mois qui restent sont prévus.' },
+  future: { libelle: 'Projection', texte: 'Cette année n’a pas commencé : tout est prévu (scénario réaliste), rien n’est réel.' },
 } as const
 
 /** Points du graphique mensuel : un mois avant le début du suivi n'a pas de barre. */

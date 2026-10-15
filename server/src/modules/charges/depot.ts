@@ -8,6 +8,7 @@ import {
   etatDette,
   moisDe,
   semainesDe,
+  totalPonctuelsAVenir,
   type MoisBudgetaire,
   plafondPaiement,
   type Centimes,
@@ -297,11 +298,12 @@ export const essentielMensuel = (charges: Charge[], aujourdhui: DateCivile, mois
 
 export async function resume(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile): Promise<ResumeChargesDto> {
   await assurerCategories(prisma, utilisateurId)
-  const [{ calendrier, debutSemaine }, categories, charges, dettes] = await Promise.all([
+  const [{ calendrier, debutSemaine }, categories, charges, dettes, ponctuels] = await Promise.all([
     chargerCalendrier(prisma, utilisateurId, aujourdhui),
     prisma.categorie.findMany({ where: { utilisateurId } }),
     prisma.charge.findMany({ where: { utilisateurId } }),
     prisma.dette.findMany({ where: { utilisateurId } }),
+    prisma.ponctuel.findMany({ where: { utilisateurId } }),
   ])
   const courant = calendrier.moisCourant()
   const avecSemaines = (p: MoisBudgetaire) => ({ cle: p.cle, debut: p.debut, fin: p.fin, nbJours: p.nbJours, semaines: semainesDe(p, debutSemaine) })
@@ -329,6 +331,7 @@ export async function resume(prisma: PrismaClient, utilisateurId: string, aujour
       enveloppe: somme(actives.filter((c) => c.nature === 'enveloppe')),
       essentiel: somme(actives.filter((c) => c.essentielle)),
     },
+    ponctuelsAVenir: totalPonctuelsAVenir(ponctuels.map(versPonctuel), aujourdhui),
     prochaines: [...duMois.lignes, ...suivant.lignes].filter((l) => l.date && l.date >= aujourdhui).slice(0, 6),
     detteRestante: additionner(...dettes.map((d) => calendrier.etatDette(d.id)?.restant ?? centimes(0))),
   }

@@ -87,16 +87,16 @@ describe('règles d’affichage', () => {
 })
 
 describe('Année (lot 18)', () => {
-  it('totaux : le réel à date et le projeté restant sont séparés ; mois coûteux ; part variable ; épargne cumulée', async () => {
+  it('totaux : ce qui est déjà fait et ce qui reste prévu, en mots simples ; mois les plus chers ; part variable', async () => {
     ouvrir()
     expect(await screen.findByText('Année 2026')).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Année en cours.')
-    const revenus = screen.getByText('Revenus', { selector: 'p' }).closest('div')!
-    expect(espaces(revenus.textContent)).toContain('Réel à date20 000 DH')
-    expect(espaces(revenus.textContent)).toContain('Projeté restant20 000 DH')
-    expect(espaces(screen.getByText('Dépenses', { selector: 'p' }).closest('div')!.textContent)).toContain('Réel à date9 500 DH')
+    const revenus = screen.getByText('Revenus de l’année', { selector: 'p' }).closest('div')!
+    expect(espaces(revenus.textContent)).toContain('Déjà reçu20 000 DH')
+    expect(espaces(revenus.textContent)).toContain('Encore attendu20 000 DH')
+    expect(espaces(screen.getByText('Dépenses de l’année', { selector: 'p' }).closest('div')!.textContent)).toContain('Déjà dépensé9 500 DH')
 
-    const couteux = screen.getByRole('region', { name: 'Mois les plus coûteux' })
+    const couteux = screen.getByRole('region', { name: 'Mois les plus chers' })
     const lignes = within(couteux).getAllByRole('link')
     expect(lignes).toHaveLength(3)
     expect(espaces(lignes[0]!.textContent)).toContain('Octobre 2026')
@@ -104,7 +104,7 @@ describe('Année (lot 18)', () => {
     expect(lignes[0]).toHaveAttribute('href', '/mois?mois=2026-10')
 
     expect(screen.getByText(/12 % de tes revenus/)).toBeInTheDocument()
-    expect(espaces(screen.getByRole('region', { name: 'Part variable et épargne cumulée' }).textContent)).toContain('3 000 DH sur l’année, réel à date puis prévu.')
+    expect(screen.queryByText('Épargne cumulée')).not.toBeInTheDocument()
   })
 
   it('les douze mois : un clic ouvre le mois ; mois sans données grisés et expliqués', async () => {
@@ -130,9 +130,9 @@ describe('Année (lot 18)', () => {
     ouvrir('/annee?annee=2028')
     expect(await screen.findByText('Année 2028')).toBeInTheDocument()
     expect(screen.getByRole('status')).toHaveTextContent('Projection. Cette année n’a pas commencé')
-    const revenus = screen.getByText('Revenus', { selector: 'p' }).closest('div')!
-    expect(espaces(revenus.textContent)).toContain('Projeté120 000 DH')
-    expect(revenus.textContent).not.toContain('Réel')
+    const revenus = screen.getByText('Revenus de l’année', { selector: 'p' }).closest('div')!
+    expect(espaces(revenus.textContent)).toContain('Prévu120 000 DH')
+    expect(revenus.textContent).not.toContain('Déjà')
     expect(screen.getByText('Aucun objectif à suivre cette année.')).toBeInTheDocument()
   })
 

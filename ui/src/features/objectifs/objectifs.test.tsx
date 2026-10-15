@@ -198,9 +198,9 @@ describe('Objectifs (liste)', () => {
   it('vue de l’année : indicateurs réels, trajectoire, fin d’année par scénario ; chaque objectif garde son lien', async () => {
     rendre(<FournisseurSaisieRapide><PageObjectifs /></FournisseurSaisieRapide>, { route: '/objectifs', compte: 'u1' })
     const kpi = await screen.findByRole('region', { name: 'Indicateurs des objectifs' })
-    expect(within(kpi).getByRole('progressbar', { name: 'Progression globale : 15 %' })).toBeInTheDocument()
-    expect(espaces(kpi.textContent)).toMatch(/Déjà épargné.*13 000.*sur.*89 000/)
-    expect(espaces(kpi.textContent)).toMatch(/À risque.*1.*Moto/)
+    expect(within(kpi).getByRole('progressbar', { name: 'Épargné : 15 % de la cible' })).toBeInTheDocument()
+    expect(espaces(kpi.textContent)).toMatch(/Tu as épargné.*13 000.*sur.*89 000.*visés/)
+    expect(espaces(kpi.textContent)).toMatch(/Dates en danger.*1.*Moto/)
     const annee = screen.getByRole('region', { name: 'Année 2026' })
     expect(espaces(annee.textContent)).toMatch(/Fin 2026 prévue.*19 000.*De.*17 000.*à.*21 000/)
     expect(within(annee).getByRole('figure', { name: 'Épargne des objectifs en 2026' })).toBeInTheDocument()

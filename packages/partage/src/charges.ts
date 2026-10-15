@@ -216,6 +216,8 @@ export interface ResumeChargesDto {
   /** Mois en cours par groupe de catégorie ; les dettes comptent en « engagement ». */
   parGroupe: Record<GroupeCategorie, Centimes>
   equivalentMensuel: { fixe: Centimes; enveloppe: Centimes; essentiel: Centimes }
+  /** Somme des ponctuels encore à venir, tous mois confondus (total de la section Ponctuels). */
+  ponctuelsAVenir: Centimes
   /** Prochaines sorties datées (aujourd'hui compris), six au plus. */
   prochaines: ChargePrevue[]
   /** Reste dû sur toutes les dettes. */

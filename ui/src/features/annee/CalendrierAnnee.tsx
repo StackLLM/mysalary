@@ -123,25 +123,24 @@ function ResumeAnnee({ annee, mois, resume }: { annee: number; mois: MoisCumul[]
   }
   const dernier = [...mois].reverse().find((m) => m.cumul !== null)!
   const nature = dernier.nature === 'reel' ? '' : dernier.nature === 'enCours' ? ' (estimation)' : ' (prévu)'
-  // Fin de l'année = report reçu de l'année précédente + reste de l'année.
+  // Fin = ce qu'on avait au départ (solde déclaré, ou report de l'année précédente) + revenus − charges − épargne de l'année.
   const premier = mois.find((m) => m.cumul !== null)!
-  const report = premier.premier ? null : premier.report
+  const depart = premier.report
   return (
     <>
       <CarteBandeau
         className="mt-6"
         gauche={{
-          titre: `Cumul fin ${formaterMois(dernier.cle, { annee: false })}${nature}`,
+          titre: `Fin ${formaterMois(dernier.cle, { annee: false })}, tu auras${nature}`,
           lignes: [
             { valeur: <Montant valeur={resume.cumulFin} className="text-montant" /> },
             ...(resume.plusBas ? [{ libelle: 'Mois le plus bas', valeur: `${formaterMois(resume.plusBas.cle, { annee: false })} · ${formaterMontant(resume.plusBas.cumul)}` }] : []),
           ],
         }}
         droite={{
-          titre: `Reste cumulé sur ${annee}`,
+          titre: 'D’où vient ce chiffre',
           lignes: [
-            { valeur: <Montant valeur={resume.reste} /> },
-            ...(report !== null ? [{ libelle: `Report de ${annee - 1}`, valeur: <Montant valeur={report} /> }] : []),
+            ...(depart ? [{ libelle: premier.premier ? 'Au départ (solde déclaré)' : `Au départ (report de ${annee - 1})`, valeur: <Montant valeur={depart} /> }] : []),
             { libelle: 'Revenus', valeur: <Montant valeur={resume.revenus} /> },
             { libelle: 'Charges', valeur: <Montant valeur={resume.charges} /> },
             { libelle: 'Épargne', valeur: <Montant valeur={resume.epargne} /> },

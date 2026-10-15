@@ -1,6 +1,6 @@
 import { formaterMois, formaterMontant, type ObjectifAnnee, type ObjectifsDto, type SuiviObjectif, type TypeObjectif } from '@mysalary/partage'
 import { motion } from 'framer-motion'
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Flag, MoreHorizontal, PiggyBank, ShieldCheck, Target } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, MoreHorizontal, ShieldCheck, Target } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -103,31 +103,24 @@ function Objectifs({ donnees }: { donnees: ObjectifsDto }) {
   return (
     <div className="flex flex-col gap-8">
       {enCours.length > 0 && (
-        <motion.section variants={elementApparition} aria-label="Indicateurs des objectifs" className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        <motion.section variants={elementApparition} aria-label="Indicateurs des objectifs" className="grid gap-3 sm:grid-cols-2 sm:gap-4">
           <TuileIndicateur
-            libelle="Progression globale"
+            libelle="Tu as épargné"
             visuel={
-              <AnneauProgression valeur={annee.progression} libelle={`Progression globale : ${pourcentage} %`} taille={52} epaisseur={6}>
+              <AnneauProgression valeur={annee.progression} libelle={`Épargné : ${pourcentage} % de la cible`} taille={52} epaisseur={6}>
                 <Target className="h-5 w-5 text-sauge-700" aria-hidden />
               </AnneauProgression>
             }
             icone={null}
-            valeur={`${pourcentage} %`}
-            detail={`${enCours.length} objectif${enCours.length > 1 ? 's' : ''} en cours`}
-          />
-          <TuileIndicateur libelle="Déjà épargné" icone={<PiggyBank className="h-5 w-5" aria-hidden />} valeur={<Montant valeur={annee.epargne} anime />} detail={<>sur <Montant valeur={annee.cible} /></>} />
-          <TuileIndicateur
-            libelle="Reste à épargner"
-            icone={<Flag className="h-5 w-5" aria-hidden />}
-            valeur={<Montant valeur={annee.restant} anime />}
-            detail={<><Montant valeur={annee.verseCetteAnnee} /> versés depuis janvier</>}
+            valeur={<Montant valeur={annee.epargne} anime />}
+            detail={<>sur <Montant valeur={annee.cible} /> visés · {pourcentage} %</>}
           />
           <TuileIndicateur
-            libelle="À risque"
+            libelle="Dates en danger"
             icone={aRisque.length > 0 ? <AlertTriangle className="h-5 w-5" aria-hidden /> : <ShieldCheck className="h-5 w-5" aria-hidden />}
             ton={aRisque.length > 0 ? 'alerte' : 'positif'}
             nature="projete"
-            valeur={aRisque.length === 0 ? 'Aucun' : String(aRisque.length)}
+            valeur={aRisque.length === 0 ? 'Aucune' : String(aRisque.length)}
             detail={aRisque.length === 0 ? 'Toutes les dates tiennent' : aRisque.map((o) => o.libelle).join(', ')}
           />
         </motion.section>

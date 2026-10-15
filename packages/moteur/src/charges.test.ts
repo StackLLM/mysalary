@@ -2,7 +2,7 @@ import fc from 'fast-check'
 import { describe, expect, it } from 'vitest'
 import { centimes } from './argent'
 import { lireCleMois as m, lireDate as d } from './dates'
-import { echeancier, equivalentMensuelCharge, etatDette, plafondPaiement, type Charge, type Dette, type PaiementDette } from './charges'
+import { echeancier, equivalentMensuelCharge, etatDette, plafondPaiement, totalPonctuelsAVenir, type Charge, type Dette, type PaiementDette } from './charges'
 import { creerCalendrier } from './periodes'
 import type { VersionContrat } from './salaire'
 
@@ -131,5 +131,17 @@ describe('charges d’un mois budgétaire', () => {
     expect(equivalentMensuelCharge(charge({ nature: 'enveloppe', montant: centimes(150_000) }))).toBe(150_000)
     const cal = calendrier('2027-01-10', { charges: [charge({ jour: 31, frequence: 'moisChoisis', mois: [2] })] })
     expect(cal.chargesDuMois(m('2027-03')).lignes.map((l) => l.date)).toEqual(['2027-02-28'])
+  })
+})
+
+describe('ponctuels à venir', () => {
+  it('additionne ceux d’aujourd’hui et d’après, pas les passés', () => {
+    const liste = [
+      { montant: centimes(10_000), date: d('2027-01-09') },
+      { montant: centimes(20_000), date: d('2027-01-10') },
+      { montant: centimes(30_000), date: d('2027-06-01') },
+    ]
+    expect(totalPonctuelsAVenir(liste, d('2027-01-10'))).toBe(50_000)
+    expect(totalPonctuelsAVenir([], d('2027-01-10'))).toBe(0)
   })
 })
