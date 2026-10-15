@@ -548,7 +548,7 @@ Limite assumée : sans mot de passe, n'importe qui qui accède à l'app peut cha
 
 Plus tard (lot sécurité) : mot de passe argon2id + cookie de session httpOnly. L'en-tête est alors remplacé par la session, sans toucher au reste du code.
 
-**Fait au lot 23 (12/10/2026)** : comptes par e-mail et mot de passe (`scrypt`), cookie de session `HttpOnly`, `SameSite=Strict`, `Secure` en HTTPS ; l'en-tête `X-Utilisateur` et l'écran Profils sont supprimés ; le compte courant vient uniquement de la session. Détail : `README.md` et [Bilan du lot 23](lots.md#bilan-du-lot-23--nettoyage-authentification-et-multi-utilisateur).
+**Fait au lot 23 (12/10/2026)** : comptes par e-mail et mot de passe (`scrypt`), cookie de session `HttpOnly`, `SameSite=Strict`, `Secure` en HTTPS ; l'en-tête `X-Utilisateur` et l'écran Profils sont supprimés ; le compte courant vient uniquement de la session. Détail : [`prod.md` § 5](prod.md#5-comptes-et-authentification) et [Bilan du lot 23](lots.md#bilan-du-lot-23--nettoyage-authentification-et-multi-utilisateur).
 
 #### 5.8 API (REST, préfixe `/api/v1`)
 
@@ -853,16 +853,12 @@ workspaces `npm`, `vitest`, `jsdom`, `@testing-library/react`, `playwright`, `fa
 
 ### 12. Sécurité et confidentialité
 
-- *État au 12/10/2026 : les points ci-dessous datent de la v1 locale. Pour le SaaS, ils sont complétés par le § 15.4.*
-- Données locales. Aucun service tiers, aucun tracking, aucune police distante.
-- Données isolées par utilisateur (filtre `utilisateurId` obligatoire, testé).
-- Pas de mot de passe en v1 : serveur limité à 127.0.0.1.
-- Validation Zod sur toutes les entrées. Montants bornés (≥ 0, plafond raisonnable).
-- Pas de données financières dans les logs ni dans les URL.
-- CSP stricte via Helmet. CORS limité à l'origine du front.
-- Sauvegarde : export JSON + copie du fichier SQLite. Import toujours en aperçu avant écriture.
+Sécurité des comptes, isolation des données, journaux, secrets et loi 09-08 : [`prod.md` § 5 à 7](prod.md#7-sécurité-et-confidentialité).
+
+Règles produit qui restent ici :
+- Pas de données financières dans les journaux ni dans les URL.
+- Import toujours en aperçu avant écriture.
 - Suppression : corbeille douce (archivage) pour objectifs et charges. Confirmation pour toute suppression.
-- Lot sécurité (authentification) obligatoire avant toute mise en ligne ou ouverture au réseau (5.7).
 
 ---
 
@@ -883,7 +879,7 @@ workspaces `npm`, `vitest`, `jsdom`, `@testing-library/react`, `playwright`, `fa
 
 ### 14. Questions ouvertes
 
-1. **Hébergement** : au Maroc (pas de transfert de données hors du pays) ou à l'étranger (autorisation préalable de la CNDP) ? À trancher avant le lot 31.
+1. **Hébergement** : au Maroc ou à l'étranger (autorisation préalable de la CNDP) ? Décision D14 de [`prod.md`](prod.md#3-décisions), à trancher au lot P0.
 2. **Encaissement** : CMI avec module récurrent via la banque, ou revendeur « merchant of record » ? À trancher avant le lot 32.
 3. **Prix** : hypothèse 199 à 299 MAD/an après essai gratuit, à tester pendant la bêta.
 
@@ -921,8 +917,8 @@ Cible de lancement : salariés marocains francophones, salaire fixe et primes, a
 | Taux d'endettement avec seuil | 36 % en moyenne, plus de 40 % dans 4 dossiers sur 10 (BAM 2025) | 28 |
 | Modèles d'événements (Ramadan, Aïd, rentrée, vacances, 13e mois) | Dépenses saisonnières fortes (HCP) | 28 |
 | Cas de référence des calculs, parcours Playwright | Exactitude, prévu au § 13 et jamais fait | 29 |
-| PostgreSQL, build de production, PWA, pages légales, CNDP | Prérequis d'un SaaS | 30 |
-| Hébergement HTTPS, sauvegardes, surveillance, bêta fermée | Mise en ligne | 31 |
+| PostgreSQL, build de production, PWA, pages légales, CNDP | Prérequis d'un SaaS | 30 → [`prod.md`](prod.md) P2 à P5 |
+| Hébergement HTTPS, sauvegardes, surveillance, bêta fermée | Mise en ligne | 31 → [`prod.md`](prod.md) P8 |
 
 #### 15.3 Écarté ou reporté (historique conservé)
 
@@ -931,17 +927,8 @@ Cible de lancement : salariés marocains francophones, salaire fixe et primes, a
 
 #### 15.4 Sécurité et données pour le SaaS
 
-- Comptes : e-mail vérifié, mot de passe `scrypt`, sessions `HttpOnly` / `SameSite=Strict` / `Secure`, essais limités, actions lourdes confirmées par mot de passe.
-- Isolation : compte courant tiré de la session seulement, filtre `utilisateurId` partout, testé.
-- Données : PostgreSQL, sauvegardes quotidiennes avec restauration testée, journaux sans données financières.
-- Loi 09-08 : déclaration CNDP avant ouverture ; autorisation préalable si hébergement hors du Maroc ; conditions et politique de confidentialité ; export et suppression du compte (déjà faits).
+Comptes, isolation, PostgreSQL, sauvegardes, journaux et loi 09-08 : [`prod.md` § 5 à 7](prod.md#5-comptes-et-authentification).
 
 #### 15.5 Prêt à commercialiser quand
 
-- Lots 24 à 31 validés ; bêta de 4 semaines sans perte de données.
-- Chaque calcul clé a un cas de référence exact au centime.
-- Aucun compte ne lit les données d'un autre (tests et essai manuel).
-- Une restauration depuis la sauvegarde de la veille a été faite pour de vrai.
-- Les e-mails arrivent en boîte de réception.
-- Conditions, confidentialité et déclaration CNDP en place.
-- Abonnement payant fonctionnel avec une carte marocaine (lot 32).
+Critères d'ouverture : [`prod.md` § 11](prod.md#11-critères-douverture).

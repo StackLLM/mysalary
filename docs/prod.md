@@ -1,371 +1,432 @@
-# MySalary — Mise en production (Netlify + Neon)
+# MySalary — Production : comptes, données, sécurité et déploiement
 
-Plan pour ouvrir MySalary à de vrais clients : authentification complète, comptes isolés, données financières persistantes et cohérentes, déploiement Netlify (interface + API) et Neon PostgreSQL (base), au moins 50 utilisateurs.
+Document unique pour ouvrir MySalary à de vrais clients : authentification, isolation des comptes, base de données, sécurité, déploiement Netlify + Neon, tests, et les lots P0 à P9 qui y mènent.
 
-On avance **lot par lot** : un lot n'est commencé qu'après la validation du précédent (même méthode que `docs/lots.md`). Chaque lot met à jour sa documentation et le tableau de suivi ci-dessous.
+Il remplace les fichiers séparés `DEPLOYMENT.md`, `AUTHENTICATION.md`, `SECURITY.md`, `DATABASE.md` et `TESTING.md` : chaque sujet est une section ci-dessous. Il reprend aussi les parties « comptes, sécurité, mise en ligne » qui étaient dans le README, `produit.md` et `lots.md`.
 
 ## Sommaire
 
-| Lot | Sujet | Statut |
-|---|---|---|
-| [P0](#lot-p0--décision-darchitecture) | Décision d'architecture (Netlify Functions ou API séparée) | à faire |
-| [P1](#lot-p1--isolation-stricte-des-données) | Isolation stricte des données entre comptes | à faire |
-| [P2](#lot-p2--durcissement-de-la-sécurité) | Durcissement de la sécurité (dépendances, journaux, configuration) | à faire |
-| [P3](#lot-p3--authentification-de-bout-en-bout) | Authentification et profil de bout en bout | à faire |
-| [P4](#lot-p4--passage-à-postgresql-neon) | Passage de SQLite à PostgreSQL (Neon) | à faire |
-| [P5](#lot-p5--api-sur-netlify-functions) | API sur Netlify Functions | à faire |
-| [P6](#lot-p6--cohérence-financière-et-concurrence) | Cohérence financière et opérations simultanées | à faire |
-| [P7](#lot-p7--charge-et-fiabilité-50-utilisateurs) | Charge et fiabilité (50 utilisateurs) | à faire |
-| [P8](#lot-p8--mise-en-production) | Mise en production | à faire |
-| [P9](#lot-p9--documentation-finale-et-recette) | Documentation finale et recette | à faire |
-
-Annexes : [A. État des lieux](#a-état-des-lieux-audit-du-15-octobre-2026) · [B. Tests avant mise en production](#b-tests-avant-mise-en-production) · [C. Actions manuelles](#c-actions-manuelles-hors-du-code) · [D. Documentation à produire](#d-documentation-à-produire) · [E. Risques résiduels](#e-risques-résiduels)
-
-> Les lots 25 à 27 de `docs/lots.md` attendent encore leur validation. Le lot 28 (projection pluriannuelle) et les suivants passent après cette mise en production, sauf décision contraire.
+1. [Mode d'emploi](#1-mode-demploi)
+2. [Suivi des lots](#2-suivi-des-lots)
+3. [Décisions](#3-décisions)
+4. [Architecture et choix techniques](#4-architecture-et-choix-techniques)
+   - [4.1 Architecture actuelle](#41-architecture-actuelle)
+   - [4.2 Architecture cible](#42-architecture-cible)
+5. [Comptes et authentification](#5-comptes-et-authentification)
+   - [5.1 Fonctionnalités en place](#51-fonctionnalités-en-place)
+   - [5.2 Sessions](#52-sessions)
+   - [5.3 Récupération du compte et e-mails](#53-récupération-du-compte-et-e-mails)
+   - [5.4 Limites d'essais](#54-limites-dessais)
+   - [5.5 Comptes créés avant l'authentification](#55-comptes-créés-avant-lauthentification)
+   - [5.6 À compléter avant l'ouverture](#56-à-compléter-avant-louverture)
+6. [Données et isolation](#6-données-et-isolation)
+   - [6.1 Règles de stockage](#61-règles-de-stockage)
+   - [6.2 Schéma actuel](#62-schéma-actuel)
+   - [6.3 Isolation entre comptes](#63-isolation-entre-comptes)
+   - [6.4 Passage à PostgreSQL](#64-passage-à-postgresql)
+   - [6.5 Sauvegarde, export et restauration](#65-sauvegarde-export-et-restauration)
+7. [Sécurité et confidentialité](#7-sécurité-et-confidentialité)
+   - [7.1 Protections en place](#71-protections-en-place)
+   - [7.2 Problèmes relevés](#72-problèmes-relevés)
+   - [7.3 Secrets et journaux](#73-secrets-et-journaux)
+   - [7.4 Loi 09-08 et CNDP](#74-loi-09-08-et-cndp)
+8. [Déploiement](#8-déploiement)
+   - [8.1 Variables d'environnement](#81-variables-denvironnement)
+   - [8.2 Netlify](#82-netlify)
+   - [8.3 Neon](#83-neon)
+   - [8.4 E-mails en production](#84-e-mails-en-production)
+   - [8.5 Mise en production et retour arrière](#85-mise-en-production-et-retour-arrière)
+   - [8.6 Actions manuelles](#86-actions-manuelles)
+9. [Tests](#9-tests)
+   - [9.1 Tests existants](#91-tests-existants)
+   - [9.2 Tests avant mise en production](#92-tests-avant-mise-en-production)
+   - [9.3 Concurrence et charge](#93-concurrence-et-charge)
+   - [9.4 Journal des résultats](#94-journal-des-résultats)
+10. [Lots P0 à P9](#10-lots-p0-à-p9)
+11. [Critères d'ouverture](#11-critères-douverture)
+12. [Risques résiduels](#12-risques-résiduels)
 
 ---
 
-## A. État des lieux (audit du 15 octobre 2026)
+## 1. Mode d'emploi
 
-### Architecture actuelle
+- **Ce document** décrit l'état réel (ce qui marche aujourd'hui) et la cible (ce qui reste à faire), pour tout ce qui touche aux comptes, aux données, à la sécurité et à la mise en ligne.
+- **Ailleurs** :
+  - le produit et les règles de calcul sont dans `docs/produit.md` ;
+  - les écrans dans `docs/ux-ui.md` ;
+  - le suivi des lots fonctionnels (0 à 34) et leurs bilans dans `docs/lots.md` ;
+  - l'installation locale dans le `README.md`.
+- **Méthode** : un lot à la fois, dans l'ordre. Pas de lot suivant sans ta validation. À la fin d'un lot :
+  1. mettre à jour son statut au § 2 ;
+  2. passer de « cible » à « en place » ce qui est fait (§ 5 à 8) ;
+  3. noter les tests exécutés au § 9.4.
+- **Légende** : ✅ en place · 🟡 livré, à valider · ⬜ à faire · 🔧 action manuelle de ta part.
+- **Citation dans le code** : « prod.md § 6.3 ».
 
-- **Monorepo npm** : `packages/moteur` (calculs purs), `packages/partage` (schémas Zod, types), `server` (API Fastify 5 + Prisma 6), `ui` (React 18 + Vite + Tailwind + TanStack Query).
-- **Base** : SQLite (`server/prisma/mysalary.db`), 23 tables, 19 migrations écrites pour SQLite.
-- **API** : un serveur Node qui reste allumé (`server/src/server.ts`), avec une purge horaire par `setInterval`. Toutes les routes sous `/api/v1`.
-- **Interface** : en développement, Vite redirige `/api` vers le port 3010. Même origine : ni CORS ni cookie inter-sites.
-- **Netlify / Neon** : aucune configuration (pas de `netlify.toml`, pas d'URL PostgreSQL).
+## 2. Suivi des lots
 
-### Ce qui fonctionne déjà (à garder)
+| Lot | Sujet | Statut | Remplace |
+|---|---|---|---|
+| [P0](#p0-hébergement-et-cadre-légal) | Hébergement et cadre légal | ⬜ | question ouverte « hébergement » (lots.md § 7) |
+| [P1](#p1-isolation-stricte-des-données) | Isolation stricte des données | ⬜ | — |
+| [P2](#p2-durcissement-de-la-sécurité) | Durcissement de la sécurité | ⬜ | lot 30 (en-têtes, journaux) |
+| [P3](#p3-authentification-de-bout-en-bout) | Authentification de bout en bout, pages légales | ⬜ | lot 30 (pages légales) |
+| [P4](#p4-passage-à-postgresql) | Passage à PostgreSQL (Neon) | ⬜ | lot 30 (PostgreSQL, reprise des données) |
+| [P5](#p5-api-et-interface-sur-netlify) | API et interface sur Netlify, PWA | ⬜ | lot 30 (build, PWA) |
+| [P6](#p6-cohérence-financière-et-concurrence) | Cohérence financière et concurrence | ⬜ | — |
+| [P7](#p7-charge-et-fiabilité) | Charge et fiabilité (50 utilisateurs) | ⬜ | — |
+| [P8](#p8-mise-en-production-et-bêta-fermée) | Mise en production et bêta fermée | ⬜ | lot 31 |
+| [P9](#p9-recette-finale) | Recette finale | ⬜ | — |
 
-| Domaine | État |
+**Lots déjà livrés sur ce sujet** (bilans complets dans `docs/lots.md`) :
+
+| Lot | Contenu | Statut |
+|---|---|---|
+| 20 | Export JSON d'un compte, restauration dans un compte vide, sauvegarde de la base | ✅ clôturé |
+| 22 | Authentification locale | ✅ clôturé, remplacé par le lot 23 |
+| 23 | Comptes par e-mail et mot de passe, sessions, isolation par la session, suppression de l'en-tête `X-Utilisateur` et de l'écran Profils | 🟡 à valider |
+| 24 | Vérification de l'e-mail, changement d'e-mail par lien, envoi SMTP, purge des sessions et liens expirés | 🟡 à valider (essai en vraie boîte reporté en P8) |
+
+**Ordre retenu** : d'abord l'isolation, la sécurité et l'authentification sur l'installation actuelle, rapide à tester. Ensuite la base PostgreSQL et l'hébergement Netlify. Puis la cohérence, la charge, et enfin l'ouverture. Les lots fonctionnels 28 et 29 de `docs/lots.md` se placent avant ou après, à décider en P0.
+
+## 3. Décisions
+
+| # | Date | Décision | Statut | Source |
+|---|---|---|---|---|
+| D1 | 12/10/2026 | Le compte courant vient **uniquement** de la session (cookie). Jamais d'un en-tête, d'un paramètre ou du corps de la requête. | ✅ en vigueur | lot 23 |
+| D2 | 12/10/2026 | Mots de passe hachés avec `scrypt` (N = 2^15, sel aléatoire), jamais stockés ni renvoyés. | ✅ en vigueur | lot 23 |
+| D3 | 12/10/2026 | Sessions en base. Seule l'empreinte SHA-256 du jeton est gardée, le jeton est dans un cookie `HttpOnly`, `SameSite=Strict`, `Secure` en HTTPS. | ✅ en vigueur | lot 23 |
+| D4 | 12/10/2026 | Interface et API sur la **même origine** : ni CORS ni cookie inter-sites. | ✅ en vigueur | lot 23 |
+| D5 | 12/10/2026 | Changer d'e-mail exige le mot de passe, puis un clic dans un lien envoyé à la **nouvelle** adresse. L'ancienne reste valable d'ici là. | ✅ en vigueur | lot 24 |
+| D6 | 07/10/2026 | Chaque table métier porte `utilisateurId`. Toute lecture et toute écriture sont filtrées par compte côté serveur. | ✅ en vigueur | produit.md (Plan) § 5.6 |
+| D7 | 07/10/2026 | Montants en centimes entiers, dates de paie et de dépense en dates civiles `AAAA-MM-JJ`. | ✅ en vigueur | produit.md (Plan) § 5.6 |
+| D8 | 12/10/2026 | Actions lourdes (supprimer, réinitialiser le compte, changer d'e-mail ou de mot de passe) confirmées par le mot de passe. | ✅ en vigueur | lot 23 |
+| D9 | 12/10/2026 | La restauration d'une sauvegarde ne se fait que dans un compte vide. | ✅ en vigueur | lot 20 |
+| D10 | 15/10/2026 | Documentation de production centralisée dans ce fichier. Pas de fichier par sujet ni par lot. | ✅ en vigueur | — |
+| D11 | 15/10/2026 | Hébergement : interface et API sur **Netlify** (API en Netlify Functions), base sur **Neon PostgreSQL**. Plan B : API sur un service séparé (Render, Fly.io, Railway), relayée par Netlify sur la même origine. | ⬜ proposée, à valider en P0 | § 4.2 |
+| D12 | 15/10/2026 | Pas de Row-Level Security au lancement : isolation par le code, une matrice de tests sur toutes les routes, et un rôle PostgreSQL sans droits sur le schéma. | ⬜ proposée, à valider en P1 | § 6.3 |
+| D13 | 15/10/2026 | Deux onglets modifient le même élément : la dernière écriture l'emporte. Les calculs qui lisent puis écrivent un total passent en transaction `Serializable`. | ⬜ proposée, à valider en P6 | § 9.3 |
+| D14 | — | Hébergement hors du Maroc (Netlify, Neon) : l'autorisation préalable de la CNDP est nécessaire. Sinon, il faut un hébergeur au Maroc, et D11 change. | ⬜ à trancher en P0 | § 7.4 |
+
+## 4. Architecture et choix techniques
+
+### 4.1 Architecture actuelle
+
+| Partie | Technique |
 |---|---|
-| Comptes | Inscription, connexion, déconnexion, mot de passe oublié (lien 1 h, usage unique), vérification d'e-mail (lien 24 h), changement d'e-mail par lien vers la nouvelle adresse, changement de mot de passe, suppression du compte avec mot de passe. |
-| Mots de passe | `scrypt` (N = 2^15), sel aléatoire, comparaison à temps constant ; jamais renvoyés. |
-| Sessions | Cookie `HttpOnly`, `SameSite=Strict`, `Secure` en HTTPS ; 30 jours ; seule l'empreinte SHA-256 du jeton est en base. Changer ou réinitialiser le mot de passe ferme les autres sessions. |
-| Contrôle d'accès | Toutes les routes de compte passent par `exigerUtilisateur` ; l'identité vient seulement du cookie. Lectures filtrées par `utilisateurId`. Avant chaque modification ou suppression, l'élément est cherché avec `{ id, utilisateurId }`. |
-| Références croisées | Les identifiants reçus (catégorie, charge, compte d'épargne, objectif, dette) sont vérifiés comme appartenant au compte avant usage (vérifié par échantillon, pas encore de façon exhaustive). |
-| Abus | Limites d'essais : 5 échecs de connexion par e-mail et 20 par IP en 15 min ; 5 « mot de passe oublié » par heure ; 3 renvois d'e-mail par heure. |
-| Erreurs | Format unique `{ erreur: { code, message, champs? } }`, aucun détail interne en 500. |
-| Cache interface | Les requêtes du compte sont effacées à la connexion et à la déconnexion ; `localStorage` ne garde qu'un indice (id du dernier compte) et la préférence d'animations. |
-| Tests | 486 tests (moteur 182, serveur 117, interface 164, partage 23), dont `isolation.test.ts` (5 cas). |
+| `packages/moteur` | Calculs purs (salaire, charges, épargne, objectifs, projections), sans base ni React |
+| `packages/partage` | Schémas Zod, types, formatage, codes d'erreur |
+| `server` | API Fastify 5 + Prisma 6 sous `/api/v1`, Helmet, corps limité à 1 Mo (50 Mo pour la restauration) |
+| `ui` | React 18 + Vite + Tailwind + TanStack Query ; Vite relaie `/api` vers le port 3010 en développement |
+| Base | SQLite (`server/prisma/mysalary.db`), 23 tables, 19 migrations |
+| Processus | Serveur Node en continu (`server/src/server.ts`), purge des sessions et liens expirés au démarrage puis toutes les heures (`setInterval`) |
+| Netlify / Neon | Aucune configuration à ce jour |
 
-### Problèmes relevés
+Flux d'une requête : `routes.ts` (validation Zod) → `depot.ts` (Prisma, filtré par compte) → moteur → réponse JSON.
+
+### 4.2 Architecture cible
+
+| | A. Netlify Functions (proposé) | B. API séparée + Netlify |
+|---|---|---|
+| Hébergement | Interface et API sur Netlify, base sur Neon | Interface sur Netlify, API sur un 2ᵉ service, base sur Neon |
+| Changement de code | Point d'entrée « fonction » autour de l'app Fastify, limites d'essais en base, purge planifiée | Presque aucun |
+| Cookies | `/api/*` sur le même domaine : `SameSite=Strict` reste valable | Même origine si Netlify relaie `/api/*` (proxy 200) |
+| Connexions PostgreSQL | Beaucoup d'instances courtes : connexions mutualisées de Neon (`-pooler`) obligatoires | Un processus, un petit pool |
+| Démarrage à froid | Fonction et Neon en veille : 1 à 3 s possibles sur la première requête | Selon l'offre |
+| Services à gérer | 2 | 3 |
+
+Pourquoi A : c'est l'hébergement demandé, l'app Fastify se réutilise sans réécriture, et 50 utilisateurs restent loin des limites. Si la mesure du lot P7 montre des démarrages à froid gênants, on passe à B sans toucher ni à la base ni à l'interface.
+
+Ce qu'il faut adapter pour A : la purge devient une fonction planifiée, les limites d'essais passent en base (§ 5.4), la taille des requêtes de restauration est limitée (§ 6.5), et Prisma passe en mode serverless (§ 8.3).
+
+## 5. Comptes et authentification
+
+### 5.1 Fonctionnalités en place
+
+| Parcours | Fonctionnement | Statut |
+|---|---|---|
+| Inscription | Prénom, e-mail (unique, en minuscules), mot de passe de 8 caractères minimum. Session ouverte aussitôt, lien de vérification envoyé. | ✅ |
+| Connexion | E-mail et mot de passe ; le même message, que l'e-mail ou le mot de passe soit faux. Un e-mail inconnu prend le même temps qu'un mauvais mot de passe. | ✅ |
+| Déconnexion | Session supprimée en base, cookie effacé, cache de l'interface vidé. | ✅ |
+| Routes privées | Toutes les routes de compte passent par `exigerUtilisateur` : 401 sans session valide. | ✅ |
+| Prénom, devise, préférences | Réglages, enregistrés par compte. | ✅ |
+| Changement de mot de passe | Ancien mot de passe exigé ; les autres sessions sont fermées. | ✅ |
+| Changement d'e-mail | Voir § 5.3. | ✅ |
+| Mot de passe oublié | Voir § 5.3. | ✅ |
+| Vérification de l'e-mail | Voir § 5.3. | ✅ |
+| Export, réinitialisation, suppression du compte | Réglages ; suppression et réinitialisation confirmées par le mot de passe, suppression en cascade de toutes les données. | ✅ |
+
+### 5.2 Sessions
+
+- **Jeton** : 32 octets aléatoires dans le cookie `mysalary_session`. Seule son empreinte SHA-256 est en base (table `Session`).
+- **Cookie** : `HttpOnly`, `SameSite=Strict`, `Path=/`, `Secure` quand `APP_URL` est en `https://` (ou si `COOKIE_SECURE=1`).
+- **Durée** : 30 jours, sans renouvellement. Une session expirée est supprimée dès qu'elle est présentée.
+- **Rotation** : chaque connexion crée un nouveau jeton et ferme l'ancienne session de ce navigateur.
+- **Fermeture** : déconnexion, changement ou réinitialisation du mot de passe (pour les autres sessions), suppression du compte.
+- **Nettoyage** : sessions et liens expirés purgés au démarrage, puis toutes les heures (une fonction planifiée sur Netlify, en P5).
+- **Interface** : le cache des requêtes est effacé à la connexion et à la déconnexion. `localStorage` ne garde que l'identifiant du dernier compte (un simple indice d'affichage, le serveur ne s'y fie pas) et la préférence d'animations.
+
+### 5.3 Récupération du compte et e-mails
+
+- **Mot de passe oublié** : lien à usage unique, valable 1 heure, envoyé par e-mail. Choisir un mot de passe par ce lien confirme aussi l'adresse et ferme les autres sessions.
+- **Vérification de l'e-mail** : à l'inscription, un lien valable 24 heures et utilisable une seule fois. Tant qu'il n'est pas ouvert, un bandeau le rappelle et permet de le renvoyer (3 envois par heure).
+- **Changement d'e-mail** : le mot de passe est exigé, puis un lien part vers la nouvelle adresse. L'adresse ne change qu'à l'ouverture du lien.
+- **Liens** : seule l'empreinte du jeton est en base (`JetonMotDePasse`, `JetonEmail`). Un lien expiré ou déjà utilisé est refusé.
+- **Envoi** : par SMTP (`SMTP_URL`), avec des gabarits HTML et texte. Sans `SMTP_URL`, le message est écrit dans le journal du serveur, ce qui n'est acceptable qu'en local (§ 7.2, problème 5).
+
+### 5.4 Limites d'essais
+
+| Action | Limite |
+|---|---|
+| Connexion | 5 échecs par e-mail et 20 par adresse IP en 15 minutes |
+| Mot de passe oublié | 5 demandes par heure |
+| Confirmation par mot de passe (Réglages) | 5 échecs en 15 minutes |
+| Renvoi du lien de vérification | 3 par heure |
+
+Aujourd'hui, ces compteurs sont gardés en mémoire (`server/src/lib/limiteur.ts`), ce qui suffit pour un seul processus. En serverless, chaque instance a sa propre mémoire : ils passeront en base en P2.
+
+### 5.5 Comptes créés avant l'authentification
+
+Ces comptes gardent toutes leurs données, mais n'ont ni e-mail ni mot de passe. Pour en activer un, sur la machine du serveur :
+
+```bash
+npm run compte:activer -- <prénom> <e-mail>
+```
+
+La commande affiche un lien valable 24 heures pour choisir le mot de passe. L'e-mail est ensuite considéré comme confirmé. Pour le changer plus tard : Réglages › E-mail de connexion.
+
+### 5.6 À compléter avant l'ouverture
+
+Travaux du lot [P3](#p3-authentification-de-bout-en-bout) :
+
+| Point | Détail |
+|---|---|
+| Session expirée dans l'interface | Tout 401 renvoie à `/connexion?suite=<page>`, sans boucle ni écran blanc |
+| Renouvellement | Session prolongée quand il reste moins de 7 jours |
+| Se déconnecter de tous les appareils | Route `POST /compte/sessions/fermeture` et bouton dans Réglages |
+| E-mails d'alerte | À l'ancienne adresse après un changement d'e-mail, et après un changement de mot de passe |
+| Lien expiré | Message clair et bouton « Recevoir un nouveau lien » |
+| Trop d'essais (429) | Message clair avec le délai d'attente |
+| Suppression du compte | E-mail de confirmation, et vérification qu'il ne reste rien en base |
+| Mots de passe courants | Refusés (petite liste locale, aucun appel externe) |
+| Conditions et confidentialité | Pages publiques, acceptation à l'inscription |
+
+## 6. Données et isolation
+
+### 6.1 Règles de stockage
+
+- **Montants** en centimes entiers (`Int`), jamais en nombre à virgule. Un `Int` va jusqu'à 21 474 836 DH par ligne.
+- **Dates civiles** (paie, dépense, échéance) en texte `AAAA-MM-JJ`, sans fuseau : la paie du 27 reste le 27. Les **instants** (création, expiration) sont en `DateTime`.
+- **Propriétaire** : chaque table métier porte `utilisateurId`, et la suppression du compte supprime tout en cascade.
+- **Natures** : le réel, le prévu et le projeté ne sont jamais mélangés (règles complètes dans produit.md (Contexte) § 5).
+- **Validation** : schémas Zod stricts sur toutes les entrées (champ inconnu refusé), montants bornés.
+
+### 6.2 Schéma actuel
+
+- Fichier : `server/prisma/schema.prisma`, base SQLite, 23 tables, 19 migrations écrites à la main.
+- Tables de compte : `Utilisateur`, `Reglages`, `Session`, `JetonMotDePasse`, `JetonEmail`.
+- Tables métier, toutes avec `utilisateurId` :
+  - salaire : contrats, paies, lignes de paie ;
+  - revenus : sources, revenus reçus ;
+  - budget : catégories, charges, ponctuels, dettes et leurs paiements, dépenses, clôtures de mois ;
+  - épargne : comptes d'épargne, mouvements, objectifs ;
+  - simulation : scénarios.
+- Contraintes uniques par compte : un contrat par mois d'effet, une paie par mois financé, etc.
+- **Index** : seulement 13 pour 23 tables. À compléter pour PostgreSQL, qui n'indexe pas les clés étrangères tout seul (§ 6.4).
+
+### 6.3 Isolation entre comptes
+
+**En place**
+- Le compte courant vient de la session (D1).
+- Toutes les lectures sont filtrées par `utilisateurId`.
+- Avant une modification ou une suppression, l'élément est cherché avec `{ id, utilisateurId }` : 404 s'il appartient à un autre compte.
+- Les identifiants reçus (catégorie, charge, compte d'épargne, objectif, dette) sont vérifiés comme appartenant au compte avant usage.
+- Le réordonnancement des objectifs exige exactement les objectifs du compte.
+- Tests : `server/test/isolation.test.ts` (sans session, faux cookie, ancien en-tête, réglages de A et B, suppression en cascade).
+
+**Points faibles** (corrigés en [P1](#p1-isolation-stricte-des-données))
+- L'écriture qui suit la vérification se fait sur `where: { id }` seul. C'est sûr tant que la vérification précède, mais fragile si une route l'oublie.
+- L'isolation n'est testée que sur les réglages, et la vérification des références n'a été faite que par échantillon.
+
+**Row-Level Security** : non retenue au lancement (D12). Avec Prisma et le pooler de Neon en mode transaction, il faudrait un `SET LOCAL app.utilisateur` dans une transaction autour de chaque requête. C'est compliqué, et une erreur rendrait des pages vides sans rien protéger de plus. Le filet retenu :
+- le filtrage par le code ;
+- la matrice de tests sur toutes les routes ;
+- un rôle PostgreSQL `mysalary_app` sans droits sur le schéma.
+
+On rouvre la question au-delà de quelques centaines de comptes.
+
+### 6.4 Passage à PostgreSQL
+
+Travaux du lot [P4](#p4-passage-à-postgresql).
+- **Schéma** : `provider = "postgresql"`, avec `url` pour la connexion mutualisée et `directUrl` pour la connexion directe (migrations). Les types sont inchangés (centimes en `Int`, dates civiles en `String`, instants en `timestamptz`).
+- **Index** : un index sur `utilisateurId` partout, et des index composés selon les filtres réels (`[utilisateurId, date]` pour les dépenses et les mouvements, `[utilisateurId, moisFinance]` pour les paies).
+- **Migrations** : les migrations SQLite ne se rejouent pas sur PostgreSQL. On repart d'une migration de départ générée depuis le schéma (`prisma migrate diff --from-empty --to-schema-datamodel`). Les anciennes sont archivées dans `server/prisma/migrations-sqlite/`. Ensuite, les migrations restent écrites à la main, puis appliquées par `prisma migrate deploy`.
+- **Rôles** : `mysalary_app` (lecture et écriture des données) pour l'app ; un rôle propriétaire, réservé aux migrations.
+- **Différences à tester** : tri des chaînes et des accents, casse, `contains` et `startsWith`, transactions simultanées, erreurs d'unicité (P2002 → 409, déjà géré).
+- **Tests** : base de test PostgreSQL (branche Neon `test`, ou PostgreSQL local), avec un schéma neuf par exécution.
+- **Reprise des données** : script `server/scripts/transfertSqlite.ts`. Il copie SQLite vers PostgreSQL compte par compte, dans une transaction, puis compare les nombres de lignes et les totaux en centimes par table. Il est d'abord joué sur une branche Neon jetable. Aucune opération destructive sur la base actuelle.
+
+### 6.5 Sauvegarde, export et restauration
+
+| Moyen | Aujourd'hui | Après P4 |
+|---|---|---|
+| Copie de la base | `npm run sauvegarde` : `VACUUM INTO` vers `sauvegardes/` (10 copies gardées) | Historique Neon (restauration à un instant donné, durée selon l'offre), plus un export programmé |
+| Export d'un compte | Réglages › Sauvegarde : JSON complet | Inchangé |
+| Restauration | Dans un compte vide uniquement (D9), aperçu avant écriture, limite de 50 Mo | Limite abaissée à ce que Netlify accepte (environ 6 Mo, à confirmer), JSON compressé dans le navigateur si besoin |
+
+Avant toute opération sur la base : `npm run sauvegarde` et un export JSON du compte `oussama`.
+
+## 7. Sécurité et confidentialité
+
+### 7.1 Protections en place
+
+- **Authentification et sessions** : § 5.
+- **Isolation** : § 6.3.
+- **Validation** : Zod strict sur toutes les entrées. Requêtes Prisma paramétrées. La seule requête SQL brute (`VACUUM INTO`, sur un chemin interne) disparaît en P4.
+- **En-têtes** : Helmet sur les réponses de l'API.
+- **Erreurs** : format unique `{ erreur: { code, message, champs? } }`. Une erreur 500 ne contient jamais de détail interne ni de donnée financière ; le détail va seulement dans le journal.
+- **Taille des requêtes** : 1 Mo, 50 Mo pour la restauration.
+- **Données** : aucun service tiers, aucun pistage, aucune police distante. Pas de donnée financière dans les URL.
+- **Suppression** : confirmée par le mot de passe, en cascade ; export possible juste avant.
+
+### 7.2 Problèmes relevés
+
+Audit du 15/10/2026.
 
 | # | Gravité | Problème | Lot |
 |---|---|---|---|
-| 1 | Bloquant | SQLite ne convient pas à Netlify (pas de disque persistant) : il faut PostgreSQL. Les 19 migrations sont propres à SQLite, et la sauvegarde utilise `VACUUM INTO`. | P4 |
-| 2 | Bloquant | L'API est un serveur qui tourne en continu, avec une purge par `setInterval` : sur Netlify, elle doit devenir une fonction, et la purge une tâche planifiée. | P5 |
-| 3 | Élevé | Les limites d'essais sont en mémoire. En serverless, chaque instance a sa propre mémoire, et la protection contre la force brute devient inefficace. | P2 / P5 |
-| 4 | Élevé | `npm audit` (production) : 6 failles (4 élevées, 2 modérées) dans `nodemailer`, `react-router` / `react-router-dom` et `deepmerge-ts`. | P2 |
-| 5 | Élevé | Sans `SMTP_URL`, le texte des e-mails (avec le lien de réinitialisation) est écrit dans le journal. Acceptable en local, dangereux en production. | P2 |
-| 6 | Moyen | Modifications et suppressions en deux temps : recherche `{ id, utilisateurId }`, puis écriture `where: { id }`. C'est sûr aujourd'hui, mais fragile si une route oublie la recherche. Mieux vaut filtrer aussi l'écriture par compte. | P1 |
-| 7 | Moyen | L'isolation n'est testée que sur les réglages. Il manque un test qui essaie **toutes** les routes avec les identifiants d'un autre compte. | P1 |
-| 8 | Moyen | La restauration accepte 50 Mo. La limite des requêtes vers une Netlify Function est bien plus basse (environ 6 Mo, à confirmer). | P5 |
-| 9 | Moyen | Seulement 13 index pour 23 tables. PostgreSQL n'indexe pas les clés étrangères tout seul, il faut un index sur `utilisateurId` partout où l'on filtre. | P4 |
-| 10 | Moyen | Aucune vérification des variables d'environnement au démarrage : une valeur oubliée (`APP_URL`, `SMTP_URL`, `DATABASE_URL`) ne se voit qu'à l'usage. | P2 |
-| 11 | Faible | Aucun en-tête de sécurité côté interface (CSP, HSTS, `frame-ancestors`) : Helmet ne protège que les réponses de l'API. | P5 |
-| 12 | Faible | Session de 30 jours sans renouvellement, et pas de bouton « Se déconnecter de tous les appareils ». | P3 |
-| 13 | Faible | Aucun e-mail d'alerte à l'ancienne adresse après un changement d'e-mail ou de mot de passe. | P3 |
-| 14 | Faible | Aucun test de charge ni d'opérations simultanées. | P6 / P7 |
+| 1 | Bloquant | SQLite ne convient pas à Netlify (pas de disque persistant) ; migrations et sauvegarde propres à SQLite | P4 |
+| 2 | Bloquant | API en serveur continu avec purge par `setInterval` : à transformer en fonction et en tâche planifiée | P5 |
+| 3 | Élevé | Limites d'essais en mémoire, inefficaces avec plusieurs instances | P2 |
+| 4 | Élevé | `npm audit --omit=dev` : 6 failles (4 élevées, 2 modérées) dans `nodemailer`, `react-router`, `react-router-dom` et `deepmerge-ts` | P2 |
+| 5 | Élevé | Sans `SMTP_URL`, le texte des e-mails, avec le lien de réinitialisation, est écrit dans le journal | P2 |
+| 6 | Moyen | Écritures sur `where: { id }` après vérification (§ 6.3) | P1 |
+| 7 | Moyen | Isolation testée seulement sur les réglages | P1 |
+| 8 | Moyen | Restauration jusqu'à 50 Mo, au-delà de la limite des fonctions Netlify | P5 |
+| 9 | Moyen | Index insuffisants pour PostgreSQL | P4 |
+| 10 | Moyen | Variables d'environnement non vérifiées au démarrage | P2 |
+| 11 | Faible | Aucun en-tête de sécurité sur les pages de l'interface (CSP, HSTS, `frame-ancestors`) | P5 |
+| 12 | Faible | Session sans renouvellement, pas de « Se déconnecter de tous les appareils » | P3 |
+| 13 | Faible | Aucune alerte à l'ancienne adresse après un changement d'e-mail ou de mot de passe | P3 |
+| 14 | Faible | Aucun test de charge ni de concurrence | P6, P7 |
 
----
+### 7.3 Secrets et journaux
 
-## Lot P0 — Décision d'architecture
+- **Secrets** : `DATABASE_URL`, `DIRECT_URL`, `SMTP_URL`. Ils vivent uniquement dans `server/.env` (ignoré par git) en local, et dans les variables d'environnement de Netlify en production. Jamais dans le code, dans une variable `VITE_*`, ni dans le chat.
+- **Fichiers jamais versionnés** : `.env`, la base SQLite, `sauvegardes/`, `Salaire/` (données personnelles réelles).
+- **Journaux, règles cibles (P2)** :
+  - en production, uniquement le destinataire masqué (`o***@gmail.com`) et le sujet d'un e-mail, jamais son texte ;
+  - masquer `cookie`, `set-cookie`, `motDePasse`, `jeton` et `token` ;
+  - aucun montant ni libellé financier.
+- **Démarrage** : en production, le serveur refuse de démarrer sans `SMTP_URL` ou sans `APP_URL` en `https://` (P2).
 
-**Objectif** : choisir où tourne l'API, avant de toucher au code.
+### 7.4 Loi 09-08 et CNDP
 
-### Options
+- **Déclaration** : déclaration à la CNDP avant l'ouverture.
+- **Hébergement à l'étranger** : Netlify et Neon sont hors du Maroc, ce qui demande une **autorisation préalable** de la CNDP pour le transfert. C'est la décision D14, à trancher en P0.
+- **Documents** : conditions d'utilisation et politique de confidentialité, acceptées à l'inscription (P3).
+- **Droits des utilisateurs** : l'export et la suppression du compte existent déjà.
 
-| | A. Netlify Functions (recommandé) | B. API séparée (Render, Fly.io, Railway) + Netlify |
+## 8. Déploiement
+
+### 8.1 Variables d'environnement
+
+En local : `server/.env`, à partir de `server/.env.example`. En production : les variables d'environnement de Netlify.
+
+| Variable | Rôle | Défaut local | Production |
+|---|---|---|---|
+| `DATABASE_URL` | Base : fichier SQLite aujourd'hui, URL Neon mutualisée (`-pooler`, `pgbouncer=true&connection_limit=1`) après P4 | `file:./mysalary.db` | obligatoire, secret |
+| `DIRECT_URL` | URL Neon directe, pour les migrations (après P4) | — | obligatoire, secret |
+| `PORT` | Port de l'API en local | `3010` | inutile en fonction |
+| `HOTE` | Adresse d'écoute ; `0.0.0.0` pour le réseau, derrière HTTPS | `127.0.0.1` | inutile en fonction |
+| `APP_URL` | Adresse de l'interface, pour les liens des e-mails ; en `https://`, le cookie devient `Secure` | `http://127.0.0.1:6010` | `https://<domaine>` |
+| `COOKIE_SECURE` | Forcer (`1`) ou non (`0`) le cookie `Secure` | selon `APP_URL` | selon `APP_URL` |
+| `TRUST_PROXY` | `1` derrière un proxy (adresse du client lue dans `X-Forwarded-For`) | désactivé | `1` |
+| `SMTP_URL` | Serveur d'envoi, ex. `smtps://user:pass@smtp.exemple.com:465` | absent (e-mails écrits dans le journal) | obligatoire, secret |
+| `MAIL_FROM` | Expéditeur | `MySalary <no-reply@mysalary.local>` | adresse du domaine |
+
+### 8.2 Netlify
+
+Cible du lot [P5](#p5-api-et-interface-sur-netlify) :
+- **Build** : `npm run build`, publication de `ui/dist`, fonctions dans `netlify/functions`.
+- **Redirections** :
+  - `/api/*` → `/.netlify/functions/api/:splat` (200) ;
+  - `/*` → `/index.html` (200), pour les pages de l'app et le rechargement d'une page profonde.
+- **Fonction `api`** : construit l'app Fastify une fois par instance et la réutilise, avec `@fastify/aws-lambda` ou `serverless-http` (choix après un essai des deux).
+- **Fonction planifiée `purge`** : toutes les heures, à la place du `setInterval`.
+- **En-têtes des pages** : `Content-Security-Policy` (scripts et styles du site seulement), `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors 'none'`.
+- **Limites à vérifier** :
+  - durée d'exécution d'une fonction (10 s par défaut) ;
+  - taille des requêtes (environ 6 Mo) ;
+  - quotas de l'offre (exécutions, bande passante, crédits), relevés en P7.
+- **PWA** : manifeste et icônes, installation sur Android et iPhone.
+- **Local** : `npm run dev` garde le serveur Node actuel ; le mode fonction se teste avec `netlify dev`.
+
+### 8.3 Neon
+
+- **Branches** :
+  - `main` pour la production ;
+  - `dev` pour la prévisualisation Netlify ;
+  - `test` pour les tests automatiques ;
+  - des branches jetables pour les essais de reprise.
+- **Région** : en Europe, la plus proche des utilisateurs (Francfort par exemple), et la même zone que les fonctions Netlify.
+- **Connexions** : URL mutualisée (`-pooler`) pour l'app, URL directe pour les migrations. Un seul `PrismaClient` par instance de fonction. `binaryTargets` adapté à Netlify (`rhel-openssl-3.0.x`, à confirmer), ou l'adaptateur `@prisma/adapter-neon`.
+- **Rôles** : § 6.4.
+- **Limites à vérifier** : heures de calcul, stockage, nombre de connexions, mise en veille et réveil, durée de l'historique de restauration. Relevés en P7.
+
+### 8.4 E-mails en production
+
+1. Choisir un fournisseur d'envoi transactionnel (Brevo : 300 messages par jour gratuits ; Resend : 3 000 par mois et 100 par jour), et récupérer son URL SMTP.
+2. Renseigner `SMTP_URL` et `MAIL_FROM` (adresse du domaine de l'application).
+3. Chez le fournisseur et chez l'hébergeur du domaine : publier les enregistrements **SPF** et **DKIM** qu'il donne, et un enregistrement **DMARC** (`v=DMARC1; p=none; rua=mailto:…` au départ).
+4. S'envoyer une inscription et un « mot de passe oublié » vers Gmail et Outlook, puis vérifier dans les en-têtes que les messages arrivent en boîte de réception, avec SPF, DKIM et DMARC valides.
+
+Le code d'envoi n'a été testé qu'avec un transport simulé ; l'essai réel se fait en P8.
+
+### 8.5 Mise en production et retour arrière
+
+Lot [P8](#p8-mise-en-production-et-bêta-fermée), dans cet ordre :
+1. Sauvegarder la base SQLite et exporter le compte `oussama`.
+2. Branche Neon `main` et rôles, puis `prisma migrate deploy` avec le rôle propriétaire.
+3. Variables de production sur Netlify (§ 8.1), le domaine et HTTPS.
+4. E-mails (§ 8.4).
+5. Reprise des données (§ 6.4), vérifiée par les nombres de lignes et les totaux.
+6. Tests de fumée en production (§ 9.2, points 1 à 9) avec un compte « Essai », supprimé ensuite.
+7. Surveillance :
+   - alertes Netlify (déploiement, erreurs de fonction) et Neon (stockage, calcul) ;
+   - `/api/v1/sante` qui vérifie aussi la base.
+
+**Retour arrière** : redéployer la version précédente depuis Netlify, et restaurer la base Neon à un instant donné, juste avant l'incident.
+
+### 8.6 Actions manuelles
+
+Je ne saisis aucun secret ni aucun mot de passe de service : tu les mets toi-même dans `server/.env` ou dans Netlify.
+
+| Action 🔧 | Où | Lot |
 |---|---|---|
-| Hébergement | Interface et API sur Netlify, base sur Neon | Interface sur Netlify, API sur un 2ᵉ hébergeur, base sur Neon |
-| Changement de code | Point d'entrée « fonction » autour de l'app Fastify existante, limites d'essais en base, purge planifiée | Presque aucun : le serveur actuel tourne tel quel |
-| Cookies | Même origine (`/api/*` sur le même domaine) : `SameSite=Strict` reste valable | Même origine si Netlify relaie `/api/*` vers l'API (proxy 200) ; sinon CORS + `SameSite=None` à éviter |
-| Connexions PostgreSQL | Nombreuses instances courtes : connexions mutualisées par Neon (`-pooler`) obligatoires | Un seul processus : un petit pool suffit |
-| Démarrage à froid | Oui (fonction + Neon en veille) : 1 à 3 s possibles sur la première requête | Selon l'offre (les offres gratuites mettent aussi l'API en veille) |
-| Services à gérer | 2 (Netlify, Neon) | 3 |
-
-**Recommandation : A**. C'est ce qui est demandé (Netlify + Neon), l'app Fastify se réutilise sans réécriture, et 50 utilisateurs restent loin des limites. Si les tests du lot P7 montrent des démarrages à froid gênants, on passe à **B** sans toucher à la base ni à l'interface.
-
-### Travaux
-
-- ADR `docs/decisions/0001-hebergement-netlify-neon.md` : décision, raisons, plan B.
-- Choix de la région Neon la plus proche des utilisateurs (Europe, Francfort par exemple) et de la région des fonctions Netlify (même zone).
-
-### Critères de fin
-
-- Option validée par toi.
-- ADR écrit.
-
-### Actions manuelles (toi)
-
-- Créer les comptes Netlify et Neon (offre gratuite au départ). Ne pas encore créer de base de production.
-
----
-
-## Lot P1 — Isolation stricte des données
-
-**Objectif** : prouver par des tests qu'aucun compte ne peut lire, modifier ou supprimer les données d'un autre, sur **toutes** les routes.
-
-### Travaux
-
-1. **Test « matrice d'isolation »** (`server/test/isolation.test.ts`) :
-   - Créer deux comptes, A et B, avec des données dans chaque entité : contrat, paie, revenu, source, charge, ponctuel, dette, paiement de dette, catégorie, dépense, clôture, compte d'épargne, mouvement, objectif, scénario, réglages.
-   - Pour chaque route `GET`, `PUT`, `PATCH`, `POST` ou `DELETE` qui prend un identifiant : A l'appelle avec l'identifiant de B. Attendu : 404, et les données de B intactes (relues ensuite).
-   - Pour chaque création qui référence un autre élément (dépense → charge, catégorie ; mouvement → compte, objectif ; paiement → dette) : A envoie un identifiant de B. Attendu : 404 ou 422, et rien de créé.
-   - Pour chaque liste et chaque page calculée (Aujourd'hui, Mois, Année, Objectifs, Épargne, Calendrier, Simulateur, export) : aucune donnée de B dans la réponse de A.
-   - La liste des routes se lit dans Fastify (`app.printRoutes` ou un hook `onRoute`). Une **nouvelle route sans cas de test fait échouer le test** : on ne peut plus oublier une route.
-2. **Écritures filtrées par compte** : remplacer `update` et `delete` sur `where: { id }` par `updateMany` et `deleteMany` sur `where: { id, utilisateurId }`, avec 404 si rien n'est touché. Ou ajouter des contraintes uniques composées `@@unique([id, utilisateurId])`. Même filet dans `ordonner` et dans la simulation.
-3. **Intégrité en base** : relire chaque relation de `schema.prisma`. Suppression du compte en cascade, et aucune clé étrangère qui puisse pointer vers la donnée d'un autre compte (vérifié par le code au point 1).
-4. **Interface** : test avec deux comptes successifs dans le même navigateur. Connexion de A, déconnexion, connexion de B : aucune donnée de A dans le cache, l'écran ou `localStorage`. Le test existe en partie, il sera complété.
-5. **Row-Level Security (RLS)** : évaluée et écrite dans l'ADR `0002-isolation.md`. **Recommandation : pas de RLS au lancement.** Avec Prisma et le pooler de Neon (mode transaction), il faudrait un `SET LOCAL app.utilisateur` dans une transaction autour de chaque requête : c'est compliqué, et une erreur rendrait des pages vides plutôt que de protéger. Le filet retenu : le filtrage applicatif, la matrice de tests et le rôle PostgreSQL de l'app sans droits sur le schéma (lot P4). On rouvre la question au-delà de quelques centaines de comptes.
-
-### Critères de fin
-
-- La matrice couvre 100 % des routes de compte, et un test échoue si une route n'y figure pas.
-- Aucune écriture `where: { id }` seule dans `server/src/modules`.
-- `npm run verifier` vert.
-
-### Documentation
-
-- `docs/DATABASE.md` § Isolation, à créer et compléter au lot P4.
-
----
-
-## Lot P2 — Durcissement de la sécurité
-
-**Objectif** : corriger les failles connues qui ne dépendent pas de l'hébergement.
-
-### Travaux
-
-1. **Dépendances** : mettre à jour `nodemailer`, `react-router-dom` et `react-router`, et trouver d'où vient `deepmerge-ts` (sans doute Prisma). Revérifier ensuite avec `npm audit --omit=dev`, sans faille élevée restante. Pas de `npm audit fix --force` à l'aveugle : changement par changement, tests à l'appui.
-2. **Configuration vérifiée au démarrage** (`server/src/config.ts`, schéma Zod) : `DATABASE_URL`, `APP_URL`, `SMTP_URL`, `MAIL_FROM`, `COOKIE_SECURE`, `NODE_ENV`. En production, le serveur **refuse de démarrer** sans `SMTP_URL` ou sans `APP_URL` en `https://`.
-3. **Journaux sans données sensibles** :
-   - Ne jamais écrire le corps des e-mails en production : uniquement le destinataire masqué (`o***@gmail.com`) et le sujet.
-   - Masquer dans les journaux Fastify l'en-tête `cookie`, `set-cookie`, et les champs `motDePasse`, `jeton`, `token`.
-   - Jamais de montant ni de libellé financier dans les journaux, à vérifier par recherche dans `server/src`.
-4. **Limites d'essais partagées** : une table `TentativeAcces` (clé, nombre, fin de fenêtre) au lieu de la `Map` en mémoire. Elle fonctionne quand plusieurs instances tournent (obligatoire pour le lot P5) et survit aux redémarrages. Elle est purgée avec les sessions.
-5. **Validation des entrées** : vérifier que toute route passe par `valider(schema, …)` (Zod strict). Les requêtes Prisma sont paramétrées, et la seule requête SQL brute (`VACUUM INTO`) disparaît au lot P4. Ajouter un test « champ inconnu refusé » par module, s'il manque.
-6. **Mot de passe** : garder 8 caractères minimum et ajouter un refus des mots de passe les plus courants (petite liste locale, sans appel externe).
-
-### Critères de fin
-
-- `npm audit --omit=dev` : 0 faille élevée.
-- Tests : démarrage refusé avec une configuration de production incomplète ; aucun lien de réinitialisation dans les journaux en production ; limite d'essais respectée avec deux instances de l'app sur la même base.
-
-### Documentation
-
-- `docs/SECURITY.md` : protections, variables sensibles, risques résiduels.
-
----
-
-## Lot P3 — Authentification de bout en bout
-
-**Objectif** : chaque parcours de compte marche réellement, de l'écran à la base, avec les bons états de chargement, d'erreur et de confirmation.
-
-### Parcours à vérifier (navigateur, 1342 et 375 px, compte « Essai »)
-
-| Parcours | Existe | À compléter |
-|---|---|---|
-| Inscription → connexion automatique → e-mail de vérification | oui | Vérifier le message si l'e-mail existe déjà ; le bouton est désactivé pendant l'envoi |
-| Connexion / déconnexion | oui | Message unique pour un mauvais e-mail ou un mauvais mot de passe ; message clair quand trop d'essais (429) |
-| Expiration de session | oui (serveur) | Interface : tout 401 renvoie à `/connexion?suite=<page>`, sans boucle ni écran blanc ; renouveler la session quand il reste moins de 7 jours |
-| Mot de passe oublié → lien → nouveau mot de passe | oui | Lien expiré ou déjà utilisé : message clair et bouton « Recevoir un nouveau lien » |
-| Vérification de l'e-mail | oui | Lien ouvert dans un autre navigateur : l'adresse est confirmée même sans session |
-| Changement d'e-mail | oui | **Ajout** : e-mail d'alerte à l'**ancienne** adresse |
-| Changement de mot de passe | oui | **Ajout** : e-mail d'alerte, et les autres sessions sont fermées (déjà fait) |
-| Prénom, devise, préférences | oui | Vérifier que tout est enregistré et relu après reconnexion |
-| Se déconnecter de tous les appareils | **non** | Route `POST /compte/sessions/fermeture` et bouton dans Réglages |
-| Suppression du compte | oui | E-mail de confirmation après suppression ; vérifier qu'il ne reste rien en base |
-
-### Travaux
-
-- Combler la colonne « À compléter », avec un test serveur et un test d'interface pour chaque ajout.
-- Faire le tour de tous les boutons des pages Connexion, Inscription, Mot de passe oublié et Réglages : aucun bouton sans action.
-- E-mails d'alerte : gabarits dans `server/src/lib/gabarits.ts`, même style que les e-mails actuels.
-
-### Critères de fin
-
-- Tous les parcours du tableau sont passés dans le navigateur, avec les captures dans le rapport.
-- Tests serveur et interface verts.
-
-### Documentation
-
-- `docs/AUTHENTICATION.md` : inscription, sessions (durée, renouvellement, fermeture), récupération du compte, vérification et changement d'e-mail, limites d'essais.
-
----
-
-## Lot P4 — Passage à PostgreSQL (Neon)
-
-**Objectif** : la même app sur PostgreSQL, en local puis sur Neon, **sans perte de données**.
-
-### Travaux
-
-1. **Sauvegarde d'abord** : `npm run sauvegarde` et un export JSON du compte `oussama` (Réglages › Sauvegarde) avant toute opération.
-2. **Schéma** : `provider = "postgresql"`, avec `url` pour la connexion mutualisée et `directUrl` pour la connexion directe (migrations). Vérifier les types : montants en `Int` (centimes, jusqu'à 21 millions de DH par ligne, à vérifier, sinon `BigInt`), dates civiles en `String` (`AAAA-MM-JJ`, inchangé), instants en `DateTime` (`timestamptz`).
-3. **Index** : `@@index([utilisateurId])`, ou des index composés selon les filtres réels (`[utilisateurId, date]` pour les dépenses et les mouvements, `[utilisateurId, moisFinance]` pour les paies), sur chaque table métier.
-4. **Migrations** : les migrations SQLite ne se rejouent pas sur PostgreSQL. On repart d'**une migration de départ PostgreSQL** générée depuis le schéma (`prisma migrate diff --from-empty --to-schema-datamodel`). Les anciennes sont archivées dans `server/prisma/migrations-sqlite/`, gardées pour l'historique.
-5. **Différences SQLite / PostgreSQL** à tester : tri des chaînes et des accents, sensibilité à la casse (e-mails déjà en minuscules), `contains` et `startsWith`, transactions concurrentes, erreurs d'unicité (P2002 → 409, déjà géré).
-6. **Sauvegarde** : `VACUUM INTO` disparaît. La sauvegarde repose sur l'historique de Neon (restauration à un instant donné, durée selon l'offre) et sur un export JSON programmé (`npm run sauvegarde` → `pg_dump` si disponible, sinon export JSON par compte).
-7. **Tests** : la base de test devient PostgreSQL. Soit une branche Neon « test », soit PostgreSQL en local (Docker ou Postgres.app). Un schéma neuf par exécution, nettoyé en fin de test.
-8. **Rôles PostgreSQL** : un rôle `mysalary_app` (lecture et écriture des données, sans droit de créer ou supprimer des tables) pour l'app, et un rôle propriétaire pour les migrations seulement.
-9. **Reprise des données** : script `server/scripts/transfertSqlite.ts`. Il lit SQLite et écrit dans PostgreSQL compte par compte, dans une transaction, puis compare les nombres de lignes et les totaux en centimes par table, avec un rapport. Il est d'abord joué sur une branche Neon jetable.
-
-### Critères de fin
-
-- `npm run verifier` vert sur PostgreSQL.
-- Transfert répété sur une branche jetable : nombres de lignes et totaux identiques, pages Aujourd'hui, Mois, Année et Objectifs identiques avant et après pour le compte `oussama`, comparées sur captures.
-- Aucune opération destructive sur la base actuelle.
-
-### Actions manuelles (toi)
-
-- Créer le projet Neon, une branche `dev` et une branche `test`, et me donner les URL **dans `server/.env`** (jamais dans le chat ni dans un fichier versionné).
-
-### Documentation
-
-- `docs/DATABASE.md` : schéma, relations, index, migrations, rôles, sauvegarde et restauration, isolation.
-
----
-
-## Lot P5 — API sur Netlify Functions
-
-**Objectif** : l'interface et l'API déployées sur Netlify, reliées à Neon, sur une adresse de prévisualisation.
-
-### Travaux
-
-1. **Point d'entrée** `netlify/functions/api.ts` : il construit l'app Fastify **une fois par instance** (réutilisée entre deux appels) et transmet la requête, avec `@fastify/aws-lambda` ou `serverless-http`, après un essai rapide des deux.
-2. **Prisma en serverless** :
-   - un seul `PrismaClient` par instance ;
-   - URL mutualisée de Neon (hôte `-pooler`, `pgbouncer=true&connection_limit=1`) et `directUrl` pour les migrations ;
-   - `binaryTargets` adapté à l'environnement Netlify (`rhel-openssl-3.0.x`, à confirmer). On évalue aussi l'adaptateur `@prisma/adapter-neon`, plus léger.
-3. **`netlify.toml`** :
-   - build `npm run build`, publication `ui/dist`, fonctions `netlify/functions` ;
-   - `/api/*` → `/.netlify/functions/api/:splat` (200) ;
-   - `/*` → `/index.html` (200), pour les pages de l'app ;
-   - en-têtes : `Content-Security-Policy` (scripts et styles du site seulement), `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors 'none'`.
-4. **Purge planifiée** : `netlify/functions/purge.ts` (fonction planifiée, toutes les heures) remplace le `setInterval`.
-5. **Taille des requêtes** : la restauration d'une sauvegarde est limitée à la taille acceptée par Netlify, en compressant le JSON côté navigateur si besoin. Message clair si le fichier est trop gros.
-6. **Durée d'exécution** : mesurer les pages les plus lourdes (Année, Simulateur) et rester bien sous la limite des fonctions (10 s par défaut, à vérifier). Si une page s'en approche, l'optimiser au lot P7.
-7. **Démarrage local inchangé** : `npm run dev` garde le serveur Node actuel. Le mode fonction est testé avec `netlify dev`.
-8. **Secrets** : uniquement dans les variables d'environnement de Netlify (`DATABASE_URL`, `DIRECT_URL`, `SMTP_URL`, `MAIL_FROM`, `APP_URL`). Aucune variable `VITE_*` secrète, et vérification que le bundle de l'interface ne contient aucune URL de base ni aucun mot de passe.
-
-### Critères de fin
-
-- Le site de prévisualisation Netlify fonctionne avec la branche Neon `dev` : inscription, connexion, toutes les pages, rechargement d'une page profonde (`/objectifs/…`), déconnexion.
-- Cookie `Secure`, `HttpOnly`, `SameSite=Strict` vérifié dans le navigateur.
-- En-têtes de sécurité vérifiés sur la réponse.
-
-### Actions manuelles (toi)
-
-- Relier le dépôt GitHub au site Netlify, saisir les variables d'environnement et, plus tard, le nom de domaine.
-
-### Documentation
-
-- `docs/DEPLOYMENT.md` : architecture, `netlify.toml`, variables, déploiement, retour arrière.
-
----
-
-## Lot P6 — Cohérence financière et concurrence
-
-**Objectif** : des chiffres toujours justes, même avec des actions simultanées ou répétées.
-
-### Travaux
-
-1. **Transactions** : faire le tour des écritures multiples (paie et lignes de paie, achat d'un objectif, clôture d'un mois, application d'une simulation, restauration, suppression d'une source de revenu). Chacune doit être dans une seule transaction, comme c'est déjà le cas pour la plupart.
-2. **Double clic et renvoi** : boutons désactivés pendant l'envoi (à vérifier sur chaque formulaire), et contraintes uniques en base là où un doublon est impossible métier (une paie par mois, un contrat par mois d'effet : déjà fait).
-3. **Conflits** : deux onglets modifient le même élément, et la dernière écriture l'emporte. Ce choix est acceptable pour un compte personnel et sera documenté. Les transactions qui lisent puis écrivent un total (achat d'un objectif) passent en isolation `Serializable`, avec une nouvelle tentative en cas de conflit.
-4. **Tests simultanés** (`server/test/concurrence.test.ts`, sur PostgreSQL) :
-   - 20 versements envoyés en même temps sur un objectif : solde final = somme exacte ;
-   - 10 dépenses simultanées sur une enveloppe : bilan du mois exact ;
-   - deux réordonnancements simultanés des objectifs : priorités toujours de 1 à N, sans trou ni doublon ;
-   - 50 comptes qui écrivent en parallèle : aucun mélange entre comptes.
-5. **Cohérence après plusieurs modifications** : scénario de bout en bout (salaire, charges, dépenses, versements, modification puis suppression), avec relecture d'Aujourd'hui, Mois, Année, Objectifs et Épargne. Les totaux doivent concorder entre les pages.
-
-### Critères de fin
-
-- Tests de concurrence verts sur PostgreSQL.
-- Aucun écart entre les pages pour le scénario de bout en bout.
-
-### Documentation
-
-- `docs/TESTING.md` § Concurrence.
-
----
-
-## Lot P7 — Charge et fiabilité (50 utilisateurs)
-
-**Objectif** : **mesurer**, pas supposer, le comportement avec 50 utilisateurs, et rendre l'app robuste aux pannes réseau.
-
-### Travaux
-
-1. **Script de charge** (`scripts/charge/`, avec `autocannon` ou `k6`) : 50 utilisateurs virtuels, chacun sur son propre compte d'essai, avec :
-   - connexion ;
-   - Aujourd'hui, Mois, Objectifs ;
-   - ajout d'une dépense, puis relecture ;
-   - déconnexion.
-   Il tourne pendant 5 minutes, avec une montée progressive. Les comptes d'essai sont supprimés ensuite.
-2. **Mesures** : temps de réponse p50 et p95 par route, taux d'erreur, connexions PostgreSQL ouvertes (tableau de bord Neon), démarrages à froid, temps CPU des fonctions. Le tout d'abord en local, puis sur la prévisualisation Netlify avec la branche Neon `dev`.
-3. **Goulots probables à vérifier** :
-   - chaque page recalcule le calendrier complet du compte (`chargerCalendrier`), avec plusieurs requêtes : regrouper les lectures, et ne lire que les tables utiles ;
-   - `scrypt` (~50 ms et 32 Mo par connexion) : 50 connexions simultanées doivent tenir dans la mémoire d'une fonction ;
-   - le réveil de Neon après une mise en veille (premier appel lent).
-4. **Robustesse** :
-   - interface : nouvelle tentative automatique pour les lectures (déjà avec TanStack Query, à régler), jamais pour les écritures ;
-   - message « Connexion perdue » et bouton « Réessayer » ;
-   - délai maximal par requête ;
-   - serveur : délai sur les requêtes Prisma et réponse 503 claire si la base est indisponible.
-5. **Limites des offres** : relever les quotas de l'offre Netlify retenue (exécutions de fonctions, bande passante, crédits) et de l'offre Neon (heures de calcul, stockage, connexions, mise en veille, durée de l'historique de restauration) à la date du lot. Calculer la marge pour 50 utilisateurs actifs.
-
-### Critères de fin
-
-- Rapport de charge avec les chiffres réels et la configuration testée. **Aucune capacité annoncée sans mesure.**
-- Aucune erreur 5xx sous 50 utilisateurs simultanés, ou alors des causes connues et corrigées.
-- p95 cible : moins de 800 ms à chaud. Seuil à valider avec toi après la première mesure.
-
-### Documentation
-
-- `docs/TESTING.md` § Charge (résultats datés, limites constatées).
-
----
-
-## Lot P8 — Mise en production
-
-**Objectif** : ouvrir le site de production avec tes données reprises.
-
-### Travaux (dans cet ordre)
-
-1. Branche Neon `main` (production) et rôles du lot P4. `prisma migrate deploy` lancé avec le rôle propriétaire.
-2. Variables d'environnement de production sur Netlify, avec `APP_URL` en `https://` et le domaine final.
-3. E-mails : fournisseur SMTP (Brevo ou Resend), enregistrements SPF, DKIM et DMARC du domaine, puis un essai vers Gmail et Outlook (déjà décrit dans le README § E-mails en production).
-4. Sauvegarde finale de SQLite, puis reprise des données avec le script du lot P4, vérifiée par les nombres de lignes et les totaux.
-5. Tests de fumée en production (annexe B, points 1 à 9) avec un compte « Essai », supprimé ensuite.
-6. Surveillance : alertes Netlify (échecs de déploiement, erreurs de fonction) et Neon (stockage, calcul). Une page `/api/v1/sante` qui vérifie aussi la base.
-7. Retour arrière documenté : redéployer la version précédente sur Netlify, et restaurer la base Neon à un instant donné.
-
-### Critères de fin
-
-- Production en ligne, ton compte repris et identique.
-- Annexe B entièrement cochée, avec la date.
-
-### Actions manuelles (toi)
-
-- Nom de domaine, DNS, fournisseur d'e-mails, validation de l'ouverture.
-
----
-
-## Lot P9 — Documentation finale et recette
-
-**Objectif** : une documentation à jour et une recette signée.
-
-### Travaux
-
-- Relire et compléter les cinq documents de l'annexe D.
-- Mettre à jour le README (variables, mise en ligne), `docs/lots.md`, la skill `codebase-overview` et les ADR.
-- Recette finale : annexe B rejouée en production, avec tableau des résultats et date.
-
----
-
-## B. Tests avant mise en production
+| Créer les comptes Netlify et Neon | sites des services | P0 |
+| Décider de l'hébergement face à la CNDP (D14) | — | P0 |
+| Créer le projet Neon, les branches et les rôles | console Neon | P4, P8 |
+| Mettre les URL de base dans `server/.env` et dans Netlify | ta machine, Netlify | P4, P5 |
+| Relier le dépôt GitHub à Netlify | Netlify | P5 |
+| Fournisseur SMTP, SPF, DKIM et DMARC | fournisseur d'e-mails, DNS | P8 |
+| Nom de domaine et HTTPS | registrar, Netlify | P8 |
+| Déclaration (et autorisation) CNDP | CNDP | avant P8 |
+| Valider chaque lot | — | tous |
+
+## 9. Tests
+
+### 9.1 Tests existants
+
+486 tests au 15/10/2026, lancés par `npm run verifier` (types, tests, build) :
+- partage : 23 ;
+- moteur : 182 ;
+- serveur : 117, avec `fastify.inject` sur une base de test vidée avant chaque test ;
+- interface : 164, avec Testing Library.
+
+Fichiers serveur liés aux comptes : `authentification.test.ts`, `compte.test.ts`, `email.test.ts`, `isolation.test.ts`, `messagerie.test.ts`, `sauvegarde.test.ts`. Stratégie générale de tests : produit.md (Plan) § 13.
+
+### 9.2 Tests avant mise en production
 
 | # | Test | Automatique | Navigateur | Lot |
 |---|---|---|---|---|
@@ -374,45 +435,168 @@ Annexes : [A. État des lieux](#a-état-des-lieux-audit-du-15-octobre-2026) · [
 | 3 | Réinitialisation du mot de passe par e-mail | `authentification.test.ts` | oui, avec un vrai e-mail | P3, P8 |
 | 4 | Modification du profil (prénom, e-mail, mot de passe, préférences) | `compte.test.ts`, `email.test.ts` | oui | P3 |
 | 5 | Persistance après reconnexion | nouveau test | oui | P3, P4 |
-| 6 | Routes et API privées refusées sans session | `isolation.test.ts` (toutes les routes) | oui | P1 |
+| 6 | Routes et API privées refusées sans session | matrice d'isolation | oui | P1 |
 | 7 | Isolation complète entre deux comptes | matrice d'isolation | oui (deux comptes, un navigateur) | P1 |
 | 8 | Cohérence financière après plusieurs modifications | `concurrence.test.ts` + scénario de bout en bout | oui | P6 |
-| 9 | Pages et calculs identiques après déploiement | 486 tests existants sur PostgreSQL | comparaison de captures | P4, P5 |
+| 9 | Pages et calculs identiques après déploiement | tous les tests sur PostgreSQL | comparaison de captures | P4, P5 |
 | 10 | Plusieurs utilisateurs simultanés | script de charge | — | P7 |
 
-Chaque résultat est noté dans `docs/TESTING.md` avec la date, l'environnement et le résultat réel. Un test non exécuté est marqué « non exécuté », jamais « réussi ».
+Vérification dans le navigateur à 1342 et 375 px, avec des comptes « Essai » supprimés ensuite. Le compte `oussama` n'est jamais modifié.
 
-## C. Actions manuelles (hors du code)
+### 9.3 Concurrence et charge
 
-| Action | Où | Lot |
-|---|---|---|
-| Créer les comptes Netlify et Neon | sites des services | P0 |
-| Créer le projet Neon, les branches `dev`, `test` et `main`, et les rôles | console Neon | P4, P8 |
-| Mettre les URL de base dans `server/.env` (local) et dans Netlify (production) | ta machine, Netlify | P4, P5 |
-| Relier le dépôt GitHub à Netlify | Netlify | P5 |
-| Fournisseur SMTP, et SPF, DKIM et DMARC sur le domaine | fournisseur d'e-mails, DNS | P8 |
-| Nom de domaine et HTTPS | registrar, Netlify | P8 |
-| Valider chaque lot | — | tous |
+**Concurrence** (`server/test/concurrence.test.ts`, sur PostgreSQL, P6) :
+- 20 versements simultanés sur un objectif : solde final = somme exacte ;
+- 10 dépenses simultanées sur une enveloppe : bilan du mois exact ;
+- deux réordonnancements simultanés : priorités de 1 à N, sans trou ni doublon ;
+- 50 comptes qui écrivent en parallèle : aucun mélange entre comptes.
 
-Je ne saisis aucun secret ni aucun mot de passe de service : tu les mets toi-même dans `.env` ou dans Netlify.
+**Charge** (`scripts/charge/`, avec `autocannon` ou `k6`, P7) :
+- **Scénario** : 50 utilisateurs virtuels, chacun avec son propre compte d'essai, qui enchaînent connexion → Aujourd'hui, Mois, Objectifs → ajout d'une dépense → relecture → déconnexion. Pendant 5 minutes, avec une montée progressive.
+- **Mesures** : p50 et p95 par route, taux d'erreur, connexions PostgreSQL, démarrages à froid, temps CPU.
+- **Environnements** : d'abord en local, puis sur la prévisualisation Netlify avec la branche Neon `dev`.
+- **Goulots à vérifier** :
+  - recalcul du calendrier complet du compte à chaque page (`chargerCalendrier`) ;
+  - `scrypt` (environ 50 ms et 32 Mo par connexion) ;
+  - réveil de Neon.
 
-## D. Documentation à produire
+### 9.4 Journal des résultats
 
-Selon la convention du dépôt (seul le README à la racine), les documents vont dans `docs/` :
+Un test non exécuté est noté « non exécuté », jamais « réussi ». Aucune capacité n'est annoncée sans mesure.
 
-| Document | Contenu | Créé au lot |
-|---|---|---|
-| `docs/DEPLOYMENT.md` | Netlify, Neon, variables, déploiement, retour arrière | P5, complété en P8 |
-| `docs/AUTHENTICATION.md` | Comptes, sessions, récupération, e-mails | P3 |
-| `docs/SECURITY.md` | Protections, secrets, journaux, risques résiduels | P2 |
-| `docs/DATABASE.md` | Schéma, relations, index, migrations, rôles, isolation, sauvegardes | P1, P4 |
-| `docs/TESTING.md` | Tests exécutés, résultats datés, charge, limites | P6, P7, P9 |
+| Date | Environnement | Test | Résultat |
+|---|---|---|---|
+| 15/10/2026 | local, SQLite | `npm run verifier` | 486 tests réussis, build OK |
+| — | — | Tests 1 à 10 du § 9.2 | non exécutés |
 
-## E. Risques résiduels
+## 10. Lots P0 à P9
 
-- **Démarrages à froid** (fonction + Neon en veille) : premier affichage lent après une période calme. Mesuré au lot P7 ; plan B, l'option B du lot P0.
-- **Quotas des offres gratuites** : à relever au lot P7. Un dépassement peut couper le service jusqu'au mois suivant.
-- **Pas de RLS** : l'isolation repose sur le code et la matrice de tests (décision P1, à revoir plus tard).
-- **Dernière écriture gagnante** entre deux onglets : accepté et documenté (P6).
+Chaque lot suit la méthode du dépôt : analyse → travaux → tests → vérification navigateur → rapport → validation.
+
+### P0. Hébergement et cadre légal
+
+- **Objectif** : choisir où tournent l'API et la base avant de toucher au code.
+- **Travaux** :
+  - valider D11 (option A ou B, § 4.2) et trancher D14 (CNDP) ;
+  - choisir les régions Neon et Netlify ;
+  - placer les lots 28 et 29 de `docs/lots.md` avant ou après P1.
+- **Fin** : décisions D11 et D14 notées au § 3.
+- **🔧 Toi** : comptes Netlify et Neon, sur l'offre gratuite au départ.
+
+### P1. Isolation stricte des données
+
+- **Objectif** : prouver qu'aucun compte ne peut lire, modifier ou supprimer les données d'un autre, sur toutes les routes.
+- **Travaux** :
+  1. **Matrice d'isolation** (`server/test/isolation.test.ts`) : comptes A et B avec des données dans chaque entité. A appelle chaque route qui prend un identifiant avec celui de B, et doit obtenir 404 sans que les données de B changent. A crée des éléments qui référencent des identifiants de B, et rien n'est créé. Les listes et les pages calculées de A ne contiennent rien de B. La liste des routes est lue dans Fastify : une route sans cas de test fait échouer le test.
+  2. **Écritures filtrées par compte** : `updateMany` et `deleteMany` sur `{ id, utilisateurId }`, avec 404 si rien n'est touché ; même filet pour le réordonnancement et la simulation.
+  3. **Relations** relues dans `schema.prisma` : cascade, et aucune référence possible vers un autre compte.
+  4. **Interface** : A se connecte puis se déconnecte, B se connecte dans le même navigateur, et rien de A ne doit apparaître (cache, écran, `localStorage`).
+  5. Valider D12.
+- **Fin** : 100 % des routes de compte couvertes, plus aucune écriture sur `where: { id }` seul, `npm run verifier` vert. Mettre à jour le § 6.3.
+
+### P2. Durcissement de la sécurité
+
+- **Objectif** : corriger les failles qui ne dépendent pas de l'hébergement (§ 7.2, points 3, 4, 5 et 10).
+- **Travaux** :
+  1. **Dépendances** mises à jour une par une, tests à l'appui (pas de `npm audit fix --force`).
+  2. **Configuration vérifiée au démarrage** (`server/src/config.ts`, Zod) ; démarrage refusé en production si elle est incomplète.
+  3. **Journaux** selon le § 7.3.
+  4. **Limites d'essais en base** : table `TentativeAcces` (clé, nombre, fin de fenêtre), purgée avec les sessions.
+  5. **Champ inconnu refusé** : un test par module, s'il manque.
+  6. **Mots de passe courants** refusés.
+- **Fin** :
+  - `npm audit --omit=dev` sans faille élevée ;
+  - tests : démarrage refusé avec une configuration incomplète, aucun lien dans les journaux en production, limite d'essais tenue avec deux instances sur la même base.
+
+  Mettre à jour les § 5.4, 7.2 et 7.3.
+
+### P3. Authentification de bout en bout
+
+- **Objectif** : chaque parcours de compte marche de l'écran à la base, avec ses états de chargement, d'erreur et de confirmation.
+- **Travaux** :
+  - tout le tableau du § 5.6, avec un test serveur et un test d'interface pour chaque ajout ;
+  - tour de chaque bouton des pages Connexion, Inscription, Mot de passe oublié et Réglages : aucun bouton sans action ;
+  - gabarits d'e-mail d'alerte dans `server/src/lib/gabarits.ts`.
+- **Fin** : tous les parcours du § 5 passés dans le navigateur à 1342 et 375 px, avec captures. Mettre à jour les § 5.1 à 5.6.
+
+### P4. Passage à PostgreSQL
+
+- **Objectif** : la même app sur PostgreSQL, sans perte de données.
+- **Travaux** : tout le § 6.4, en commençant par la sauvegarde du § 6.5.
+- **Fin** :
+  - `npm run verifier` vert sur PostgreSQL ;
+  - reprise répétée sur une branche jetable, avec nombres de lignes et totaux identiques ;
+  - pages Aujourd'hui, Mois, Année et Objectifs identiques pour le compte `oussama`, comparées sur captures.
+  Mettre à jour les § 6.2 et 6.5.
+- **🔧 Toi** : projet Neon, branches `dev` et `test`, URL dans `server/.env`.
+
+### P5. API et interface sur Netlify
+
+- **Objectif** : interface et API déployées sur une adresse de prévisualisation Netlify, reliées à la branche Neon `dev`.
+- **Travaux** : tout le § 8.2, plus Prisma en serverless (§ 8.3) et la limite de restauration (§ 6.5). Vérifier que le bundle de l'interface ne contient aucune URL de base ni aucun secret.
+- **Fin** :
+  - prévisualisation fonctionnelle : inscription, connexion, toutes les pages, rechargement d'une page profonde, déconnexion ;
+  - cookie `Secure`, `HttpOnly`, `SameSite=Strict` et en-têtes de sécurité vérifiés dans le navigateur ;
+  - PWA installable.
+- **🔧 Toi** : relier GitHub à Netlify, saisir les variables.
+
+### P6. Cohérence financière et concurrence
+
+- **Objectif** : des chiffres toujours justes, même avec des actions simultanées ou répétées.
+- **Travaux** :
+  1. **Transactions** : faire le tour des écritures multiples (paie et lignes de paie, achat d'un objectif, clôture d'un mois, application d'une simulation, restauration, suppression d'une source de revenu), chacune dans une seule transaction.
+  2. **Double envoi** : boutons désactivés pendant l'envoi, et contraintes uniques là où un doublon est impossible métier.
+  3. **Concurrence** : appliquer D13.
+  4. **Tests** de concurrence du § 9.3.
+  5. **Scénario de bout en bout** : salaire, charges, dépenses, versements, modification puis suppression, avec des totaux qui concordent entre Aujourd'hui, Mois, Année, Objectifs et Épargne.
+- **Fin** : tests verts sur PostgreSQL, aucun écart entre les pages.
+
+### P7. Charge et fiabilité
+
+- **Objectif** : mesurer le comportement avec 50 utilisateurs, et rendre l'app robuste aux pannes réseau.
+- **Travaux** :
+  1. Script et mesures du § 9.3, d'abord en local, puis sur la prévisualisation.
+  2. Optimiser les goulots relevés.
+  3. **Interface** : nouvelle tentative automatique pour les lectures seulement, jamais pour les écritures. Message « Connexion perdue » avec un bouton « Réessayer », et un délai maximal par requête.
+  4. **Serveur** : délai sur les requêtes Prisma, et réponse 503 claire si la base est indisponible.
+  5. Relever les quotas de Netlify et de Neon (§ 8.2, § 8.3) et calculer la marge pour 50 utilisateurs actifs.
+- **Fin** : résultats datés au § 9.4, aucune erreur 5xx sous 50 utilisateurs simultanés (ou causes connues et corrigées). Pour le p95, la cible est de moins de 800 ms à chaud, seuil à valider après la première mesure.
+
+### P8. Mise en production et bêta fermée
+
+- **Objectif** : ouvrir la production avec tes données reprises, puis 10 à 20 testeurs.
+- **Travaux** : procédure du § 8.5, essai réel des e-mails (§ 8.4), puis invitation des testeurs.
+- **Fin** : production en ligne, ton compte repris et identique, § 9.2 entièrement coché et daté.
+- **🔧 Toi** : domaine, DNS, fournisseur d'e-mails, CNDP, choix des testeurs, validation de l'ouverture.
+
+### P9. Recette finale
+
+- **Objectif** : confirmer que tout est prêt et que la documentation dit vrai.
+- **Travaux** :
+  - rejouer le § 9.2 en production ;
+  - relire tout ce document, dont les statuts, les décisions et les « en place » ;
+  - mettre à jour le README, `docs/lots.md` et la skill `codebase-overview`.
+- **Fin** : critères du § 11 vérifiés.
+
+## 11. Critères d'ouverture
+
+MySalary est prêt à commercialiser quand :
+- les lots P0 à P9 sont validés, ainsi que les lots fonctionnels 24 à 29 de `docs/lots.md` ;
+- la bêta fermée a duré 4 semaines sans perte de données ;
+- chaque calcul clé a un cas de référence exact au centime (lot 29) ;
+- aucun compte ne lit les données d'un autre (matrice de tests et essai manuel) ;
+- une restauration depuis la sauvegarde de la veille a été faite pour de vrai ;
+- les e-mails arrivent en boîte de réception ;
+- la capacité pour 50 utilisateurs a été mesurée (§ 9.4).
+
+L'abonnement payant (lot 32) vient après l'ouverture.
+
+## 12. Risques résiduels
+
+- **Démarrages à froid** : premier affichage lent après une période calme (fonction et Neon en veille). Mesuré en P7 ; plan B, l'option B de D11.
+- **Quotas des offres gratuites** : un dépassement peut couper le service jusqu'au mois suivant. Relevés en P7.
+- **Pas de RLS** : l'isolation repose sur le code et la matrice de tests (D12).
+- **Dernière écriture gagnante** entre deux onglets (D13).
 - **E-mails** : la livraison dépend du fournisseur et du DNS ; un e-mail en spam bloque la récupération du compte.
-- **Une seule personne** pour l'exploitation : aucune astreinte ; sauvegardes et surveillance automatiques indispensables (P8).
+- **CNDP** : un délai d'autorisation peut retarder l'ouverture (D14).
+- **Une seule personne pour l'exploitation** : aucune astreinte ; sauvegardes et surveillance automatiques indispensables.

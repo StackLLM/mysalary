@@ -42,8 +42,8 @@
 | 27 | [Aujourd'hui : tableau de bord](#lot-27--aujourdhui--tableau-de-bord) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 486 | [Bilan du lot 27](#bilan-du-lot-27--aujourdhui--tableau-de-bord) |
 | 28 | [Projection pluriannuelle et endettement](#lot-28--projection-pluriannuelle-et-endettement) | 6 — Finalisation fonctionnelle | ⏭️ Prochain | — | — | — |
 | 29 | [Exactitude des calculs et parcours](#lot-29--exactitude-des-calculs-et-parcours) | 7 — Validation et tests | ⬜ Prévu | — | — | — |
-| 30 | [PostgreSQL, sécurité, PWA, légal](#lot-30--postgresql-sécurité-pwa-légal) | 8 — Préparation de la production | ⬜ Prévu | — | — | — |
-| 31 | [Mise en ligne en bêta fermée](#lot-31--mise-en-ligne-en-bêta-fermée) | 9 — Déploiement et hébergement | ⬜ Prévu | — | — | — |
+| 30 | [PostgreSQL, sécurité, PWA, légal](#lot-30--postgresql-sécurité-pwa-légal) | 8 — Préparation de la production | ↪️ Remplacé par [`prod.md`](prod.md) P0 à P7 | — | — | — |
+| 31 | [Mise en ligne en bêta fermée](#lot-31--mise-en-ligne-en-bêta-fermée) | 9 — Déploiement et hébergement | ↪️ Remplacé par [`prod.md`](prod.md) P8 et P9 | — | — | — |
 | 32 | [Abonnement payant](#lots-32-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
 | 33 | [Arabe et darija](#lots-32-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
 | 34 | [Import de relevés](#lots-32-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
@@ -334,7 +334,7 @@ Décidés le 12/10/2026 après l'étude de marché (`docs/etude/Etude-marche-202
 
 ### Lot 24 — Comptes fiables et e-mails
 
-- **Statut** : 🟡 livré le 12/10/2026, en attente de validation · 467 tests · [Bilan du lot 24](#bilan-du-lot-24--comptes-fiables-et-e-mails). Reste à faire par toi : test d'envoi dans une vraie boîte (fournisseur et domaine à choisir), repris au lot 31.
+- **Statut** : 🟡 livré le 12/10/2026, en attente de validation · 467 tests · [Bilan du lot 24](#bilan-du-lot-24--comptes-fiables-et-e-mails). Reste à faire par toi : test d'envoi dans une vraie boîte (fournisseur et domaine à choisir), repris au lot P8 de [`prod.md`](prod.md).
 - **Contenu** : vérification de l'adresse e-mail à l'inscription (lien à usage unique, renvoi, bandeau tant que non vérifiée) ; changement d'e-mail appliqué seulement après le clic dans le lien envoyé à la nouvelle adresse ; envoi par un fournisseur transactionnel via `SMTP_URL` (gabarits HTML et texte, SPF, DKIM, DMARC) ; purge des sessions et liens expirés.
 - **Dépend de** : lot 23. **Effort** : 3 à 4 jours.
 - **Validation** : parcours complets avec une vraie boîte de réception ; lien expiré ou réutilisé refusé ; e-mails hors spam sur Gmail et Outlook.
@@ -369,15 +369,11 @@ Décidés le 12/10/2026 après l'étude de marché (`docs/etude/Etude-marche-202
 
 ### Lot 30 — PostgreSQL, sécurité, PWA, légal
 
-- **Contenu** : passage à PostgreSQL (migration de base, tests serveur sur PostgreSQL, reprise des données SQLite dont le compte `oussama`) ; build compilé et interface servie derrière un proxy ; variables d'environnement documentées ; CSP et en-têtes vérifiés ; journaux sans données financières ; manifeste et icônes (PWA) ; pages Conditions et Confidentialité, acceptation à l'inscription ; dossier de déclaration CNDP.
-- **Dépend de** : lot 29. **Effort** : 4 à 6 jours.
-- **Validation** : tous les tests sur PostgreSQL ; comptage par table identique après reprise ; installation sur Android et iPhone.
+- **Remplacé le 15/10/2026** par les lots P0 à P7 de [`prod.md`](prod.md#10-lots-p0-à-p9) : PostgreSQL et reprise des données (P4), sécurité, en-têtes et journaux (P2), pages légales (P3), build, Netlify et PWA (P5), CNDP (P0, P8).
 
 ### Lot 31 — Mise en ligne en bêta fermée
 
-- **Contenu** : serveur et base, nom de domaine, HTTPS, sauvegardes quotidiennes avec restauration testée, surveillance de disponibilité et des erreurs, procédure de déploiement et de retour arrière ; 10 à 20 testeurs.
-- **Dépend de** : lot 30 ; décision d'hébergement (produit.md (Plan) § 14). **Effort** : 2 à 3 jours, plus les démarches.
-- **Validation** : critères « prêt à commercialiser » (produit.md (Plan) § 15.5) sauf l'abonnement.
+- **Remplacé le 15/10/2026** par les lots P8 (mise en production, bêta fermée de 10 à 20 testeurs) et P9 (recette) de [`prod.md`](prod.md#10-lots-p0-à-p9). Critères : [`prod.md` § 11](prod.md#11-critères-douverture).
 
 ### Lots 32 et suivants — après le lancement
 
@@ -413,8 +409,8 @@ Tout ce qu'un lot livré a laissé de côté, et le lot qui doit le reprendre.
 | Aperçu de l'effet avant de changer de mode de période (ux-ui.md (UX) § 5.12) | lot 3 | 21 (proposé, à confirmer) |
 | Jours fériés (seul le week-end décale la paie) | lot 4 | après le lancement (selon les retours) |
 | Parcours de bout en bout avec Playwright | lot 21 | 29 |
-| Vérification de l'e-mail, envoi réel des e-mails | lot 23 | ✅ fait au lot 24 (test en vraie boîte reporté au lot 31) |
-| PostgreSQL, HTTPS | lot 23 | 30, 31 |
+| Vérification de l'e-mail, envoi réel des e-mails | lot 23 | ✅ fait au lot 24 (test en vraie boîte reporté en P8, `prod.md`) |
+| PostgreSQL, HTTPS | lot 23 | `prod.md` P4, P5, P8 |
 
 ## 6. Historique des commits
 
@@ -478,7 +474,7 @@ Dépôt privé : `github.com/oussamaalmouallim/mysalary`, branche `main`.
 4. Où placer l'**aperçu de l'effet** d'un changement de mode de période ? Proposition : lot 21.
 5. Faut-il gérer les **jours fériés** pour la date de paie ? Aujourd'hui, seul le week-end la décale. → reporté après le lancement.
 6. Questions 1 à 4 : hors du périmètre de lancement fixé le 12/10/2026 ; reprises après la bêta selon les retours.
-7. **Hébergement** au Maroc ou à l'étranger (autorisation CNDP) : à trancher avant le lot 31.
+7. **Hébergement** au Maroc ou à l'étranger (autorisation CNDP) : décision D14 de [`prod.md`](prod.md#3-décisions), à trancher au lot P0.
 8. **Encaissement** CMI ou revendeur : à trancher avant le lot 32.
 
 ## 8. Bilans détaillés des lots
@@ -2463,7 +2459,7 @@ Inscription → bandeau sur la mise en route → « Renvoyer le lien » (204) �
 
 - [x] `npm run verifier` passe (467 tests).
 - [x] Parcours complet dans le navigateur.
-- [ ] **Messages reçus dans une vraie boîte, hors spam, avec SPF, DKIM et DMARC valides** : impossible tant qu'aucun fournisseur d'envoi ni nom de domaine n'est configuré. À faire par toi au moment de choisir le domaine (README § E-mails en production), puis à rejouer avant la bêta (lot 28). Le code d'envoi SMTP est testé avec un transport simulé, jamais avec un vrai serveur.
+- [ ] **Messages reçus dans une vraie boîte, hors spam, avec SPF, DKIM et DMARC valides** : impossible tant qu'aucun fournisseur d'envoi ni nom de domaine n'est configuré. À faire par toi au moment de choisir le domaine (`prod.md` § 8.4), puis à rejouer avant la bêta (lot 28). Le code d'envoi SMTP est testé avec un transport simulé, jamais avec un vrai serveur.
 
 #### 8. Reporté
 

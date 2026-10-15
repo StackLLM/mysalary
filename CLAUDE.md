@@ -25,7 +25,7 @@
 
 ## Contexte
 - Architecture : utiliser la Skill `codebase-overview`
-- Décisions : `docs/decisions/` (lire seulement si utile) · Suivi des lots : `docs/lots.md`
+- Décisions : `docs/decisions/` (lire seulement si utile) · Suivi des lots : `docs/lots.md` · Production (lots P0 à P9) : `docs/prod.md`
 
 # Compact instructions
 Conserver : fichiers modifiés, décisions prises, erreurs de test non résolues, lot en cours.
