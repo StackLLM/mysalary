@@ -36,7 +36,8 @@ Il remplace les fichiers séparés `DEPLOYMENT.md`, `AUTHENTICATION.md`, `SECURI
    - [8.3 Neon](#83-neon)
    - [8.4 E-mails en production](#84-e-mails-en-production)
    - [8.5 Mise en production et retour arrière](#85-mise-en-production-et-retour-arrière)
-   - [8.6 Actions manuelles](#86-actions-manuelles)
+   - [8.6 Offres, régions et coûts](#86-offres-régions-et-coûts)
+   - [8.7 Actions manuelles](#87-actions-manuelles)
 9. [Tests](#9-tests)
    - [9.1 Tests existants](#91-tests-existants)
    - [9.2 Tests avant mise en production](#92-tests-avant-mise-en-production)
@@ -67,7 +68,7 @@ Il remplace les fichiers séparés `DEPLOYMENT.md`, `AUTHENTICATION.md`, `SECURI
 
 | Lot | Sujet | Statut | Remplace |
 |---|---|---|---|
-| [P0](#p0-hébergement-et-cadre-légal) | Hébergement et cadre légal | ⬜ | question ouverte « hébergement » (lots.md § 7) |
+| [P0](#p0-hébergement-et-cadre-légal) | Hébergement et cadre légal | 🟡 livré le 15/10/2026, à valider | question ouverte « hébergement » (lots.md § 7) |
 | [P1](#p1-isolation-stricte-des-données) | Isolation stricte des données | ⬜ | — |
 | [P2](#p2-durcissement-de-la-sécurité) | Durcissement de la sécurité | ⬜ | lot 30 (en-têtes, journaux) |
 | [P3](#p3-authentification-de-bout-en-bout) | Authentification de bout en bout, pages légales | ⬜ | lot 30 (pages légales) |
@@ -87,7 +88,7 @@ Il remplace les fichiers séparés `DEPLOYMENT.md`, `AUTHENTICATION.md`, `SECURI
 | 23 | Comptes par e-mail et mot de passe, sessions, isolation par la session, suppression de l'en-tête `X-Utilisateur` et de l'écran Profils | 🟡 à valider |
 | 24 | Vérification de l'e-mail, changement d'e-mail par lien, envoi SMTP, purge des sessions et liens expirés | 🟡 à valider (essai en vraie boîte reporté en P8) |
 
-**Ordre retenu** : d'abord l'isolation, la sécurité et l'authentification sur l'installation actuelle, rapide à tester. Ensuite la base PostgreSQL et l'hébergement Netlify. Puis la cohérence, la charge, et enfin l'ouverture. Les lots fonctionnels 28 et 29 de `docs/lots.md` se placent avant ou après, à décider en P0.
+**Ordre retenu** : d'abord l'isolation, la sécurité et l'authentification sur l'installation actuelle, rapide à tester. Ensuite la base PostgreSQL et l'hébergement Netlify. Puis la cohérence, la charge, et enfin l'ouverture. Les lots fonctionnels 28 et 29 de `docs/lots.md` viennent **après P9** (décidé le 15/10/2026), et sont déployés sur la production existante.
 
 ## 3. Décisions
 
@@ -103,10 +104,11 @@ Il remplace les fichiers séparés `DEPLOYMENT.md`, `AUTHENTICATION.md`, `SECURI
 | D8 | 12/10/2026 | Actions lourdes (supprimer, réinitialiser le compte, changer d'e-mail ou de mot de passe) confirmées par le mot de passe. | ✅ en vigueur | lot 23 |
 | D9 | 12/10/2026 | La restauration d'une sauvegarde ne se fait que dans un compte vide. | ✅ en vigueur | lot 20 |
 | D10 | 15/10/2026 | Documentation de production centralisée dans ce fichier. Pas de fichier par sujet ni par lot. | ✅ en vigueur | — |
-| D11 | 15/10/2026 | Hébergement : interface et API sur **Netlify** (API en Netlify Functions), base sur **Neon PostgreSQL**. Plan B : API sur un service séparé (Render, Fly.io, Railway), relayée par Netlify sur la même origine. | ⬜ proposée, à valider en P0 | § 4.2 |
+| D11 | 15/10/2026 | Hébergement : interface et API sur **Netlify** (API en Netlify Functions), base sur **Neon PostgreSQL**. Plan B, si la mesure P7 l'exige : API sur un service séparé (Render, Fly.io, Railway), relayée par Netlify sur la même origine. | ✅ validée le 15/10/2026 | § 4.2 |
 | D12 | 15/10/2026 | Pas de Row-Level Security au lancement : isolation par le code, une matrice de tests sur toutes les routes, et un rôle PostgreSQL sans droits sur le schéma. | ⬜ proposée, à valider en P1 | § 6.3 |
 | D13 | 15/10/2026 | Deux onglets modifient le même élément : la dernière écriture l'emporte. Les calculs qui lisent puis écrivent un total passent en transaction `Serializable`. | ⬜ proposée, à valider en P6 | § 9.3 |
-| D14 | — | Hébergement hors du Maroc (Netlify, Neon) : l'autorisation préalable de la CNDP est nécessaire. Sinon, il faut un hébergeur au Maroc, et D11 change. | ⬜ à trancher en P0 | § 7.4 |
+| D14 | 15/10/2026 | Les données sont traitées hors du Maroc (Netlify, Neon) : en Union européenne avec l'option « Europe » de D15, aux États-Unis avec l'option « économique ». **Tu engages toi-même la démarche CNDP** (déclaration et, si besoin, autorisation), et elle doit aboutir avant l'ouverture (P8). Le travail technique continue en attendant. | ✅ décidée | § 7.4 |
+| D15 | — | Offres et régions : l'API (fonctions) et la base doivent être dans la **même région**. Option « Europe » : Netlify Pro (fonctions à Francfort) + Neon Launch à Francfort. Option « économique » : Netlify Personal (fonctions dans l'Ohio, région imposée) + Neon Launch dans l'Ohio. Pas d'offre gratuite en production. **Choix reporté après la mesure de P7** : jusque-là, offres gratuites, avec la base de développement dans l'Ohio (`aws-us-east-2`), à côté des fonctions de Netlify Free. | ✅ décidée (choix final après P7) | § 8.6 |
 
 ## 4. Architecture et choix techniques
 
@@ -135,7 +137,7 @@ Flux d'une requête : `routes.ts` (validation Zod) → `depot.ts` (Prisma, filtr
 | Démarrage à froid | Fonction et Neon en veille : 1 à 3 s possibles sur la première requête | Selon l'offre |
 | Services à gérer | 2 | 3 |
 
-Pourquoi A : c'est l'hébergement demandé, l'app Fastify se réutilise sans réécriture, et 50 utilisateurs restent loin des limites. Si la mesure du lot P7 montre des démarrages à froid gênants, on passe à B sans toucher ni à la base ni à l'interface.
+**Retenu : A** (D11, validée le 15/10/2026). Raisons : c'est l'hébergement demandé, l'app Fastify se réutilise sans réécriture, et 50 utilisateurs restent loin des limites. Si la mesure du lot P7 montre des démarrages à froid gênants, on passe à B sans toucher ni à la base ni à l'interface.
 
 Ce qu'il faut adapter pour A : la purge devient une fonction planifiée, les limites d'essais passent en base (§ 5.4), la taille des requêtes de restauration est limitée (§ 6.5), et Prisma passe en mode serverless (§ 8.3).
 
@@ -272,7 +274,7 @@ Travaux du lot [P4](#p4-passage-à-postgresql).
 |---|---|---|
 | Copie de la base | `npm run sauvegarde` : `VACUUM INTO` vers `sauvegardes/` (10 copies gardées) | Historique Neon (restauration à un instant donné, durée selon l'offre), plus un export programmé |
 | Export d'un compte | Réglages › Sauvegarde : JSON complet | Inchangé |
-| Restauration | Dans un compte vide uniquement (D9), aperçu avant écriture, limite de 50 Mo | Limite abaissée à ce que Netlify accepte (environ 6 Mo, à confirmer), JSON compressé dans le navigateur si besoin |
+| Restauration | Dans un compte vide uniquement (D9), aperçu avant écriture, limite de 50 Mo | Limite abaissée sous les 6 Mo acceptés par une fonction Netlify (JSON compressé dans le navigateur si besoin) |
 
 Avant toute opération sur la base : `npm run sauvegarde` et un export JSON du compte `oussama`.
 
@@ -323,7 +325,7 @@ Audit du 15/10/2026.
 ### 7.4 Loi 09-08 et CNDP
 
 - **Déclaration** : déclaration à la CNDP avant l'ouverture.
-- **Hébergement à l'étranger** : Netlify et Neon sont hors du Maroc, ce qui demande une **autorisation préalable** de la CNDP pour le transfert. C'est la décision D14, à trancher en P0.
+- **Hébergement à l'étranger** : Netlify et Neon sont hors du Maroc. Selon le pays de destination (Union européenne avec l'option « Europe », États-Unis avec l'option « économique »), le transfert peut demander une **autorisation préalable** de la CNDP. À confirmer avec la CNDP ou un juriste : je ne peux pas l'établir moi-même. C'est la décision D14.
 - **Documents** : conditions d'utilisation et politique de confidentialité, acceptées à l'inscription (P3).
 - **Droits des utilisateurs** : l'export et la suppression du compte existent déjà.
 
@@ -355,10 +357,11 @@ Cible du lot [P5](#p5-api-et-interface-sur-netlify) :
 - **Fonction `api`** : construit l'app Fastify une fois par instance et la réutilise, avec `@fastify/aws-lambda` ou `serverless-http` (choix après un essai des deux).
 - **Fonction planifiée `purge`** : toutes les heures, à la place du `setInterval`.
 - **En-têtes des pages** : `Content-Security-Policy` (scripts et styles du site seulement), `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors 'none'`.
-- **Limites à vérifier** :
-  - durée d'exécution d'une fonction (10 s par défaut) ;
-  - taille des requêtes (environ 6 Mo) ;
-  - quotas de l'offre (exécutions, bande passante, crédits), relevés en P7.
+- **Limites des fonctions** (documentation Netlify, relevée le 15/10/2026) :
+  - 60 s par requête et 30 s pour une fonction planifiée, non réglable ;
+  - requête ou réponse de 6 Mo au plus ;
+  - 1024 Mo de mémoire par défaut, réglable seulement en offre payante.
+- **Région des fonctions** : Ohio (`cmh`) par défaut. Elle ne se change (Francfort `fra`, Londres `lhr`, Irlande `dub`) **qu'en offre Pro**. Voir le § 8.6.
 - **PWA** : manifeste et icônes, installation sur Android et iPhone.
 - **Local** : `npm run dev` garde le serveur Node actuel ; le mode fonction se teste avec `netlify dev`.
 
@@ -369,10 +372,10 @@ Cible du lot [P5](#p5-api-et-interface-sur-netlify) :
   - `dev` pour la prévisualisation Netlify ;
   - `test` pour les tests automatiques ;
   - des branches jetables pour les essais de reprise.
-- **Région** : en Europe, la plus proche des utilisateurs (Francfort par exemple), et la même zone que les fonctions Netlify.
-- **Connexions** : URL mutualisée (`-pooler`) pour l'app, URL directe pour les migrations. Un seul `PrismaClient` par instance de fonction. `binaryTargets` adapté à Netlify (`rhel-openssl-3.0.x`, à confirmer), ou l'adaptateur `@prisma/adapter-neon`.
+- **Région** : **la même que les fonctions Netlify** (D15) : Francfort (`aws-eu-central-1`) avec Netlify Pro, Ohio (`aws-us-east-2`) sinon. Une page de l'app enchaîne plusieurs requêtes à la base : séparer la base et les fonctions d'un océan ajouterait environ 100 ms à chaque requête.
+- **Connexions** : URL mutualisée (`-pooler`, PgBouncer en mode transaction, jusqu'à 10 000 connexions clientes) pour l'app, et URL directe pour les migrations, comme le recommande Neon. Un seul `PrismaClient` par instance de fonction. `binaryTargets` adapté à Netlify (`rhel-openssl-3.0.x`, à confirmer), ou l'adaptateur `@prisma/adapter-neon`.
 - **Rôles** : § 6.4.
-- **Limites à vérifier** : heures de calcul, stockage, nombre de connexions, mise en veille et réveil, durée de l'historique de restauration. Relevés en P7.
+- **Limites** : § 8.6.
 
 ### 8.4 E-mails en production
 
@@ -398,20 +401,70 @@ Lot [P8](#p8-mise-en-production-et-bêta-fermée), dans cet ordre :
 
 **Retour arrière** : redéployer la version précédente depuis Netlify, et restaurer la base Neon à un instant donné, juste avant l'incident.
 
-### 8.6 Actions manuelles
+### 8.6 Offres, régions et coûts
+
+Relevé le 15/10/2026 sur les sites officiels de Netlify et de Neon. À revérifier en P7, avant de payer.
+
+**Netlify (offres à crédits)**
+
+| Offre | Prix | Crédits par mois | Quand les crédits sont épuisés | Région des fonctions |
+|---|---|---|---|---|
+| Free | 0 $ | 300 | **Site en pause** (« Site not available ») jusqu'au mois suivant | Ohio, imposée |
+| Personal | 9 $/mois | 1 000 | Recharge automatique possible (500 crédits pour 5 $) | Ohio, imposée |
+| Pro | 20 $/mois | 3 000 | Recharge automatique possible (1 500 crédits pour 10 $) | Au choix, dont Francfort |
+
+Consommation de crédits :
+- 15 par mise en production ;
+- 10 par Go-heure de calcul de fonction ;
+- 20 par Go de bande passante ;
+- 2 pour 10 000 requêtes.
+
+Les prévisualisations et les déploiements de branche sont gratuits.
+
+**Neon**
+
+| Offre | Prix | Calcul | Stockage | Historique de restauration | Veille |
+|---|---|---|---|---|---|
+| Free | 0 $ | 100 CU-heures par projet et par mois | 1 Go par projet | 6 heures | après 5 min d'inactivité, non réglable |
+| Launch | à l'usage (0,106 $ par CU-heure) | à l'usage | à l'usage | jusqu'à 7 jours (1 jour par défaut) | réglable |
+
+Régions Neon en Europe : Francfort (`aws-eu-central-1`) et Londres (`aws-eu-west-2`).
+
+**Estimation pour 50 utilisateurs actifs** (hypothèses, à remplacer par la mesure de P7)
+- **Hypothèses** : 100 appels à l'API par jour et par utilisateur, 0,3 s par appel avec 1 Go de mémoire, environ 10 mises en production par mois.
+- **Netlify** : environ 150 000 appels par mois.
+
+  | Poste | Crédits par mois |
+  |---|---|
+  | Calcul | ≈ 125 |
+  | Requêtes, y compris les fichiers de l'interface | ≈ 90 |
+  | Bande passante | ≈ 120 |
+  | Mises en production | ≈ 150 |
+  | **Total** | **≈ 500** |
+
+  C'est au-dessus des 300 crédits de l'offre Free, et sa limite stricte mettrait le site en pause.
+- **Neon** : avec des utilisateurs répartis sur la journée, la base reste éveillée environ 17 h par jour, soit environ 130 CU-heures par mois à 0,25 CU. C'est au-dessus des 100 de l'offre Free, ce qui représente environ 14 $ par mois en Launch.
+
+**Conséquences**
+- **Pas d'offre gratuite en production** : Free reste pour les prévisualisations (Netlify) et les branches `dev` et `test` (Neon). Il faut un projet Neon gratuit séparé pour qu'elles n'entament pas le calcul de la production.
+- **Option « Europe »** : Netlify Pro (20 $) + Neon Launch à Francfort (≈ 14 $), soit ≈ 34 $ par mois. Données en Union européenne, temps de réponse plus court depuis le Maroc.
+- **Option « économique »** : Netlify Personal (9 $) + Neon Launch dans l'Ohio (≈ 14 $), soit ≈ 23 $ par mois. Données aux États-Unis, environ 100 ms de plus par appel depuis le Maroc.
+
+### 8.7 Actions manuelles
 
 Je ne saisis aucun secret ni aucun mot de passe de service : tu les mets toi-même dans `server/.env` ou dans Netlify.
 
 | Action 🔧 | Où | Lot |
 |---|---|---|
 | Créer les comptes Netlify et Neon | sites des services | P0 |
-| Décider de l'hébergement face à la CNDP (D14) | — | P0 |
+| Démarche CNDP : déclaration et, si besoin, autorisation de transfert (D14) | CNDP | à lancer maintenant, aboutie avant P8 |
+| Projet Neon « mysalary-dev » dans l'Ohio (`aws-us-east-2`) | console Neon | avant P4 |
+| Choisir l'option « Europe » ou « économique » (D15) et l'offre payante | Netlify, Neon | après P7, avant P8 |
 | Créer le projet Neon, les branches et les rôles | console Neon | P4, P8 |
 | Mettre les URL de base dans `server/.env` et dans Netlify | ta machine, Netlify | P4, P5 |
 | Relier le dépôt GitHub à Netlify | Netlify | P5 |
 | Fournisseur SMTP, SPF, DKIM et DMARC | fournisseur d'e-mails, DNS | P8 |
 | Nom de domaine et HTTPS | registrar, Netlify | P8 |
-| Déclaration (et autorisation) CNDP | CNDP | avant P8 |
 | Valider chaque lot | — | tous |
 
 ## 9. Tests
@@ -476,12 +529,22 @@ Chaque lot suit la méthode du dépôt : analyse → travaux → tests → véri
 ### P0. Hébergement et cadre légal
 
 - **Objectif** : choisir où tournent l'API et la base avant de toucher au code.
-- **Travaux** :
-  - valider D11 (option A ou B, § 4.2) et trancher D14 (CNDP) ;
-  - choisir les régions Neon et Netlify ;
-  - placer les lots 28 et 29 de `docs/lots.md` avant ou après P1.
-- **Fin** : décisions D11 et D14 notées au § 3.
-- **🔧 Toi** : comptes Netlify et Neon, sur l'offre gratuite au départ.
+- **Fait (15/10/2026)** :
+  - D11 validée : Netlify Functions + Neon ;
+  - limites et prix officiels relevés (§ 8.2, 8.3, 8.6) ;
+  - constat : fonctions et base doivent être dans la même région, et la région des fonctions n'est au choix qu'en Netlify Pro ;
+  - estimation de consommation pour 50 utilisateurs : les offres gratuites ne suffisent pas en production ;
+  - D15 (options « Europe » et « économique ») et D14 (CNDP) posées.
+- **Décidé avec toi (15/10/2026)** :
+  - D14 : tu engages la démarche CNDP ;
+  - D15 : l'offre finale est choisie après la mesure de P7 ;
+  - les lots 28 et 29 viennent après P9.
+- **Conséquence pour la suite** : le projet Neon de développement sera créé dans l'Ohio (`aws-us-east-2`), la seule région des fonctions en Netlify Free. Sinon les mesures de P5 et P7 seraient faussées par la traversée de l'Atlantique. La base de production, elle, sera créée en P8 dans la région de l'option choisie.
+- **Fin** : ta validation de P0.
+- **🔧 Toi** :
+  - créer les comptes Netlify et Neon, en offre gratuite ;
+  - créer un projet Neon « mysalary-dev » dans la région **AWS US East 2 (Ohio)** ;
+  - lancer la démarche CNDP.
 
 ### P1. Isolation stricte des données
 
@@ -580,7 +643,7 @@ Chaque lot suit la méthode du dépôt : analyse → travaux → tests → véri
 
 ## 11. Critères d'ouverture
 
-MySalary est prêt à commercialiser quand :
+La bêta fermée (P8) s'ouvre avant les lots 28 et 29. MySalary est **prêt à commercialiser** quand :
 - les lots P0 à P9 sont validés, ainsi que les lots fonctionnels 24 à 29 de `docs/lots.md` ;
 - la bêta fermée a duré 4 semaines sans perte de données ;
 - chaque calcul clé a un cas de référence exact au centime (lot 29) ;
@@ -594,7 +657,7 @@ L'abonnement payant (lot 32) vient après l'ouverture.
 ## 12. Risques résiduels
 
 - **Démarrages à froid** : premier affichage lent après une période calme (fonction et Neon en veille). Mesuré en P7 ; plan B, l'option B de D11.
-- **Quotas des offres gratuites** : un dépassement peut couper le service jusqu'au mois suivant. Relevés en P7.
+- **Quotas** : en offre Netlify Free, des crédits épuisés mettent le site en pause jusqu'au mois suivant. D'où une offre payante en production (§ 8.6), avec la recharge automatique activée ou une alerte de consommation.
 - **Pas de RLS** : l'isolation repose sur le code et la matrice de tests (D12).
 - **Dernière écriture gagnante** entre deux onglets (D13).
 - **E-mails** : la livraison dépend du fournisseur et du DNS ; un e-mail en spam bloque la récupération du compte.

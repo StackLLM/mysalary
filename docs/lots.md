@@ -40,8 +40,8 @@
 | 25 | [Épargne synchronisée](#lot-25--épargne-synchronisée) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 473 | [Bilan du lot 25](#bilan-du-lot-25--épargne-synchronisée) |
 | 26 | [Objectifs : vue annuelle](#lot-26--objectifs--vue-annuelle) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 480 | [Bilan du lot 26](#bilan-du-lot-26--objectifs--vue-annuelle) |
 | 27 | [Aujourd'hui : tableau de bord](#lot-27--aujourdhui--tableau-de-bord) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 486 | [Bilan du lot 27](#bilan-du-lot-27--aujourdhui--tableau-de-bord) |
-| 28 | [Projection pluriannuelle et endettement](#lot-28--projection-pluriannuelle-et-endettement) | 6 — Finalisation fonctionnelle | ⏭️ Prochain | — | — | — |
-| 29 | [Exactitude des calculs et parcours](#lot-29--exactitude-des-calculs-et-parcours) | 7 — Validation et tests | ⬜ Prévu | — | — | — |
+| 28 | [Projection pluriannuelle et endettement](#lot-28--projection-pluriannuelle-et-endettement) | 6 — Finalisation fonctionnelle | ⬜ Après la mise en production ([`prod.md`](prod.md) P0 à P9, décidé le 15/10/2026) | — | — | — |
+| 29 | [Exactitude des calculs et parcours](#lot-29--exactitude-des-calculs-et-parcours) | 7 — Validation et tests | ⬜ Après la mise en production, à la suite du lot 28 | — | — | — |
 | 30 | [PostgreSQL, sécurité, PWA, légal](#lot-30--postgresql-sécurité-pwa-légal) | 8 — Préparation de la production | ↪️ Remplacé par [`prod.md`](prod.md) P0 à P7 | — | — | — |
 | 31 | [Mise en ligne en bêta fermée](#lot-31--mise-en-ligne-en-bêta-fermée) | 9 — Déploiement et hébergement | ↪️ Remplacé par [`prod.md`](prod.md) P8 et P9 | — | — | — |
 | 32 | [Abonnement payant](#lots-32-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
