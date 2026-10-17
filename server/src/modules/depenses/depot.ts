@@ -2,7 +2,7 @@ import { echeanceDeCharge, type CleMois, type DateCivile } from '@mysalary/moteu
 import { formaterDate, type DepenseDto, type RattachementsDto, type schemaDepense, type SuiviDepensesDto } from '@mysalary/partage'
 import type { PrismaClient } from '@prisma/client'
 import type { z } from 'zod'
-import { introuvable } from '../../lib/erreurs'
+import { exigerTouche, introuvable } from '../../lib/erreurs'
 import { versCharge } from '../charges/conversion'
 import { regle, verifierCategorie } from '../charges/depot'
 import { exigerDatesOuvertes } from '../mois/clotures'
@@ -59,13 +59,13 @@ export async function modifierDepense(prisma: PrismaClient, utilisateurId: strin
   const avant = await trouver(prisma, utilisateurId, id)
   await exigerDatesOuvertes(prisma, utilisateurId, avant.date, saisie.date)
   const s = await verifier(prisma, utilisateurId, saisie, aujourdhui)
-  await prisma.depense.update({ where: { id }, data: donnees(s) })
+  exigerTouche(await prisma.depense.updateMany({ where: { id, utilisateurId }, data: donnees(s) }), 'Dépense')
 }
 
 export async function supprimerDepense(prisma: PrismaClient, utilisateurId: string, id: string) {
   const avant = await trouver(prisma, utilisateurId, id)
   await exigerDatesOuvertes(prisma, utilisateurId, avant.date)
-  await prisma.depense.delete({ where: { id } })
+  exigerTouche(await prisma.depense.deleteMany({ where: { id, utilisateurId } }), 'Dépense')
 }
 
 /** Mois › Dépenses : réel du mois (dépenses, paiements de dettes) et prévu encore attendu, séparés. */

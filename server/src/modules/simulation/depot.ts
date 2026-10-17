@@ -1,8 +1,8 @@
 import { decalerMois, moisDe, simuler, type Ajustements, type DateCivile } from '@mysalary/moteur'
 import { formaterDate, formaterMois, formaterMontant, type ApplicationDto, type ScenarioDto, type schemaAjustements, type schemaExecution, type schemaScenario, type SimulationDto } from '@mysalary/partage'
-import type { PrismaClient, Scenario } from '@prisma/client'
+import type { Prisma, PrismaClient, Scenario } from '@prisma/client'
 import type { z } from 'zod'
-import { introuvable } from '../../lib/erreurs'
+import { exigerTouche, introuvable } from '../../lib/erreurs'
 import { regle } from '../charges/depot'
 import { chargerCalendrier } from '../salaire/depot'
 
@@ -37,7 +37,8 @@ export async function appliquer(prisma: PrismaClient, utilisateurId: string, auj
     return o
   }
   const changements: string[] = []
-  const ecritures = []
+  // Exécutées dans une seule transaction ; chaque écriture vise un élément du compte (prod.md § 6.3).
+  const ecritures: ((tx: Prisma.TransactionClient) => Promise<unknown>)[] = []
 
   for (const id of idsObjectifs) {
     const o = objectif(id)
@@ -50,15 +51,15 @@ export async function appliquer(prisma: PrismaClient, utilisateurId: string, auj
       data.dateCible = a.datesCibles[id] ?? null
       changements.push(`« ${o.libelle} » : date souhaitée ${data.dateCible ? formaterMois(data.dateCible) : 'retirée'}.`)
     }
-    ecritures.push(prisma.objectif.update({ where: { id }, data }))
+    ecritures.push(async (tx) => exigerTouche(await tx.objectif.updateMany({ where: { id, utilisateurId }, data }), 'Objectif'))
   }
 
   for (const p of a.primes) {
     if (p.mois < courant) throw regle(`La prime de ${formaterMois(p.mois)} est dans un mois passé.`)
     const date = calendrier.mois(p.mois).debut
     const mois = moisDe(date)
-    ecritures.push(
-      prisma.sourceRevenu.create({
+    ecritures.push((tx) =>
+      tx.sourceRevenu.create({
         data: { utilisateurId, libelle: 'Prime (simulation)', type: 'prime', montant: p.montant, frequence: 'unique', versement: 'dateSeparee', jour: Number(date.slice(8)), certitude: 'probable', debut: mois, fin: mois },
       }),
     )
@@ -72,12 +73,13 @@ export async function appliquer(prisma: PrismaClient, utilisateurId: string, auj
     const nouveau = c.montant - r.montant
     // La charge garde son montant jusqu'à ce mois ; une copie réduite prend le relais le mois suivant.
     if (c.debut >= suivant) {
-      ecritures.push(nouveau > 0 ? prisma.charge.update({ where: { id: c.id }, data: { montant: nouveau } }) : prisma.charge.delete({ where: { id: c.id } }))
+      const ou = { where: { id: c.id, utilisateurId } }
+      ecritures.push(async (tx) => exigerTouche(nouveau > 0 ? await tx.charge.updateMany({ ...ou, data: { montant: nouveau } }) : await tx.charge.deleteMany(ou), 'Charge'))
     } else {
-      ecritures.push(prisma.charge.update({ where: { id: c.id }, data: { fin: courant } }))
+      ecritures.push(async (tx) => exigerTouche(await tx.charge.updateMany({ where: { id: c.id, utilisateurId }, data: { fin: courant } }), 'Charge'))
       if (nouveau > 0) {
         const { id: _id, creeLe: _c, modifieLe: _m, ...copie } = c
-        ecritures.push(prisma.charge.create({ data: { ...copie, montant: nouveau, debut: suivant, fin: c.fin && c.fin < suivant ? suivant : c.fin } }))
+        ecritures.push((tx) => tx.charge.create({ data: { ...copie, montant: nouveau, debut: suivant, fin: c.fin && c.fin < suivant ? suivant : c.fin } }))
       }
     }
     changements.push(
@@ -88,7 +90,9 @@ export async function appliquer(prisma: PrismaClient, utilisateurId: string, auj
   }
 
   if (changements.length === 0) throw regle('Aucun levier à appliquer.')
-  await prisma.$transaction(ecritures)
+  await prisma.$transaction(async (tx) => {
+    for (const ecrire of ecritures) await ecrire(tx)
+  })
   return { changements }
 }
 
@@ -106,19 +110,33 @@ async function trouver(prisma: PrismaClient, utilisateurId: string, id: string) 
   return s
 }
 
-const donnees = (s: z.output<typeof schemaScenario>) => ({ nom: s.nom, ajustements: JSON.stringify(s.ajustements), horizon: s.horizon })
+/**
+ * Ce qui sera enregistré : les leviers qui visent un objectif ou une charge d'un autre compte sont retirés,
+ * pour qu'aucun scénario ne garde d'identifiant étranger (prod.md § 6.3).
+ */
+async function donnees(prisma: PrismaClient, utilisateurId: string, s: z.output<typeof schemaScenario>) {
+  const a = s.ajustements
+  const [objectifs, charges] = await Promise.all([
+    prisma.objectif.findMany({ where: { utilisateurId, id: { in: [...Object.keys(a.versements), ...Object.keys(a.datesCibles)] } }, select: { id: true } }),
+    prisma.charge.findMany({ where: { utilisateurId, id: { in: a.reductions.map((r) => r.chargeId) } }, select: { id: true } }),
+  ])
+  const aMoi = new Set([...objectifs, ...charges].map((x) => x.id))
+  const garder = <T,>(leviers: Record<string, T>) => Object.fromEntries(Object.entries(leviers).filter(([id]) => aMoi.has(id)))
+  const ajustements = { ...a, versements: garder(a.versements), datesCibles: garder(a.datesCibles), reductions: a.reductions.filter((r) => aMoi.has(r.chargeId)) }
+  return { nom: s.nom, ajustements: JSON.stringify(ajustements), horizon: s.horizon }
+}
 
 export async function creer(prisma: PrismaClient, utilisateurId: string, s: z.output<typeof schemaScenario>) {
-  const { id } = await prisma.scenario.create({ data: { utilisateurId, ...donnees(s) } })
+  const { id } = await prisma.scenario.create({ data: { utilisateurId, ...(await donnees(prisma, utilisateurId, s)) } })
   return { id }
 }
 
 export async function modifier(prisma: PrismaClient, utilisateurId: string, id: string, s: z.output<typeof schemaScenario>) {
   await trouver(prisma, utilisateurId, id)
-  await prisma.scenario.update({ where: { id }, data: donnees(s) })
+  exigerTouche(await prisma.scenario.updateMany({ where: { id, utilisateurId }, data: await donnees(prisma, utilisateurId, s) }), 'Scénario')
 }
 
 export async function supprimer(prisma: PrismaClient, utilisateurId: string, id: string) {
   await trouver(prisma, utilisateurId, id)
-  await prisma.scenario.delete({ where: { id } })
+  exigerTouche(await prisma.scenario.deleteMany({ where: { id, utilisateurId } }), 'Scénario')
 }

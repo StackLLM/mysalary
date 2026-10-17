@@ -117,7 +117,7 @@ export async function rouvrir(prisma: PrismaClient, utilisateurId: string, cle: 
   const cloture = await prisma.clotureMois.findUnique({ where: { utilisateurId_cle: { utilisateurId, cle } } })
   if (!cloture) throw regle(`${formaterMois(cle, { majuscule: true })} n’est pas clôturé.`)
   await prisma.$transaction([
-    prisma.clotureMois.delete({ where: { id: cloture.id } }),
+    prisma.clotureMois.delete({ where: { utilisateurId_cle: { utilisateurId, cle } } }),
     prisma.journalCloture.create({ data: { utilisateurId, cle, action: 'reouverture' } }),
   ])
 }

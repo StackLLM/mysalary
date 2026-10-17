@@ -68,8 +68,8 @@ Il remplace les fichiers séparés `DEPLOYMENT.md`, `AUTHENTICATION.md`, `SECURI
 
 | Lot | Sujet | Statut | Remplace |
 |---|---|---|---|
-| [P0](#p0-hébergement-et-cadre-légal) | Hébergement et cadre légal | 🟡 livré le 15/10/2026, à valider | question ouverte « hébergement » (lots.md § 7) |
-| [P1](#p1-isolation-stricte-des-données) | Isolation stricte des données | ⬜ | — |
+| [P0](#p0-hébergement-et-cadre-légal) | Hébergement et cadre légal | ✅ validé le 17/10/2026 (lancement de P1) | question ouverte « hébergement » (lots.md § 7) |
+| [P1](#p1-isolation-stricte-des-données) | Isolation stricte des données | 🟡 livré le 17/10/2026, à valider | — |
 | [P2](#p2-durcissement-de-la-sécurité) | Durcissement de la sécurité | ⬜ | lot 30 (en-têtes, journaux) |
 | [P3](#p3-authentification-de-bout-en-bout) | Authentification de bout en bout, pages légales | ⬜ | lot 30 (pages légales) |
 | [P4](#p4-passage-à-postgresql) | Passage à PostgreSQL (Neon) | ⬜ | lot 30 (PostgreSQL, reprise des données) |
@@ -105,7 +105,7 @@ Il remplace les fichiers séparés `DEPLOYMENT.md`, `AUTHENTICATION.md`, `SECURI
 | D9 | 12/10/2026 | La restauration d'une sauvegarde ne se fait que dans un compte vide. | ✅ en vigueur | lot 20 |
 | D10 | 15/10/2026 | Documentation de production centralisée dans ce fichier. Pas de fichier par sujet ni par lot. | ✅ en vigueur | — |
 | D11 | 15/10/2026 | Hébergement : interface et API sur **Netlify** (API en Netlify Functions), base sur **Neon PostgreSQL**. Plan B, si la mesure P7 l'exige : API sur un service séparé (Render, Fly.io, Railway), relayée par Netlify sur la même origine. | ✅ validée le 15/10/2026 | § 4.2 |
-| D12 | 15/10/2026 | Pas de Row-Level Security au lancement : isolation par le code, une matrice de tests sur toutes les routes, et un rôle PostgreSQL sans droits sur le schéma. | ⬜ proposée, à valider en P1 | § 6.3 |
+| D12 | 15/10/2026 | Pas de Row-Level Security au lancement : isolation par le code, une matrice de tests sur toutes les routes, et un rôle PostgreSQL sans droits sur le schéma. | 🟡 proposée, à valider avec P1 | § 6.3 |
 | D13 | 15/10/2026 | Deux onglets modifient le même élément : la dernière écriture l'emporte. Les calculs qui lisent puis écrivent un total passent en transaction `Serializable`. | ⬜ proposée, à valider en P6 | § 9.3 |
 | D14 | 15/10/2026 | Les données sont traitées hors du Maroc (Netlify, Neon) : en Union européenne avec l'option « Europe » de D15, aux États-Unis avec l'option « économique ». **Tu engages toi-même la démarche CNDP** (déclaration et, si besoin, autorisation), et elle doit aboutir avant l'ouverture (P8). Le travail technique continue en attendant. | ✅ décidée | § 7.4 |
 | D15 | — | Offres et régions : l'API (fonctions) et la base doivent être dans la **même région**. Option « Europe » : Netlify Pro (fonctions à Francfort) + Neon Launch à Francfort. Option « économique » : Netlify Personal (fonctions dans l'Ohio, région imposée) + Neon Launch dans l'Ohio. Pas d'offre gratuite en production. **Choix reporté après la mesure de P7** : jusque-là, offres gratuites, avec la base de développement dans l'Ohio (`aws-us-east-2`), à côté des fonctions de Netlify Free. | ✅ décidée (choix final après P7) | § 8.6 |
@@ -238,17 +238,26 @@ Travaux du lot [P3](#p3-authentification-de-bout-en-bout) :
 
 ### 6.3 Isolation entre comptes
 
-**En place**
+**En place** (P1, 17/10/2026)
 - Le compte courant vient de la session (D1).
 - Toutes les lectures sont filtrées par `utilisateurId`.
-- Avant une modification ou une suppression, l'élément est cherché avec `{ id, utilisateurId }` : 404 s'il appartient à un autre compte.
-- Les identifiants reçus (catégorie, charge, compte d'épargne, objectif, dette) sont vérifiés comme appartenant au compte avant usage.
+- **Écritures** : toute modification ou suppression d'un élément se fait par `updateMany` / `deleteMany` sur `{ id, utilisateurId }`, puis `exigerTouche` (`server/src/lib/erreurs.ts`) répond 404 si rien n'a été touché. Les paies et les clôtures passent par leur clé unique, qui contient le compte (`utilisateurId_moisFinance`, `utilisateurId_cle`). Plus aucune écriture sur `where: { id }` seul, sauf sur la ligne `Utilisateur` du compte de la session.
+- **Plusieurs écritures liées** (réordonnancement, simulation appliquée, achat réalisé, reprise d'un objectif, suppression d'une source) : dans une transaction, chaque écriture est filtrée et vérifiée. Si l'une ne touche rien, tout est annulé.
+- **Références** : les identifiants reçus (catégorie, charge, ponctuel, dette, source de revenus, compte d'épargne, objectif) sont vérifiés comme appartenant au compte avant usage. Un scénario enregistré perd les leviers qui visent un objectif ou une charge d'un autre compte.
 - Le réordonnancement des objectifs exige exactement les objectifs du compte.
-- Tests : `server/test/isolation.test.ts` (sans session, faux cookie, ancien en-tête, réglages de A et B, suppression en cascade).
+- La restauration donne un nouvel identifiant à chaque ligne et ne recopie que les liens internes au fichier.
+- **Relations** (`schema.prisma`, 10 liens entre tables métier) : toutes les tables métier sont supprimées en cascade avec le compte. La base, elle, accepterait encore un lien vers la ligne d'un autre compte : c'est le code qui l'empêche. Le passage à PostgreSQL (§ 6.4) ajoute des clés étrangères composées `(id, utilisateurId)` qui l'interdisent aussi en base.
+- **Interface** : les requêtes sont rangées sous l'identifiant du compte, et la déconnexion vide le cache et retire le compte de `localStorage`.
 
-**Points faibles** (corrigés en [P1](#p1-isolation-stricte-des-données))
-- L'écriture qui suit la vérification se fait sur `where: { id }` seul. C'est sûr tant que la vérification précède, mais fragile si une route l'oublie.
-- L'isolation n'est testée que sur les réglages, et la vérification des références n'a été faite que par échantillon.
+**Tests**
+- `server/test/isolation.test.ts` : sans session, faux cookie, ancien en-tête, réglages de A et B, suppression en cascade.
+- `server/test/matrice-isolation.test.ts` : les comptes A et B ont chacun une ligne dans **chaque** table qui porte `utilisateurId` (liste lue dans le schéma Prisma). A appelle les **91 routes du compte** :
+  - avec les identifiants de B : 404 ;
+  - avec une saisie qui vise B : refus ;
+  - sur les listes et pages calculées : aucune réponse ne contient un identifiant ou un libellé de B.
+
+  À la fin, les lignes de B sont identiques à l'octet près, et aucune ligne de A ne contient un identifiant de B. La liste des routes est lue dans Fastify : une route sans cas fait échouer le test.
+- Contrôle du test lui-même : deux filtres retirés à la main (liste des catégories, suppression d'une charge) ont bien fait échouer la matrice.
 
 **Row-Level Security** : non retenue au lancement (D12). Avec Prisma et le pooler de Neon en mode transaction, il faudrait un `SET LOCAL app.utilisateur` dans une transaction autour de chaque requête. C'est compliqué, et une erreur rendrait des pages vides sans rien protéger de plus. Le filet retenu :
 - le filtrage par le code ;
@@ -261,6 +270,7 @@ On rouvre la question au-delà de quelques centaines de comptes.
 
 Travaux du lot [P4](#p4-passage-à-postgresql).
 - **Schéma** : `provider = "postgresql"`, avec `url` pour la connexion mutualisée et `directUrl` pour la connexion directe (migrations). Les types sont inchangés (centimes en `Int`, dates civiles en `String`, instants en `timestamptz`).
+- **Clés étrangères composées** : chaque table référencée reçoit `@@unique([id, utilisateurId])`, et chaque lien devient `@relation(fields: [xId, utilisateurId], references: [id, utilisateurId])`. La base refuse alors tout lien vers la ligne d'un autre compte (P1, § 6.3). Pour les 4 liens en `SetNull` (source d'un revenu, charge et ponctuel d'une dépense, objectif d'un mouvement), la migration écrite à la main met `ON DELETE SET NULL ("xId")` : seule la colonne du lien est vidée, jamais `utilisateurId` (PostgreSQL 15 ou plus).
 - **Index** : un index sur `utilisateurId` partout, et des index composés selon les filtres réels (`[utilisateurId, date]` pour les dépenses et les mouvements, `[utilisateurId, moisFinance]` pour les paies).
 - **Migrations** : les migrations SQLite ne se rejouent pas sur PostgreSQL. On repart d'une migration de départ générée depuis le schéma (`prisma migrate diff --from-empty --to-schema-datamodel`). Les anciennes sont archivées dans `server/prisma/migrations-sqlite/`. Ensuite, les migrations restent écrites à la main, puis appliquées par `prisma migrate deploy`.
 - **Rôles** : `mysalary_app` (lecture et écriture des données) pour l'app ; un rôle propriétaire, réservé aux migrations.
@@ -302,8 +312,8 @@ Audit du 15/10/2026.
 | 3 | Élevé | Limites d'essais en mémoire, inefficaces avec plusieurs instances | P2 |
 | 4 | Élevé | `npm audit --omit=dev` : 6 failles (4 élevées, 2 modérées) dans `nodemailer`, `react-router`, `react-router-dom` et `deepmerge-ts` | P2 |
 | 5 | Élevé | Sans `SMTP_URL`, le texte des e-mails, avec le lien de réinitialisation, est écrit dans le journal | P2 |
-| 6 | Moyen | Écritures sur `where: { id }` après vérification (§ 6.3) | P1 |
-| 7 | Moyen | Isolation testée seulement sur les réglages | P1 |
+| 6 | Moyen | Écritures sur `where: { id }` après vérification (§ 6.3) | P1 ✅ corrigé |
+| 7 | Moyen | Isolation testée seulement sur les réglages | P1 ✅ corrigé |
 | 8 | Moyen | Restauration jusqu'à 50 Mo, au-delà de la limite des fonctions Netlify | P5 |
 | 9 | Moyen | Index insuffisants pour PostgreSQL | P4 |
 | 10 | Moyen | Variables d'environnement non vérifiées au démarrage | P2 |
@@ -471,13 +481,13 @@ Je ne saisis aucun secret ni aucun mot de passe de service : tu les mets toi-mê
 
 ### 9.1 Tests existants
 
-486 tests au 15/10/2026, lancés par `npm run verifier` (types, tests, build) :
+499 tests au 17/10/2026, lancés par `npm run verifier` (types, tests, build) :
 - partage : 23 ;
-- moteur : 182 ;
-- serveur : 117, avec `fastify.inject` sur une base de test vidée avant chaque test ;
-- interface : 164, avec Testing Library.
+- moteur : 190 ;
+- serveur : 119, avec `fastify.inject` sur une base de test vidée avant chaque test ;
+- interface : 167, avec Testing Library.
 
-Fichiers serveur liés aux comptes : `authentification.test.ts`, `compte.test.ts`, `email.test.ts`, `isolation.test.ts`, `messagerie.test.ts`, `sauvegarde.test.ts`. Stratégie générale de tests : produit.md (Plan) § 13.
+Fichiers serveur liés aux comptes : `authentification.test.ts`, `compte.test.ts`, `email.test.ts`, `isolation.test.ts`, `matrice-isolation.test.ts`, `messagerie.test.ts`, `sauvegarde.test.ts`. Stratégie générale de tests : produit.md (Plan) § 13.
 
 ### 9.2 Tests avant mise en production
 
@@ -488,8 +498,8 @@ Fichiers serveur liés aux comptes : `authentification.test.ts`, `compte.test.ts
 | 3 | Réinitialisation du mot de passe par e-mail | `authentification.test.ts` | oui, avec un vrai e-mail | P3, P8 |
 | 4 | Modification du profil (prénom, e-mail, mot de passe, préférences) | `compte.test.ts`, `email.test.ts` | oui | P3 |
 | 5 | Persistance après reconnexion | nouveau test | oui | P3, P4 |
-| 6 | Routes et API privées refusées sans session | matrice d'isolation | oui | P1 |
-| 7 | Isolation complète entre deux comptes | matrice d'isolation | oui (deux comptes, un navigateur) | P1 |
+| 6 | Routes et API privées refusées sans session | `isolation.test.ts` | oui | P1 |
+| 7 | Isolation complète entre deux comptes | `matrice-isolation.test.ts` | oui (deux comptes, un navigateur) | P1 |
 | 8 | Cohérence financière après plusieurs modifications | `concurrence.test.ts` + scénario de bout en bout | oui | P6 |
 | 9 | Pages et calculs identiques après déploiement | tous les tests sur PostgreSQL | comparaison de captures | P4, P5 |
 | 10 | Plusieurs utilisateurs simultanés | script de charge | — | P7 |
@@ -520,7 +530,10 @@ Un test non exécuté est noté « non exécuté », jamais « réussi ». Aucun
 | Date | Environnement | Test | Résultat |
 |---|---|---|---|
 | 15/10/2026 | local, SQLite | `npm run verifier` | 486 tests réussis, build OK |
-| — | — | Tests 1 à 10 du § 9.2 | non exécutés |
+| 17/10/2026 | local, SQLite | `npm run verifier` | 499 tests réussis, build OK |
+| 17/10/2026 | local, SQLite | Test 7 du § 9.2, automatique : matrice sur les 91 routes du compte | réussi |
+| 17/10/2026 | local, navigateur, 1342 et 375 px | Test 7 du § 9.2, navigateur : A rempli, affiché puis déconnecté ; B inscrit dans le même onglet sans recharger. Objectifs et Mon plan de B vides de A, `localStorage` sans l'identifiant de A. Comptes d'essai supprimés ensuite. | réussi |
+| — | — | Tests 1 à 6 et 8 à 10 du § 9.2 | non exécutés |
 
 ## 10. Lots P0 à P9
 
@@ -556,6 +569,13 @@ Chaque lot suit la méthode du dépôt : analyse → travaux → tests → véri
   4. **Interface** : A se connecte puis se déconnecte, B se connecte dans le même navigateur, et rien de A ne doit apparaître (cache, écran, `localStorage`).
   5. Valider D12.
 - **Fin** : 100 % des routes de compte couvertes, plus aucune écriture sur `where: { id }` seul, `npm run verifier` vert. Mettre à jour le § 6.3.
+- **Fait (17/10/2026)** :
+  - matrice sur les 91 routes du compte, toutes les tables (§ 6.3, § 9.4) ;
+  - écritures filtrées par compte dans tous les dépôts (`exigerTouche`), y compris dans les transactions ;
+  - faille trouvée et corrigée : un scénario enregistré pouvait garder l'identifiant d'un objectif ou d'une charge d'un autre compte, sans rien lire ni modifier chez lui. Ces leviers sont maintenant retirés à l'enregistrement ;
+  - relations relues : clés composées en base reportées à P4, où le schéma PostgreSQL repart de zéro ;
+  - vérification dans le navigateur avec deux comptes d'essai, supprimés ensuite.
+- **À décider** : valider D12 (pas de Row-Level Security au lancement).
 
 ### P2. Durcissement de la sécurité
 

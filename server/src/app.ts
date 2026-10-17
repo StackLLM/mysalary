@@ -27,10 +27,12 @@ interface Options {
   auth?: Partial<ConfigAuthentification>
   /** Faire confiance à X-Forwarded-For (derrière un proxy HTTPS). */
   trustProxy?: boolean
+  /** Reçoit « MÉTHODE /chemin » de chaque route du compte : la matrice d'isolation vérifie qu'aucune n'est oubliée (prod.md § 6.3). */
+  inventaireRoutes?: string[]
 }
 
 /** Construit l'application sans l'écouter : utilisé par le serveur et par les tests. */
-export async function construireApp({ prisma, logger = false, horloge, auth = {}, trustProxy = false }: Options) {
+export async function construireApp({ prisma, logger = false, horloge, auth = {}, trustProxy = false, inventaireRoutes }: Options) {
   const app = Fastify({ logger, bodyLimit: 1024 * 1024, trustProxy })
 
   installerBase(
@@ -55,6 +57,11 @@ export async function construireApp({ prisma, logger = false, horloge, auth = {}
       // Routes du compte courant : toutes passent par exigerUtilisateur.
       await api.register(async (compte) => {
         compte.addHook('preHandler', exigerUtilisateur(app))
+        if (inventaireRoutes) {
+          compte.addHook('onRoute', (route) => {
+            for (const methode of [route.method].flat()) if (methode !== 'HEAD') inventaireRoutes.push(`${methode} ${route.url}`)
+          })
+        }
         await compte.register(routesCompte)
         await compte.register(routesReglages)
         await compte.register(routesSalaire)

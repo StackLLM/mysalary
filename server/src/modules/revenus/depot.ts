@@ -21,7 +21,7 @@ import {
 } from '@mysalary/partage'
 import type { PrismaClient, RevenuRecu as LigneRecu, SourceRevenu as LigneSource } from '@prisma/client'
 import type { z } from 'zod'
-import { ErreurApi, introuvable } from '../../lib/erreurs'
+import { ErreurApi, exigerTouche, introuvable } from '../../lib/erreurs'
 import { chargerCalendrier } from '../salaire/depot'
 import { versRevenuRecu, versSource } from './conversion'
 
@@ -76,16 +76,16 @@ export async function creerSource(prisma: PrismaClient, utilisateurId: string, s
 
 export async function modifierSource(prisma: PrismaClient, utilisateurId: string, id: string, saisie: SaisieSource) {
   await trouverSource(prisma, utilisateurId, id)
-  await prisma.sourceRevenu.update({ where: { id }, data: versBase(saisie) })
+  exigerTouche(await prisma.sourceRevenu.updateMany({ where: { id, utilisateurId }, data: versBase(saisie) }), 'Source de revenus')
 }
 
 /** Supprime la source. Ses revenus reçus restent (réel) et deviennent des revenus libres. */
 export async function supprimerSource(prisma: PrismaClient, utilisateurId: string, id: string) {
   await trouverSource(prisma, utilisateurId, id)
-  await prisma.$transaction([
-    prisma.revenuRecu.updateMany({ where: { utilisateurId, sourceId: id }, data: { sourceId: null, moisOccurrence: null } }),
-    prisma.sourceRevenu.delete({ where: { id } }),
-  ])
+  await prisma.$transaction(async (tx) => {
+    await tx.revenuRecu.updateMany({ where: { utilisateurId, sourceId: id }, data: { sourceId: null, moisOccurrence: null } })
+    exigerTouche(await tx.sourceRevenu.deleteMany({ where: { id, utilisateurId } }), 'Source de revenus')
+  })
 }
 
 // --- Revenus prévus ---
@@ -155,13 +155,14 @@ export async function modifierRecu(prisma: PrismaClient, utilisateurId: string, 
   const avant = await trouverRecu(prisma, utilisateurId, id)
   await exigerDatesOuvertes(prisma, utilisateurId, avant.date, saisie.date)
   const libelle = await verifierRecu(prisma, utilisateurId, saisie, aujourdhui, id)
-  return versDtoRecu(await prisma.revenuRecu.update({ where: { id }, data: donneesRecu(saisie, libelle) }))
+  exigerTouche(await prisma.revenuRecu.updateMany({ where: { id, utilisateurId }, data: donneesRecu(saisie, libelle) }), 'Revenu reçu')
+  return versDtoRecu(await trouverRecu(prisma, utilisateurId, id))
 }
 
 export async function supprimerRecu(prisma: PrismaClient, utilisateurId: string, id: string) {
   const avant = await trouverRecu(prisma, utilisateurId, id)
   await exigerDatesOuvertes(prisma, utilisateurId, avant.date)
-  await prisma.revenuRecu.delete({ where: { id } })
+  exigerTouche(await prisma.revenuRecu.deleteMany({ where: { id, utilisateurId } }), 'Revenu reçu')
 }
 
 // --- Résumé ---

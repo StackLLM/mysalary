@@ -23,7 +23,7 @@ import {
 import type { ContratSalaire, LignePaie as LigneBase, Paie, PrismaClient } from '@prisma/client'
 import type { schemaContrat, schemaModificationContrat, schemaPrimesPaie, schemaReception } from '@mysalary/partage'
 import type { z } from 'zod'
-import { ErreurApi, introuvable } from '../../lib/erreurs'
+import { ErreurApi, exigerTouche, introuvable } from '../../lib/erreurs'
 import { versCharge, versDette, versPaiement, versPonctuel } from '../charges/conversion'
 import { versDepense } from '../depenses/conversion'
 import { versCompte, versMouvement, versObjectif } from '../epargne/conversion'
@@ -105,12 +105,13 @@ export async function modifierContrat(
 ) {
   await trouverContrat(prisma, utilisateurId, id)
   if (modif.moisEffet) await verifierMoisLibre(prisma, utilisateurId, modif.moisEffet, id)
-  return versDtoContrat(await prisma.contratSalaire.update({ where: { id }, data: modif }))
+  exigerTouche(await prisma.contratSalaire.updateMany({ where: { id, utilisateurId }, data: modif }), 'Version du salaire')
+  return versDtoContrat(await trouverContrat(prisma, utilisateurId, id))
 }
 
 export async function supprimerContrat(prisma: PrismaClient, utilisateurId: string, id: string) {
   await trouverContrat(prisma, utilisateurId, id)
-  await prisma.contratSalaire.delete({ where: { id } })
+  exigerTouche(await prisma.contratSalaire.deleteMany({ where: { id, utilisateurId } }), 'Version du salaire')
 }
 
 // --- Calendrier ---
@@ -178,7 +179,7 @@ export async function enregistrerPrimes(
     throw new ErreurApi(422, CODES_ERREUR.REGLE_METIER, 'Cette paie est déjà reçue. Corrige plutôt la réception.')
   }
   await prisma.$transaction(async (tx) => {
-    if (existante) await tx.paie.delete({ where: { id: existante.id } })
+    if (existante) await tx.paie.delete({ where: { utilisateurId_moisFinance: { utilisateurId, moisFinance: mois } } })
     if (primes.length === 0) return
     await tx.paie.create({
       data: {
@@ -273,9 +274,9 @@ export async function recevoir(
       create: { utilisateurId, moisFinance: mois },
       update: {},
     })
-    await tx.lignePaie.deleteMany({ where: { paieId: paie.id } })
+    await tx.lignePaie.deleteMany({ where: { paieId: paie.id, utilisateurId } })
     await tx.paie.update({
-      where: { id: paie.id },
+      where: { utilisateurId_moisFinance: { utilisateurId, moisFinance: mois } },
       data: {
         dateReelle: saisie.dateReelle,
         datePrevue: existante?.datePrevue ?? calculee.datePrevue,
@@ -294,11 +295,11 @@ export async function annulerReception(prisma: PrismaClient, utilisateurId: stri
   const primesPrevues = paie.lignes.filter((l) => l.type === 'prime' && l.montantPrevu !== null && !l.sourceId)
   await prisma.$transaction(async (tx) => {
     if (primesPrevues.length === 0) {
-      await tx.paie.delete({ where: { id: paie.id } })
+      await tx.paie.delete({ where: { utilisateurId_moisFinance: { utilisateurId, moisFinance: mois } } })
       return
     }
-    await tx.lignePaie.deleteMany({ where: { paieId: paie.id, id: { notIn: primesPrevues.map((l) => l.id) } } })
-    await tx.lignePaie.updateMany({ where: { paieId: paie.id }, data: { montantRecu: null } })
-    await tx.paie.update({ where: { id: paie.id }, data: { dateReelle: null, datePrevue: null, recueLe: null } })
+    await tx.lignePaie.deleteMany({ where: { paieId: paie.id, utilisateurId, id: { notIn: primesPrevues.map((l) => l.id) } } })
+    await tx.lignePaie.updateMany({ where: { paieId: paie.id, utilisateurId }, data: { montantRecu: null } })
+    await tx.paie.update({ where: { utilisateurId_moisFinance: { utilisateurId, moisFinance: mois } }, data: { dateReelle: null, datePrevue: null, recueLe: null } })
   })
 }

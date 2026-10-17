@@ -35,7 +35,7 @@ import {
 } from '@mysalary/partage'
 import type { Categorie, PrismaClient } from '@prisma/client'
 import type { z } from 'zod'
-import { ErreurApi, introuvable } from '../../lib/erreurs'
+import { ErreurApi, exigerTouche, introuvable } from '../../lib/erreurs'
 import { exigerDatesOuvertes } from '../mois/clotures'
 import { chargerCalendrier } from '../salaire/depot'
 import { ecrireAjustements, versCharge, versDette, versPaiement, versPonctuel } from './conversion'
@@ -92,15 +92,15 @@ async function trouverCategorie(prisma: PrismaClient, utilisateurId: string, id:
 export async function modifierCategorie(prisma: PrismaClient, utilisateurId: string, id: string, saisie: z.output<typeof schemaCategorie>) {
   await trouverCategorie(prisma, utilisateurId, id)
   if (await prisma.categorie.findFirst({ where: { utilisateurId, libelle: saisie.libelle, NOT: { id } } })) throw conflitCategorie(saisie.libelle)
-  await prisma.categorie.update({ where: { id }, data: saisie })
+  exigerTouche(await prisma.categorie.updateMany({ where: { id, utilisateurId }, data: saisie }), 'Catégorie')
 }
 
 export async function supprimerCategorie(prisma: PrismaClient, utilisateurId: string, id: string) {
   const c = await trouverCategorie(prisma, utilisateurId, id)
-  const ou = { where: { categorieId: id } }
+  const ou = { where: { categorieId: id, utilisateurId } }
   const utilisations = (await prisma.charge.count(ou)) + (await prisma.ponctuel.count(ou)) + (await prisma.depense.count(ou))
   if (utilisations > 0) throw regle(`« ${c.libelle} » est utilisée par ${utilisations} élément${utilisations > 1 ? 's' : ''}. Change-leur d’abord de catégorie.`)
-  await prisma.categorie.delete({ where: { id } })
+  exigerTouche(await prisma.categorie.deleteMany({ where: { id, utilisateurId } }), 'Catégorie')
 }
 
 /** Une charge ne peut viser qu'une catégorie du même compte. */
@@ -163,12 +163,12 @@ async function trouverCharge(prisma: PrismaClient, utilisateurId: string, id: st
 export async function modifierCharge(prisma: PrismaClient, utilisateurId: string, id: string, saisie: SaisieCharge) {
   await trouverCharge(prisma, utilisateurId, id)
   await verifierCategorie(prisma, utilisateurId, saisie.categorieId)
-  await prisma.charge.update({ where: { id }, data: versBaseCharge(saisie) })
+  exigerTouche(await prisma.charge.updateMany({ where: { id, utilisateurId }, data: versBaseCharge(saisie) }), 'Charge')
 }
 
 export async function supprimerCharge(prisma: PrismaClient, utilisateurId: string, id: string) {
   await trouverCharge(prisma, utilisateurId, id)
-  await prisma.charge.delete({ where: { id } })
+  exigerTouche(await prisma.charge.deleteMany({ where: { id, utilisateurId } }), 'Charge')
 }
 
 // --- Ponctuels ---
@@ -200,12 +200,12 @@ async function trouverPonctuel(prisma: PrismaClient, utilisateurId: string, id: 
 export async function modifierPonctuel(prisma: PrismaClient, utilisateurId: string, id: string, saisie: SaisiePonctuel) {
   await trouverPonctuel(prisma, utilisateurId, id)
   await verifierCategorie(prisma, utilisateurId, saisie.categorieId)
-  await prisma.ponctuel.update({ where: { id }, data: saisie })
+  exigerTouche(await prisma.ponctuel.updateMany({ where: { id, utilisateurId }, data: saisie }), 'Ponctuel')
 }
 
 export async function supprimerPonctuel(prisma: PrismaClient, utilisateurId: string, id: string) {
   await trouverPonctuel(prisma, utilisateurId, id)
-  await prisma.ponctuel.delete({ where: { id } })
+  exigerTouche(await prisma.ponctuel.deleteMany({ where: { id, utilisateurId } }), 'Ponctuel')
 }
 
 // --- Dettes ---
@@ -250,13 +250,13 @@ export async function modifierDette(prisma: PrismaClient, utilisateurId: string,
   if (saisie.montantTotal < paye) {
     throw regle(`Tu as déjà remboursé ${formaterMontant(paye)} : le total ne peut pas être plus petit.`, { montantTotal: `Au moins ${formaterMontant(paye)}.` })
   }
-  await prisma.dette.update({ where: { id }, data: donneesDette(saisie) })
+  exigerTouche(await prisma.dette.updateMany({ where: { id, utilisateurId }, data: donneesDette(saisie) }), 'Dette')
 }
 
 /** Supprime la dette et ses paiements (l'écran demande une confirmation explicite). */
 export async function supprimerDette(prisma: PrismaClient, utilisateurId: string, id: string) {
   await trouverDette(prisma, utilisateurId, id)
-  await prisma.dette.delete({ where: { id } })
+  exigerTouche(await prisma.dette.deleteMany({ where: { id, utilisateurId } }), 'Dette')
 }
 
 export async function ajouterPaiement(
@@ -283,7 +283,7 @@ export async function supprimerPaiement(prisma: PrismaClient, utilisateurId: str
   const p = await prisma.paiementDette.findFirst({ where: { id: paiementId, detteId, utilisateurId } })
   if (!p) throw introuvable('Paiement')
   await exigerDatesOuvertes(prisma, utilisateurId, p.date)
-  await prisma.paiementDette.delete({ where: { id: paiementId } })
+  exigerTouche(await prisma.paiementDette.deleteMany({ where: { id: paiementId, detteId, utilisateurId } }), 'Paiement')
 }
 
 // --- Résumé ---

@@ -29,7 +29,7 @@ import {
 } from '@mysalary/partage'
 import type { PrismaClient } from '@prisma/client'
 import type { z } from 'zod'
-import { introuvable } from '../../lib/erreurs'
+import { exigerTouche, introuvable } from '../../lib/erreurs'
 import { versCharge } from '../charges/conversion'
 import { essentielMensuel, regle } from '../charges/depot'
 import { exigerDatesOuvertes } from '../mois/clotures'
@@ -89,7 +89,7 @@ export async function creerCompte(prisma: PrismaClient, utilisateurId: string, s
 export async function modifierCompte(prisma: PrismaClient, utilisateurId: string, id: string, s: Sortie<typeof schemaCompteEpargne>, aujourdhui: DateCivile) {
   await trouverCompte(prisma, utilisateurId, id)
   pasDansLeFutur(s.auLe, aujourdhui, 'Un solde déclaré')
-  await prisma.compteEpargne.update({ where: { id }, data: { libelle: s.libelle, solde: s.solde, auLe: s.auLe } })
+  exigerTouche(await prisma.compteEpargne.updateMany({ where: { id, utilisateurId }, data: { libelle: s.libelle, solde: s.solde, auLe: s.auLe } }), 'Compte')
 }
 
 export async function supprimerCompte(prisma: PrismaClient, utilisateurId: string, id: string) {
@@ -97,7 +97,7 @@ export async function supprimerCompte(prisma: PrismaClient, utilisateurId: strin
   if (await prisma.mouvementEpargne.count({ where: { compteId: id, utilisateurId } })) {
     throw regle('Ce compte a des mouvements : supprime-les d’abord, ou garde le compte.')
   }
-  await prisma.compteEpargne.delete({ where: { id } })
+  exigerTouche(await prisma.compteEpargne.deleteMany({ where: { id, utilisateurId } }), 'Compte')
 }
 
 async function trouverObjectif(prisma: PrismaClient, utilisateurId: string, id: string) {
@@ -142,7 +142,7 @@ export async function supprimerMouvement(prisma: PrismaClient, utilisateurId: st
   if (!m) throw introuvable('Mouvement')
   if (m.type === 'achat') throw regle('C’est l’achat d’un objectif réalisé : annule la réalisation depuis l’objectif.')
   await exigerDatesOuvertes(prisma, utilisateurId, m.date)
-  await prisma.mouvementEpargne.delete({ where: { id } })
+  exigerTouche(await prisma.mouvementEpargne.deleteMany({ where: { id, utilisateurId } }), 'Mouvement')
 }
 
 // --- Objectifs ---
@@ -205,13 +205,13 @@ export async function creer(prisma: PrismaClient, utilisateurId: string, s: Sort
 
 export async function modifier(prisma: PrismaClient, utilisateurId: string, id: string, s: Sortie<typeof schemaObjectif>) {
   await trouverObjectif(prisma, utilisateurId, id)
-  await prisma.objectif.update({ where: { id }, data: donneesObjectif(s) })
+  exigerTouche(await prisma.objectif.updateMany({ where: { id, utilisateurId }, data: donneesObjectif(s) }), 'Objectif')
 }
 
 /** Supprimer : ses versements restent dans l'épargne (épargne libre) ; son achat éventuel aussi. */
 export async function supprimer(prisma: PrismaClient, utilisateurId: string, id: string) {
   await trouverObjectif(prisma, utilisateurId, id)
-  await prisma.objectif.delete({ where: { id } })
+  exigerTouche(await prisma.objectif.deleteMany({ where: { id, utilisateurId } }), 'Objectif')
 }
 
 /**
@@ -251,7 +251,9 @@ export async function ordonner(prisma: PrismaClient, utilisateurId: string, { id
   if (ids.length !== attendus.size || new Set(ids).size !== ids.length || ids.some((id) => !attendus.has(id))) {
     throw regle('L’ordre doit contenir chaque objectif une seule fois.')
   }
-  await prisma.$transaction(ids.map((id, i) => prisma.objectif.update({ where: { id }, data: { priorite: i + 1 } })))
+  await prisma.$transaction(async (tx) => {
+    for (const [i, id] of ids.entries()) exigerTouche(await tx.objectif.updateMany({ where: { id, utilisateurId }, data: { priorite: i + 1 } }), 'Objectif')
+  })
 }
 
 /** Pause, reprise, abandon. Reprendre un objectif réalisé annule son achat (l'épargne revient). */
@@ -260,13 +262,13 @@ export async function changerStatut(prisma: PrismaClient, utilisateurId: string,
   if (o.statut === 'realise') {
     const achat = await prisma.mouvementEpargne.findFirst({ where: { utilisateurId, objectifId: id, type: 'achat' } })
     if (achat) await exigerDatesOuvertes(prisma, utilisateurId, achat.date)
-    await prisma.$transaction([
-      prisma.mouvementEpargne.deleteMany({ where: { utilisateurId, objectifId: id, type: 'achat' } }),
-      prisma.objectif.update({ where: { id }, data: { statut, realiseLe: null } }),
-    ])
+    await prisma.$transaction(async (tx) => {
+      await tx.mouvementEpargne.deleteMany({ where: { utilisateurId, objectifId: id, type: 'achat' } })
+      exigerTouche(await tx.objectif.updateMany({ where: { id, utilisateurId }, data: { statut, realiseLe: null } }), 'Objectif')
+    })
     return
   }
-  await prisma.objectif.update({ where: { id }, data: { statut } })
+  exigerTouche(await prisma.objectif.updateMany({ where: { id, utilisateurId }, data: { statut } }), 'Objectif')
 }
 
 /** Achat réalisé (R19) : l'épargné de l'objectif sort du compte à la date de l'achat ; ce n'est pas une dépense. */
@@ -278,10 +280,10 @@ export async function realiser(prisma: PrismaClient, utilisateurId: string, id: 
   await trouverCompte(prisma, utilisateurId, s.compteId)
   const { epargne } = await chargerCalendrier(prisma, utilisateurId, aujourdhui)
   const dejaEpargne = epargneObjectif(epargne.objectifs.find((x) => x.id === id)!, epargne.mouvementsEpargne)
-  await prisma.$transaction([
-    ...(dejaEpargne > 0
-      ? [prisma.mouvementEpargne.create({ data: { utilisateurId, compteId: s.compteId, objectifId: id, type: 'achat', date: s.date, montant: -dejaEpargne, libelle: `Achat : ${o.libelle}` } })]
-      : []),
-    prisma.objectif.update({ where: { id }, data: { statut: 'realise', realiseLe: lireDate(s.date) } }),
-  ])
+  await prisma.$transaction(async (tx) => {
+    if (dejaEpargne > 0) {
+      await tx.mouvementEpargne.create({ data: { utilisateurId, compteId: s.compteId, objectifId: id, type: 'achat', date: s.date, montant: -dejaEpargne, libelle: `Achat : ${o.libelle}` } })
+    }
+    exigerTouche(await tx.objectif.updateMany({ where: { id, utilisateurId }, data: { statut: 'realise', realiseLe: lireDate(s.date) } }), 'Objectif')
+  })
 }
