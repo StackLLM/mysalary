@@ -248,7 +248,7 @@ function CarteCompte() {
       <Carte titre="Compte">
         <Identite initiale={utilisateur.prenom.charAt(0).toUpperCase()} nom={utilisateur.prenom} detail={utilisateur.email ?? `Créé le ${dateCourte(utilisateur.creeLe)}`} />
         <Separateur className="my-5" />
-        <p className="text-texte-sm text-gris">Tes données sont à toi seul : aucun autre compte n’y a accès.</p>
+        <p className="text-texte-sm text-gris">Tes données n’appartiennent qu’à toi : aucun autre compte n’y a accès.</p>
         <BoutonExport utilisateur={utilisateur} className="mt-6 w-full" />
         <Bouton
           variante="teinte"

@@ -1,4 +1,4 @@
-import { formaterDate, formaterMois, formaterMontant, type AlerteDto, type AujourdhuiDto } from '@mysalary/partage'
+import { deMois, formaterDate, formaterMois, formaterMontant, type AlerteDto, type AujourdhuiDto } from '@mysalary/partage'
 import { motion } from 'framer-motion'
 import { AlertTriangle, CalendarClock, CheckCircle2, Hourglass, PiggyBank, Receipt, TrendingUp, Wallet } from 'lucide-react'
 import { useState } from 'react'
@@ -105,7 +105,7 @@ function Journee({ donnees }: { donnees: AujourdhuiDto }) {
               <div className="flex flex-col justify-between gap-5 sm:flex-row">
                 <Identite initiale={prenom.charAt(0).toUpperCase() || '·'} nom={prenom ? `Bonjour ${prenom}` : 'Bonjour'} detail={dateDuJour(aujourdhui)} />
                 <div className="flex flex-col gap-1 text-texte text-gris sm:items-end sm:text-right">
-                  <span>Mois de {formaterMois(k.mois.cle)}</span>
+                  <span>Mois {deMois(k.mois.cle)}</span>
                   <span>
                     {formaterDate(k.mois.debut, 'court')} → {formaterDate(k.mois.fin, 'court')}
                   </span>
@@ -129,7 +129,7 @@ function Journee({ donnees }: { donnees: AujourdhuiDto }) {
                         { valeur: <Montant valeur={semaine.reste} className={cn(semaine.reste < 0 && 'text-peche-clair')} /> },
                         { libelle: `Par jour, sur ${semaine.joursRestants} jour${semaine.joursRestants > 1 ? 's' : ''}`, valeur: <Montant valeur={semaine.parJour} /> },
                       ]
-                    : [{ valeur: 'Pas d’enveloppe' }],
+                    : [{ valeur: 'Aucune enveloppe suivie par semaine' }],
                 }}
               />
 

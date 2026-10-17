@@ -233,9 +233,13 @@ describe('Onboarding (lot 19)', () => {
     expect(espaces(screen.getByText(/Charges prévues/).closest('div')?.textContent)).toContain('5 600')
     expect(espaces(screen.getByText(/Capacité d’épargne/).closest('div')?.textContent)).toContain('projection · réaliste')
     expect(screen.getByText('Pas encore d’objectif')).toBeInTheDocument()
+    const lecturesSession = () => vi.mocked(api.lire).mock.calls.filter(([chemin]) => chemin === '/auth/session').length
+    const avant = lecturesSession()
     fireEvent.click(screen.getByRole('button', { name: /Terminer et ouvrir/ }))
     await waitFor(() => expect(api.modifier).toHaveBeenCalledWith('/onboarding', { etape: 10, termine: true }))
     expect(await screen.findByText('Aujourd’hui')).toBeInTheDocument()
+    // Le compte de la session est relu : le bandeau « mise en route pas terminée » disparaît d'Aujourd'hui.
+    await waitFor(() => expect(lecturesSession()).toBeGreaterThan(avant))
   })
 
   it('résumé sans salaire : pas de faux chiffres, un renvoi vers l’étape Salaire', async () => {

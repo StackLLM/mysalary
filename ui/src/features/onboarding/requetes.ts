@@ -2,7 +2,7 @@ import type { ImportDto, OnboardingDto, SaisieDecisionImport, SaisieOnboarding }
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { CLE_COMPTE, useCompte } from '../../state/compte'
-import { useUtilisateurCourant } from '../compte/requetes'
+import { CLE_SESSION, useUtilisateurCourant } from '../compte/requetes'
 
 /** Étape atteinte, fin, et import de l'ancienne app (lot 19) : sauvegardés par compte, relus à chaque ouverture. */
 function useCle() {
@@ -23,8 +23,8 @@ export function useEnregistrerEtape() {
     mutationFn: (saisie: SaisieOnboarding) => api.modifier<void>('/onboarding', saisie),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: cle })
-      // L'étape et la fin sont aussi portées par le compte (Profils, Aujourd'hui).
-      await client.invalidateQueries({ queryKey: ['utilisateurs'] })
+      // L'étape et la fin sont aussi portées par le compte de la session (bandeau d'Aujourd'hui).
+      await client.invalidateQueries({ queryKey: CLE_SESSION })
     },
   })
 }
