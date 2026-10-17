@@ -32,6 +32,7 @@ const app = await construireApp({
   auth: {
     urlApplication: config.urlApplication,
     cookieSecurise: config.cookieSecurise,
+    contact: config.contact,
     // Sans SMTP_URL (local uniquement), les liens de mot de passe sont écrits dans ce journal.
     messagerie: creerMessagerie({ smtp: config.smtp, expediteur: config.expediteur, journal: (t) => app.log.info(t) }),
   },

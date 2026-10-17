@@ -60,7 +60,7 @@ describe('limites d’essais en base', () => {
 
 describe('mots de passe courants', () => {
   it('refusés à l’inscription, au changement et à la réinitialisation', async () => {
-    const r = await ctx.app.inject({ method: 'POST', url: url('/auth/inscription'), payload: { prenom: 'A', email: 'courant@exemple.test', motDePasse: 'Azerty123' } })
+    const r = await ctx.app.inject({ method: 'POST', url: url('/auth/inscription'), payload: { prenom: 'A', email: 'courant@exemple.test', motDePasse: 'Azerty123', accepteConditions: true } })
     expect(r.statusCode).toBe(400)
     expect(r.json().erreur.champs.motDePasse).toBe('Ce mot de passe est trop courant : choisis-en un autre.')
     const compte = await creerCompte(ctx.app, 'A')
@@ -72,7 +72,7 @@ describe('mots de passe courants', () => {
 })
 
 describe('configuration au démarrage', () => {
-  const PROD = { NODE_ENV: 'production', DATABASE_URL: 'postgresql://base', APP_URL: 'https://mysalary.test', SMTP_URL: 'smtps://u:secret@smtp.exemple.test:465' }
+  const PROD = { NODE_ENV: 'production', DATABASE_URL: 'postgresql://base', APP_URL: 'https://mysalary.test', SMTP_URL: 'smtps://u:secret@smtp.exemple.test:465', MAIL_CONTACT: 'contact@exemple.test' }
 
   it('en local, des valeurs par défaut suffisent', () => {
     expect(lireConfig({ DATABASE_URL: 'file:./base.db' })).toMatchObject({ production: false, port: 3010, urlApplication: 'http://127.0.0.1:6010', cookieSecurise: false })
@@ -88,6 +88,7 @@ describe('configuration au démarrage', () => {
     expect(essai).toThrow(/APP_URL/)
     expect(essai).toThrow(/SMTP_URL/)
     expect(essai).toThrow(/COOKIE_SECURE/)
+    expect(essai).toThrow(/MAIL_CONTACT/)
     expect(() => lireConfig({ ...PROD, PORT: 'abc' })).toThrow(/PORT/)
     try {
       lireConfig({ ...PROD, APP_URL: 'pas-une-adresse' })

@@ -10,6 +10,8 @@ export interface ConfigAuthentification {
   /** Cookie de session réservé à HTTPS. */
   cookieSecurise: boolean
   messagerie: Messagerie
+  /** Adresse de contact affichée dans les pages légales et les e-mails d'alerte (`MAIL_CONTACT`) ; absente en local. */
+  contact?: string | null
 }
 
 declare module 'fastify' {

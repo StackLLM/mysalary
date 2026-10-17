@@ -71,6 +71,19 @@ describe('export, réinitialisation, import', () => {
     expect(api.creer).toHaveBeenLastCalledWith('/compte/suppression', { motDePasse: 'le-bon' })
   })
 
+  it('réglages : « se déconnecter de tous les appareils » demande confirmation, ferme toutes les sessions et ramène à la connexion', async () => {
+    vi.mocked(api.creer).mockResolvedValueOnce(undefined)
+    rendre(<PageReglages />, { route: '/reglages', compte: 'u1', autres: { '/connexion': <p>Connexion</p> } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Se déconnecter de tous les appareils' }))
+    const dialogue = await screen.findByRole('dialog')
+    expect(within(dialogue).getByText(/celui-ci compris/)).toBeInTheDocument()
+    expect(api.creer).not.toHaveBeenCalled()
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Déconnecter tous les appareils' }))
+    expect(await screen.findByText('Connexion')).toBeInTheDocument()
+    expect(api.creer).toHaveBeenCalledWith('/compte/sessions/fermeture', {})
+    expect(toast).toHaveBeenCalledWith('Tous tes appareils sont déconnectés.')
+  })
+
   it('réglages : changer l’e-mail demande le mot de passe, envoie un lien et garde l’adresse actuelle', async () => {
     vi.mocked(api.modifier).mockRejectedValueOnce(new ErreurApi(401, 'IDENTIFIANTS_REFUSES', 'Mot de passe incorrect.', { motDePasse: 'Mot de passe incorrect.' })).mockResolvedValueOnce({ email: 'neuf@exemple.test' })
     rendre(<PageReglages />, { route: '/reglages', compte: 'u1' })

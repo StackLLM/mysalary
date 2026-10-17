@@ -51,13 +51,17 @@ export function useInscription() {
   return useMutation({ mutationFn: (saisie: Inscription) => api.creer<Utilisateur>('/auth/inscription', saisie), onSuccess: ouvrir })
 }
 
-/** Ferme la session côté serveur, revient à la connexion, puis oublie tout ce qui était affiché. */
+/**
+ * Ferme la session côté serveur, revient à la connexion, puis oublie tout ce qui était affiché.
+ * `partout` : ferme aussi les sessions des autres appareils (lot P3) ; une erreur est alors remontée.
+ */
 export function useDeconnexion() {
   const client = useQueryClient()
   const compte = useCompte()
   const naviguer = useNavigate()
-  return async () => {
-    await api.creer<void>('/auth/deconnexion', {}).catch(() => undefined)
+  return async ({ partout = false } = {}) => {
+    if (partout) await api.creer<void>('/compte/sessions/fermeture', {})
+    else await api.creer<void>('/auth/deconnexion', {}).catch(() => undefined)
     naviguer('/connexion', { replace: true })
     compte.quitter({ volontaire: true })
     client.setQueryData(CLE_SESSION, null)

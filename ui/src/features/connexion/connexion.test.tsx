@@ -1,10 +1,10 @@
 import type { Utilisateur } from '@mysalary/partage'
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { GardeCompte } from '../../components/GardeCompte'
-import { api, ErreurApi } from '../../lib/api'
+import { api, ErreurApi, EVENEMENT_SESSION_EXPIREE } from '../../lib/api'
 import { lireUtilisateurCourant } from '../../state/utilisateur'
 import { rendre } from '../../test/outils'
 import { PageConnexion } from './PageConnexion'
@@ -76,15 +76,19 @@ describe('inscription', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Créer mon compte' }))
     expect(await screen.findByText('Le prénom est obligatoire.')).toBeInTheDocument()
     expect(screen.getByText('Au moins 8 caractères.')).toBeInTheDocument()
+    expect(screen.getByText(/Accepte les conditions d’utilisation/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'conditions d’utilisation' })).toHaveAttribute('href', '/conditions')
+    expect(screen.getByRole('link', { name: 'politique de confidentialité' })).toHaveAttribute('href', '/confidentialite')
 
     fireEvent.change(screen.getByLabelText('Prénom'), { target: { value: 'Léa' } })
     fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'lea@exemple.test' } })
     fireEvent.change(screen.getByLabelText('Mot de passe'), { target: { value: 'un-bon-mot-de-passe' } })
     fireEvent.click(screen.getByRole('button', { name: 'EUR' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /J’accepte les conditions/ }))
     vi.mocked(api.creer).mockRejectedValueOnce(new ErreurApi(409, 'CONFLIT', 'Un compte existe déjà avec cet e-mail.', { email: 'Un compte existe déjà avec cet e-mail. Connecte-toi.' }))
     fireEvent.click(screen.getByRole('button', { name: 'Créer mon compte' }))
     expect(await screen.findByText('Un compte existe déjà avec cet e-mail. Connecte-toi.')).toBeInTheDocument()
-    expect(api.creer).toHaveBeenCalledWith('/auth/inscription', { prenom: 'Léa', email: 'lea@exemple.test', motDePasse: 'un-bon-mot-de-passe', devise: 'EUR' })
+    expect(api.creer).toHaveBeenCalledWith('/auth/inscription', { prenom: 'Léa', email: 'lea@exemple.test', motDePasse: 'un-bon-mot-de-passe', devise: 'EUR', accepteConditions: true })
 
     vi.mocked(api.creer).mockResolvedValueOnce({ ...lea, onboardingTermine: false })
     fireEvent.click(screen.getByRole('button', { name: 'Créer mon compte' }))
@@ -149,6 +153,17 @@ describe('routes protégées', () => {
     expect(await screen.findByText('Page privée')).toBeInTheDocument()
     expect(lireUtilisateurCourant()).toBe('u1')
   })
+
+  it('session expirée en cours d’usage : message, puis connexion avec la page en cours en suite, sans boucle', async () => {
+    vi.mocked(api.lire).mockResolvedValue(lea)
+    rendre(<GardeCompte>Page privée</GardeCompte>, { route: '/mois?mois=2026-10', chemin: '/mois', compte: 'u1', autres: { '/connexion': <Lieu /> } })
+    expect(await screen.findByText('Page privée')).toBeInTheDocument()
+    sansSession()
+    act(() => void window.dispatchEvent(new Event(EVENEMENT_SESSION_EXPIREE)))
+    expect(await screen.findByText('/connexion?suite=%2Fmois%3Fmois%3D2026-10')).toBeInTheDocument()
+    expect(toast).toHaveBeenCalledWith('Session expirée. Reconnecte-toi.', { id: 'session-expiree' })
+    expect(lireUtilisateurCourant()).toBeNull()
+  })
 })
 
 /** Affiche l'adresse courante (pour vérifier une redirection). */
@@ -173,6 +188,7 @@ describe('confirmation de l’adresse', () => {
     vi.mocked(api.creer).mockRejectedValueOnce(new ErreurApi(400, 'LIEN_INVALIDE', 'Ce lien n’est plus valable.'))
     const { unmount } = rendre(<PageVerificationEmail />, { route: `/email/verification?jeton=${jeton}`, chemin: '/email/verification' })
     expect(await screen.findByRole('heading', { name: 'Lien expiré' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Recevoir un nouveau lien' })).toHaveAttribute('href', '/reglages')
     unmount()
 
     vi.mocked(api.creer).mockRejectedValueOnce(new ErreurApi(409, 'CONFLIT', 'Cette adresse est déjà utilisée par un autre compte.'))

@@ -1,4 +1,4 @@
-import type { Utilisateur } from '@mysalary/partage'
+import { VERSION_CONDITIONS, type Utilisateur } from '@mysalary/partage'
 import { describe, expect, it } from 'vitest'
 import { construireApp } from '../src/app'
 import { activerCompte } from '../src/lib/activation'
@@ -8,7 +8,7 @@ const ctx = preparerApp()
 
 const appeler = (method: 'GET' | 'POST' | 'PUT', chemin: string, { payload, cookie }: { payload?: object; cookie?: string } = {}) =>
   ctx.app.inject({ method, url: url(chemin), headers: cookie ? { cookie } : {}, ...(payload ? { payload } : {}) })
-const inscrire = (payload: object) => appeler('POST', '/auth/inscription', { payload })
+const inscrire = (payload: object) => appeler('POST', '/auth/inscription', { payload: { accepteConditions: true, ...payload } })
 const connecter = (email: string, motDePasse: string) => appeler('POST', '/auth/connexion', { payload: { email, motDePasse } })
 /** Le lien du dernier e-mail envoyé, et son jeton. */
 const dernierLien = () => {
@@ -29,6 +29,15 @@ describe('inscription', () => {
     const ligne = await ctx.prisma.utilisateur.findUniqueOrThrow({ where: { id: compte.id } })
     expect(ligne.motDePasse).toMatch(/^scrypt\$/)
     expect(ligne.motDePasse).not.toContain('un-bon-mot-de-passe')
+    expect(ligne).toMatchObject({ conditionsVersion: VERSION_CONDITIONS })
+    expect(ligne.conditionsAccepteesLe).toBeInstanceOf(Date)
+  })
+
+  it('refuse l’inscription sans acceptation des conditions d’utilisation et de confidentialité', async () => {
+    const r = await inscrire({ prenom: 'A', email: 'sans@exemple.test', motDePasse: 'un-bon-mot-de-passe', accepteConditions: false })
+    expect(r.statusCode).toBe(400)
+    expect(r.json().erreur.champs.accepteConditions).toMatch(/Accepte les conditions/)
+    expect(await ctx.prisma.utilisateur.count()).toBe(0)
   })
 
   it('refuse un e-mail déjà pris (même casse différente) et des champs invalides, par champ', async () => {
@@ -158,7 +167,7 @@ describe('activation d’un compte d’avant le lot 23', () => {
 describe('cookie Secure en HTTPS', () => {
   it('le cookie de session porte Secure quand l’application est servie en HTTPS', async () => {
     const app = await construireApp({ prisma: ctx.prisma, auth: { cookieSecurise: true } })
-    const r = await app.inject({ method: 'POST', url: url('/auth/inscription'), payload: { prenom: 'S', email: 's@exemple.test', motDePasse: 'mot-de-passe-s' } })
+    const r = await app.inject({ method: 'POST', url: url('/auth/inscription'), payload: { prenom: 'S', email: 's@exemple.test', motDePasse: 'mot-de-passe-s', accepteConditions: true } })
     expect(String(r.headers['set-cookie'])).toMatch(/; Secure$/)
     await app.close()
   })

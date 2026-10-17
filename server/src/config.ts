@@ -18,6 +18,7 @@ const schemaEnvironnement = z
     TRUST_PROXY: drapeau,
     SMTP_URL: z.string().min(1).optional(),
     MAIL_FROM: z.string().min(3).default('MySalary <no-reply@mysalary.local>'),
+    MAIL_CONTACT: z.email({ error: 'Adresse e-mail attendue.' }).optional(),
   })
 
 /** Exigences de la production, vérifiées même si une autre variable est déjà fautive : tout est signalé d'un coup. */
@@ -26,6 +27,7 @@ function exigencesProduction(env: Record<string, string | undefined>): string[] 
   const problemes: string[] = []
   if (!env.APP_URL?.startsWith('https://')) problemes.push('APP_URL : en production, l’adresse doit commencer par https://.')
   if (!env.SMTP_URL) problemes.push('SMTP_URL : obligatoire en production, sinon les liens partiraient dans le journal.')
+  if (!env.MAIL_CONTACT) problemes.push('MAIL_CONTACT : obligatoire en production, c’est l’adresse que les pages légales et les alertes donnent aux utilisateurs.')
   if (env.COOKIE_SECURE === '0') problemes.push('COOKIE_SECURE : interdit en production, le cookie de session doit rester réservé à HTTPS.')
   return problemes
 }
@@ -39,6 +41,7 @@ export interface Config {
   trustProxy: boolean
   smtp: string | undefined
   expediteur: string
+  contact: string | null
 }
 
 /** Configuration invalide : chaque ligne nomme la variable et le problème, jamais sa valeur (elle peut être secrète). */
@@ -65,5 +68,6 @@ export function lireConfig(env: Record<string, string | undefined> = process.env
     trustProxy: e.TRUST_PROXY === '1',
     smtp: e.SMTP_URL,
     expediteur: e.MAIL_FROM,
+    contact: e.MAIL_CONTACT ?? null,
   }
 }

@@ -18,7 +18,7 @@ Il remplace les fichiers séparés `DEPLOYMENT.md`, `AUTHENTICATION.md`, `SECURI
    - [5.3 Récupération du compte et e-mails](#53-récupération-du-compte-et-e-mails)
    - [5.4 Limites d'essais](#54-limites-dessais)
    - [5.5 Comptes créés avant l'authentification](#55-comptes-créés-avant-lauthentification)
-   - [5.6 À compléter avant l'ouverture](#56-à-compléter-avant-louverture)
+   - [5.6 Complété en P3](#56-complété-en-p3)
 6. [Données et isolation](#6-données-et-isolation)
    - [6.1 Règles de stockage](#61-règles-de-stockage)
    - [6.2 Schéma actuel](#62-schéma-actuel)
@@ -70,8 +70,8 @@ Il remplace les fichiers séparés `DEPLOYMENT.md`, `AUTHENTICATION.md`, `SECURI
 |---|---|---|---|
 | [P0](#p0-hébergement-et-cadre-légal) | Hébergement et cadre légal | ✅ validé le 17/10/2026 (lancement de P1) | question ouverte « hébergement » (lots.md § 7) |
 | [P1](#p1-isolation-stricte-des-données) | Isolation stricte des données | ✅ validé le 17/10/2026 | — |
-| [P2](#p2-durcissement-de-la-sécurité) | Durcissement de la sécurité | 🟡 livré le 17/10/2026, à valider | lot 30 (en-têtes, journaux) |
-| [P3](#p3-authentification-de-bout-en-bout) | Authentification de bout en bout, pages légales | ⬜ | lot 30 (pages légales) |
+| [P2](#p2-durcissement-de-la-sécurité) | Durcissement de la sécurité | ✅ validé le 17/10/2026 | lot 30 (en-têtes, journaux) |
+| [P3](#p3-authentification-de-bout-en-bout) | Authentification de bout en bout, pages légales | 🟡 livré le 17/10/2026, à valider | lot 30 (pages légales) |
 | [P4](#p4-passage-à-postgresql) | Passage à PostgreSQL (Neon) | ⬜ | lot 30 (PostgreSQL, reprise des données) |
 | [P5](#p5-api-et-interface-sur-netlify) | API et interface sur Netlify, PWA | ⬜ | lot 30 (build, PWA) |
 | [P6](#p6-cohérence-financière-et-concurrence) | Cohérence financière et concurrence | ⬜ | — |
@@ -147,7 +147,7 @@ Ce qu'il faut adapter pour A : la purge devient une fonction planifiée, les lim
 
 | Parcours | Fonctionnement | Statut |
 |---|---|---|
-| Inscription | Prénom, e-mail (unique, en minuscules), mot de passe de 8 caractères minimum. Session ouverte aussitôt, lien de vérification envoyé. | ✅ |
+| Inscription | Prénom, e-mail (unique, en minuscules), mot de passe de 8 caractères minimum et pas trop courant, acceptation des conditions (P3). Session ouverte aussitôt, lien de vérification envoyé. | ✅ |
 | Connexion | E-mail et mot de passe ; le même message, que l'e-mail ou le mot de passe soit faux. Un e-mail inconnu prend le même temps qu'un mauvais mot de passe. | ✅ |
 | Déconnexion | Session supprimée en base, cookie effacé, cache de l'interface vidé. | ✅ |
 | Routes privées | Toutes les routes de compte passent par `exigerUtilisateur` : 401 sans session valide. | ✅ |
@@ -162,9 +162,9 @@ Ce qu'il faut adapter pour A : la purge devient une fonction planifiée, les lim
 
 - **Jeton** : 32 octets aléatoires dans le cookie `mysalary_session`. Seule son empreinte SHA-256 est en base (table `Session`).
 - **Cookie** : `HttpOnly`, `SameSite=Strict`, `Path=/`, `Secure` quand `APP_URL` est en `https://` (ou si `COOKIE_SECURE=1`).
-- **Durée** : 30 jours, sans renouvellement. Une session expirée est supprimée dès qu'elle est présentée.
+- **Durée** : 30 jours, prolongée de 30 jours quand une session utilisée a moins de 7 jours devant elle (P3). Une session expirée est supprimée dès qu'elle est présentée.
 - **Rotation** : chaque connexion crée un nouveau jeton et ferme l'ancienne session de ce navigateur.
-- **Fermeture** : déconnexion, changement ou réinitialisation du mot de passe (pour les autres sessions), suppression du compte.
+- **Fermeture** : déconnexion, « Se déconnecter de tous les appareils » (toutes les sessions, P3), changement ou réinitialisation du mot de passe (pour les autres sessions), suppression du compte.
 - **Nettoyage** : sessions et liens expirés purgés au démarrage, puis toutes les heures (une fonction planifiée sur Netlify, en P5).
 - **Interface** : le cache des requêtes est effacé à la connexion et à la déconnexion. `localStorage` ne garde que l'identifiant du dernier compte (un simple indice d'affichage, le serveur ne s'y fie pas) et la préférence d'animations.
 
@@ -172,7 +172,8 @@ Ce qu'il faut adapter pour A : la purge devient une fonction planifiée, les lim
 
 - **Mot de passe oublié** : lien à usage unique, valable 1 heure, envoyé par e-mail. Choisir un mot de passe par ce lien confirme aussi l'adresse et ferme les autres sessions.
 - **Vérification de l'e-mail** : à l'inscription, un lien valable 24 heures et utilisable une seule fois. Tant qu'il n'est pas ouvert, un bandeau le rappelle et permet de le renvoyer (3 envois par heure).
-- **Changement d'e-mail** : le mot de passe est exigé, puis un lien part vers la nouvelle adresse. L'adresse ne change qu'à l'ouverture du lien.
+- **Changement d'e-mail** : le mot de passe est exigé, puis un lien part vers la nouvelle adresse. L'adresse ne change qu'à l'ouverture du lien ; l'ancienne reçoit alors une alerte (P3).
+- **Alertes et confirmations** (P3) : après un changement de mot de passe, et après la suppression du compte. Elles indiquent `MAIL_CONTACT` pour « ce n'est pas moi ».
 - **Liens** : seule l'empreinte du jeton est en base (`JetonMotDePasse`, `JetonEmail`). Un lien expiré ou déjà utilisé est refusé.
 - **Envoi** : par SMTP (`SMTP_URL`), avec des gabarits HTML et texte. Sans `SMTP_URL`, le message est écrit dans le journal du serveur, ce qui n'est acceptable qu'en local (§ 7.2, problème 5).
 
@@ -199,21 +200,23 @@ npm run compte:activer -- <prénom> <e-mail>
 
 La commande affiche un lien valable 24 heures pour choisir le mot de passe. L'e-mail est ensuite considéré comme confirmé. Pour le changer plus tard : Réglages › E-mail de connexion.
 
-### 5.6 À compléter avant l'ouverture
+### 5.6 Complété en P3
 
-Travaux du lot [P3](#p3-authentification-de-bout-en-bout) :
+Tous les points prévus pour P3 sont en place (17/10/2026) :
 
-| Point | Détail |
-|---|---|
-| Session expirée dans l'interface | Tout 401 renvoie à `/connexion?suite=<page>`, sans boucle ni écran blanc |
-| Renouvellement | Session prolongée quand il reste moins de 7 jours |
-| Se déconnecter de tous les appareils | Route `POST /compte/sessions/fermeture` et bouton dans Réglages |
-| E-mails d'alerte | À l'ancienne adresse après un changement d'e-mail, et après un changement de mot de passe |
-| Lien expiré | Message clair et bouton « Recevoir un nouveau lien » |
-| Trop d'essais (429) | Message clair avec le délai d'attente |
-| Suppression du compte | E-mail de confirmation, et vérification qu'il ne reste rien en base |
-| Mots de passe courants | Refusés (petite liste locale, aucun appel externe) |
-| Conditions et confidentialité | Pages publiques, acceptation à l'inscription |
+| Point | En place | Tests |
+|---|---|---|
+| Session expirée dans l'interface | Tout 401 sur un compte ouvert affiche « Session expirée », puis renvoie à `/connexion?suite=<page>` ; après la connexion, retour à cette page. Sans boucle ni écran blanc. | `connexion.test.tsx` |
+| Renouvellement | Une session utilisée à moins de 7 jours de son expiration repart pour 30 jours (`sessionRenouvelee`). | `parcours-compte.test.ts` |
+| Se déconnecter de tous les appareils | `POST /compte/sessions/fermeture`, lien dans Réglages › Compte, avec confirmation. Ferme toutes les sessions du compte, celle-ci comprise. | serveur et interface |
+| E-mails d'alerte | Ancienne adresse prévenue quand l'e-mail de connexion change ; alerte après tout changement de mot de passe (Réglages ou lien). Un envoi raté n'annule pas le changement. | `parcours-compte.test.ts` |
+| Lien expiré | Mot de passe : « Demander un nouveau lien ». Adresse : « Recevoir un nouveau lien » (vers Réglages, après connexion si besoin). | `connexion.test.tsx` |
+| Trop d'essais (429) | Message avec le délai réel (« Réessaie dans 15 minutes ») et en-tête `Retry-After`. | `parcours-compte.test.ts` |
+| Suppression du compte | E-mail de confirmation ; aucune ligne du compte ne reste dans aucune table (vérifié sur toutes les tables du schéma). | `parcours-compte.test.ts` |
+| Mots de passe courants | Fait en P2 (§ 5.4). | `securite.test.ts` |
+| Conditions et confidentialité | Pages publiques `/conditions` et `/confidentialite`, liées depuis tous les écrans de connexion. Case obligatoire à l'inscription ; la date et la version acceptées sont gardées (`Utilisateur.conditionsAccepteesLe`, `conditionsVersion`, version `2026-10-17`). Le contact affiché vient de `MAIL_CONTACT`. | serveur et interface |
+
+**À faire valider par un juriste** : le texte des deux pages (rédigé d'après ce que fait réellement l'app, mais sans avis juridique) et la mention CNDP une fois la déclaration faite (§ 7.4). Les comptes créés avant P3 n'ont pas d'acceptation enregistrée ; une nouvelle version des textes devra être présentée à tous avant de s'appliquer.
 
 ## 6. Données et isolation
 
@@ -320,8 +323,8 @@ Audit du 15/10/2026.
 | 9 | Moyen | Index insuffisants pour PostgreSQL | P4 |
 | 10 | Moyen | Variables d'environnement non vérifiées au démarrage | P2 ✅ corrigé |
 | 11 | Faible | Aucun en-tête de sécurité sur les pages de l'interface (CSP, HSTS, `frame-ancestors`) | P5 |
-| 12 | Faible | Session sans renouvellement, pas de « Se déconnecter de tous les appareils » | P3 |
-| 13 | Faible | Aucune alerte à l'ancienne adresse après un changement d'e-mail ou de mot de passe | P3 |
+| 12 | Faible | Session sans renouvellement, pas de « Se déconnecter de tous les appareils » | P3 ✅ corrigé |
+| 13 | Faible | Aucune alerte à l'ancienne adresse après un changement d'e-mail ou de mot de passe | P3 ✅ corrigé |
 | 14 | Faible | Aucun test de charge ni de concurrence | P6, P7 |
 
 ### 7.3 Secrets et journaux
@@ -339,7 +342,7 @@ Audit du 15/10/2026.
 
 - **Déclaration** : déclaration à la CNDP avant l'ouverture.
 - **Hébergement à l'étranger** : Netlify et Neon sont hors du Maroc. Selon le pays de destination (Union européenne avec l'option « Europe », États-Unis avec l'option « économique »), le transfert peut demander une **autorisation préalable** de la CNDP. À confirmer avec la CNDP ou un juriste : je ne peux pas l'établir moi-même. C'est la décision D14.
-- **Documents** : conditions d'utilisation et politique de confidentialité, acceptées à l'inscription (P3).
+- **Documents** : conditions d'utilisation (`/conditions`) et politique de confidentialité (`/confidentialite`), acceptées à l'inscription, en place depuis P3. À faire relire par un juriste ; y ajouter le numéro CNDP une fois obtenu.
 - **Droits des utilisateurs** : l'export et la suppression du compte existent déjà.
 
 ## 8. Déploiement
@@ -359,6 +362,7 @@ En local : `server/.env`, à partir de `server/.env.example`. En production : le
 | `COOKIE_SECURE` | Forcer (`1`) ou non (`0`) le cookie `Secure` | selon `APP_URL` | selon `APP_URL` |
 | `TRUST_PROXY` | `1` derrière un proxy (adresse du client lue dans `X-Forwarded-For`) | désactivé | `1` |
 | `SMTP_URL` | Serveur d'envoi, ex. `smtps://user:pass@smtp.exemple.com:465` | absent (e-mails écrits dans le journal) | obligatoire, secret |
+| `MAIL_CONTACT` | Contact du responsable, affiché dans les pages légales et les alertes | absent | obligatoire |
 | `MAIL_FROM` | Expéditeur | `MySalary <no-reply@mysalary.local>` | adresse du domaine |
 
 ### 8.2 Netlify
@@ -485,13 +489,13 @@ Je ne saisis aucun secret ni aucun mot de passe de service : tu les mets toi-mê
 
 ### 9.1 Tests existants
 
-511 tests au 17/10/2026, lancés par `npm run verifier` (types, tests, build) :
+525 tests au 17/10/2026, lancés par `npm run verifier` (types, tests, build) :
 - partage : 24 ;
 - moteur : 190 ;
-- serveur : 130, avec `fastify.inject` sur une base de test vidée avant chaque test ;
-- interface : 167, avec Testing Library.
+- serveur : 140, avec `fastify.inject` sur une base de test vidée avant chaque test ;
+- interface : 171, avec Testing Library.
 
-Fichiers serveur liés aux comptes : `authentification.test.ts`, `compte.test.ts`, `email.test.ts`, `isolation.test.ts`, `matrice-isolation.test.ts`, `champs-inconnus.test.ts`, `securite.test.ts`, `messagerie.test.ts`, `sauvegarde.test.ts`. Stratégie générale de tests : produit.md (Plan) § 13.
+Fichiers serveur liés aux comptes : `authentification.test.ts`, `compte.test.ts`, `email.test.ts`, `isolation.test.ts`, `matrice-isolation.test.ts`, `champs-inconnus.test.ts`, `securite.test.ts`, `parcours-compte.test.ts`, `messagerie.test.ts`, `sauvegarde.test.ts`. Stratégie générale de tests : produit.md (Plan) § 13.
 
 ### 9.2 Tests avant mise en production
 
@@ -541,7 +545,10 @@ Un test non exécuté est noté « non exécuté », jamais « réussi ». Aucun
 | 17/10/2026 | local | `npm audit --omit=dev` | 0 faille |
 | 17/10/2026 | local | Démarrage en production sans `SMTP_URL` ni `APP_URL` en `https://` | refusé, code de sortie 1, variables listées |
 | 17/10/2026 | local, navigateur | Inscription avec un mot de passe courant ; 6ᵉ connexion après 5 échecs | refusée avec le message sous le champ ; « Trop d'essais » affiché. Compte d'essai et lignes de test supprimés. |
-| — | — | Tests 1 à 6 et 8 à 10 du § 9.2 | non exécutés |
+| 17/10/2026 | local, SQLite | `npm run verifier` après P3 | 525 tests réussis, build OK |
+| 17/10/2026 | local, navigateur, 1342 et 375 px | Tests 1, 2, 4 et 5 du § 9.2 : inscription (erreurs, case des conditions, acceptation gardée en base), pages légales, « Se déconnecter de tous les appareils » (l'autre appareil reçoit 401), reconnexion, renvoi du lien, suppression du compte, 6ᵉ connexion refusée avec le délai. Compte d'essai et lignes de test supprimés. | réussi |
+| 17/10/2026 | local, navigateur | Recette complète d'un compte « X » (inscription → mise en route → gestion → mot de passe oublié → suppression) | réussi, 3 défauts d'affichage corrigés |
+| — | — | Test 3 du § 9.2 avec une vraie boîte e-mail ; tests 6 à 10 restants | non exécutés |
 
 ## 10. Lots P0 à P9
 
@@ -617,6 +624,8 @@ Chaque lot suit la méthode du dépôt : analyse → travaux → tests → véri
   - tour de chaque bouton des pages Connexion, Inscription, Mot de passe oublié et Réglages : aucun bouton sans action ;
   - gabarits d'e-mail d'alerte dans `server/src/lib/gabarits.ts`.
 - **Fin** : tous les parcours du § 5 passés dans le navigateur à 1342 et 375 px, avec captures. Mettre à jour les § 5.1 à 5.6.
+- **Fait (17/10/2026)** : tout le § 5.6. Le tour des boutons des pages Connexion, Inscription, Mot de passe oublié et Réglages a trouvé un défaut : sur mobile, les boutons des fenêtres de confirmation débordaient (« Supprimer définitivement »). Ils s'empilent maintenant sur toute la largeur.
+- **Reste pour P8** : l'essai en vraie boîte e-mail (SMTP), et la relecture juridique des pages légales.
 
 ### P4. Passage à PostgreSQL
 

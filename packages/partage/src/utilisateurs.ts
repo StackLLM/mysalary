@@ -29,12 +29,22 @@ export const motDePasse = z
 /** Mot de passe saisi pour se connecter ou confirmer : seulement non vide (l'ancienne règle peut différer). */
 const motDePasseSaisi = z.string({ error: 'Le mot de passe est obligatoire.' }).min(1, 'Le mot de passe est obligatoire.').max(200, 'Au plus 200 caractères.')
 
+/** Version des conditions d'utilisation et de la politique de confidentialité acceptées à l'inscription (lot P3). */
+export const VERSION_CONDITIONS = '2026-10-17'
+
 export const schemaInscription = z.strictObject({
   prenom,
   email,
   motDePasse,
   devise: z.enum(DEVISES, { error: 'Devise non prise en charge.' }).default('MAD'),
+  accepteConditions: z.literal(true, { error: 'Accepte les conditions d’utilisation et la politique de confidentialité pour créer ton compte.' }),
 })
+
+/** Informations publiques de l'instance (pages légales). */
+export interface InfosPubliquesDto {
+  /** Adresse de contact du responsable ; absente en local. */
+  contact: string | null
+}
 export type Inscription = z.input<typeof schemaInscription>
 
 export const schemaConnexion = z.strictObject({ email, motDePasse: motDePasseSaisi })

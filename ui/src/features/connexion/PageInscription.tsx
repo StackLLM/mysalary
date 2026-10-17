@@ -1,4 +1,5 @@
 import { DEVISES, schemaInscription, type Devise } from '@mysalary/partage'
+import { AlertCircle } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Bouton } from '../../components/Bouton'
@@ -17,11 +18,12 @@ export function PageInscription() {
   const [email, setEmail] = useState('')
   const [motDePasse, setMotDePasse] = useState('')
   const [devise, setDevise] = useState<Devise>('MAD')
+  const [accepte, setAccepte] = useState(false)
   const [erreurs, setErreurs] = useState<Record<string, string>>({})
 
   function soumettre(e: FormEvent) {
     e.preventDefault()
-    const lu = schemaInscription.safeParse({ prenom, email, motDePasse, devise })
+    const lu = schemaInscription.safeParse({ prenom, email, motDePasse, devise, accepteConditions: accepte })
     if (!lu.success) return setErreurs(erreursDe(lu.error))
     setErreurs({})
     // Un nouveau compte commence par la mise en route (lot 19).
@@ -57,6 +59,35 @@ export function PageInscription() {
           </div>
           <p className="mt-2 text-mention text-gris">Elle ne pourra plus être changée ensuite.</p>
         </fieldset>
+        <div>
+          <label className="flex items-start gap-3 text-texte-sm text-encre-2">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[#7D8C82]"
+              checked={accepte}
+              onChange={(e) => setAccepte(e.target.checked)}
+              aria-invalid={Boolean(erreurs.accepteConditions)}
+              aria-describedby={erreurs.accepteConditions ? 'erreur-conditions' : undefined}
+            />
+            <span>
+              J’accepte les{' '}
+              <Link to="/conditions" target="_blank" rel="noopener" className="font-semibold text-lien hover:underline">
+                conditions d’utilisation
+              </Link>{' '}
+              et la{' '}
+              <Link to="/confidentialite" target="_blank" rel="noopener" className="font-semibold text-lien hover:underline">
+                politique de confidentialité
+              </Link>
+              .
+            </span>
+          </label>
+          {erreurs.accepteConditions && (
+            <p id="erreur-conditions" className="mt-2 flex items-center gap-1 text-mention text-alerte">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              {erreurs.accepteConditions}
+            </p>
+          )}
+        </div>
         <Bouton type="submit" taille="lg" className="w-full" chargement={inscription.isPending}>
           Créer mon compte
         </Bouton>

@@ -1,5 +1,5 @@
 import helmet from '@fastify/helmet'
-import { PREFIXE_API } from '@mysalary/partage'
+import { PREFIXE_API, type InfosPubliquesDto } from '@mysalary/partage'
 import type { PrismaClient } from '@prisma/client'
 import Fastify, { type FastifyServerOptions } from 'fastify'
 import { routesAuth } from './modules/auth/routes'
@@ -43,6 +43,7 @@ export async function construireApp({ prisma, logger = false, horloge, auth = {}
     {
       urlApplication: auth.urlApplication ?? 'http://127.0.0.1:6010',
       cookieSecurise: auth.cookieSecurise ?? false,
+      contact: auth.contact ?? null,
       messagerie: auth.messagerie ?? (async ({ a, sujet, texte }) => app.log.info({ a, sujet }, `E-mail non envoyé (SMTP_URL absent)\n${texte}`)),
     },
     horloge,
@@ -55,6 +56,8 @@ export async function construireApp({ prisma, logger = false, horloge, auth = {}
     async (api) => {
       // Routes publiques (aucun compte requis).
       api.get('/sante', async () => ({ statut: 'ok' }))
+      // Contact du responsable, pour les pages légales (lot P3).
+      api.get('/infos', async (): Promise<InfosPubliquesDto> => ({ contact: app.auth.contact ?? null }))
       await api.register(routesAuth)
 
       // Routes du compte courant : toutes passent par exigerUtilisateur.

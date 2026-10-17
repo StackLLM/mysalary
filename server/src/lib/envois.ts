@@ -9,7 +9,12 @@ export interface Envoi {
   messagerie: Messagerie
   urlApplication: string
   maintenant: Date
+  contact: string | null
 }
+
+/** Que faire si ce n'est pas toi : écrire au contact s'il est configuré, sinon changer de mot de passe. */
+const siCeNEstPasToi = (contact: string | null) =>
+  contact ? `Si ce n’est pas toi, écris-nous tout de suite à ${contact}.` : 'Si ce n’est pas toi, choisis tout de suite un nouveau mot de passe depuis la page de connexion.'
 
 /** E-mail « confirme ton adresse » (inscription, renvoi) ou « confirme ta nouvelle adresse » (changement), envoyé à `email`. */
 export async function envoyerLienEmail({ prisma, messagerie, urlApplication, maintenant }: Envoi, compte: { id: string; prenom: string }, type: TypeLienEmail, email: string) {
@@ -41,10 +46,42 @@ export async function envoyerLienMotDePasse({ messagerie, urlApplication }: Envo
   await messagerie({ a: compte.email, sujet: 'MySalary : choisis un nouveau mot de passe', texte, html })
 }
 
+/** Alerte à l'ancienne adresse : l'e-mail de connexion vient de changer (lot P3). Sans lien : l'ancienne adresse n'ouvre plus le compte. */
+export async function envoyerAlerteEmailChange({ messagerie, contact }: Envoi, compte: { prenom: string }, ancienne: string, nouvelle: string) {
+  const { texte, html } = composer({
+    titre: 'Ton adresse de connexion a changé',
+    paragraphes: [`Bonjour ${compte.prenom},`, `Ton compte MySalary se connecte désormais avec ${nouvelle}. Cette adresse-ci (${ancienne}) ne sert plus pour ce compte.`],
+    pied: siCeNEstPasToi(contact),
+  })
+  await messagerie({ a: ancienne, sujet: 'MySalary : ton adresse de connexion a changé', texte, html })
+}
+
+/** Alerte après un changement de mot de passe, depuis les Réglages ou par un lien « mot de passe oublié » (lot P3). */
+export async function envoyerAlerteMotDePasse({ messagerie, urlApplication, contact }: Envoi, compte: { prenom: string; email: string }) {
+  const { texte, html } = composer({
+    titre: 'Ton mot de passe a changé',
+    paragraphes: [`Bonjour ${compte.prenom},`, 'Le mot de passe de ton compte MySalary vient d’être changé. Pour ta sécurité, tes autres appareils ont été déconnectés.'],
+    bouton: { libelle: 'Choisir un autre mot de passe', lien: `${urlApplication.replace(/\/$/, '')}/mot-de-passe/oubli` },
+    pied: siCeNEstPasToi(contact),
+  })
+  await messagerie({ a: compte.email, sujet: 'MySalary : ton mot de passe a changé', texte, html })
+}
+
+/** Confirmation de la suppression du compte : plus aucune donnée n'est gardée (lot P3). */
+export async function envoyerConfirmationSuppression({ messagerie, contact }: Envoi, compte: { prenom: string; email: string }) {
+  const { texte, html } = composer({
+    titre: 'Ton compte est supprimé',
+    paragraphes: [`Bonjour ${compte.prenom},`, 'Ton compte MySalary et toutes ses données (salaire, charges, dépenses, épargne, objectifs) ont été effacés définitivement. Nous ne gardons rien.'],
+    pied: contact ? `Une question ? Écris-nous à ${contact}.` : 'Merci d’avoir utilisé MySalary.',
+  })
+  await messagerie({ a: compte.email, sujet: 'MySalary : ton compte est supprimé', texte, html })
+}
+
 /** Les outils d'envoi de l'app courante. */
 export const contexteEnvoi = (app: FastifyInstance): Envoi => ({
   prisma: app.prisma,
   messagerie: app.auth.messagerie,
   urlApplication: app.auth.urlApplication,
   maintenant: app.maintenant(),
+  contact: app.auth.contact ?? null,
 })

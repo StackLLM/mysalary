@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Bouton } from '../../components/Bouton'
 import { Carte, Separateur, TitreSection } from '../../components/Carte'
+import { Confirmation } from '../../components/Confirmation'
 import { Cellule, Champ, ChampMontant } from '../../components/Champ'
 import { Identite, Interrupteur } from '../../components/Elements'
 import { FilAriane } from '../../components/FilAriane'
@@ -241,7 +242,20 @@ function CarteCompte() {
   const naviguer = useNavigate()
   const [confirmer, setConfirmer] = useState(false)
   const [reinitialiser, setReinitialiser] = useState(false)
+  const [partout, setPartout] = useState(false)
+  const [fermeture, setFermeture] = useState(false)
   if (!utilisateur) return null
+
+  async function deconnecterPartout() {
+    setFermeture(true)
+    try {
+      await deconnecter({ partout: true })
+      toast('Tous tes appareils sont déconnectés.')
+    } catch {
+      setFermeture(false)
+      toast('Déconnexion impossible pour l’instant. Réessaie.')
+    }
+  }
 
   return (
     <>
@@ -258,7 +272,20 @@ function CarteCompte() {
         >
           Se déconnecter
         </Bouton>
+        <button type="button" className="mt-3 w-full text-texte-sm font-semibold text-lien hover:underline" onClick={() => setPartout(true)}>
+          Se déconnecter de tous les appareils
+        </button>
       </Carte>
+      <Confirmation
+        ouvert={partout}
+        onFermer={() => setPartout(false)}
+        titre="Se déconnecter partout ?"
+        description="Tous les appareils où ton compte est ouvert (téléphone, ordinateur, celui-ci compris) devront se reconnecter avec ton mot de passe."
+        libelleConfirmer="Déconnecter tous les appareils"
+        onConfirmer={() => void deconnecterPartout()}
+        chargement={fermeture}
+        ton="principal"
+      />
 
       <EmailCompte />
 

@@ -50,6 +50,14 @@ export function MiseEnPageAuth({ titre, sousTitre, children, pied }: { titre: st
           {sousTitre && <p className="mt-2 text-texte text-gris">{sousTitre}</p>}
           <div className="mt-8 rounded-carte bg-white p-6 shadow-carte sm:p-8">{children}</div>
           {pied && <div className="mt-6 text-center text-texte-sm text-gris">{pied}</div>}
+          <p className="mt-8 flex justify-center gap-6 text-mention text-gris">
+            <Link to="/conditions" className="hover:text-encre hover:underline">
+              Conditions d’utilisation
+            </Link>
+            <Link to="/confidentialite" className="hover:text-encre hover:underline">
+              Confidentialité
+            </Link>
+          </p>
         </div>
       </main>
     </div>

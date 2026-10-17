@@ -222,6 +222,9 @@ const CAS: Record<string, (c: Comptes) => Appel[]> = {
   'POST /import/apercu': () => [{ chemin: '/import/apercu', payload: { fichier: IMPORT }, attendu: 'compte' }],
   'PUT /import/lignes/:id': () => [{ chemin: '/import/lignes/salaire', payload: { statut: 'ignore' }, attendu: 'compte' }],
   'DELETE /import': () => [{ chemin: '/import', attendu: 'compte' }],
+
+  // En dernier : ferme toutes les sessions de A, celle de ce test comprise.
+  'POST /compte/sessions/fermeture': () => [{ chemin: '/compte/sessions/fermeture', attendu: 'compte' }],
 }
 
 /** Tables qui portent `utilisateurId` : lues dans le schéma, une nouvelle table est couverte d'office. */

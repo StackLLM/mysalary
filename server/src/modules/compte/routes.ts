@@ -1,12 +1,12 @@
 import { CODES_ERREUR, type DemandeChangementEmail, schemaChangementEmail, schemaChangementMotDePasse, schemaConfirmationMotDePasse, schemaExportCompte, schemaModificationUtilisateur } from '@mysalary/partage'
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { ErreurApi, introuvable } from '../../lib/erreurs'
-import { contexteEnvoi, envoyerLienEmail } from '../../lib/envois'
+import { contexteEnvoi, envoyerAlerteMotDePasse, envoyerConfirmationSuppression, envoyerLienEmail } from '../../lib/envois'
 import { erreurPourJournal } from '../../lib/journaux'
-import { Limiteur } from '../../lib/limiteur'
+import { Limiteur, TropDEssais } from '../../lib/limiteur'
 import { hacher, verifier } from '../../lib/motDePasse'
 import { valider } from '../../lib/valider'
-import { fermerSession, ouvrirSession } from '../../plugins/session'
+import { fermerSession, fermerToutesLesSessions, ouvrirSession } from '../../plugins/session'
 import { utilisateurDe } from '../../plugins/utilisateurCourant'
 import * as sauvegarde from '../sauvegarde/depot'
 import * as comptes from '../utilisateurs/depot'
@@ -20,7 +20,8 @@ export async function routesCompte(app: FastifyInstance) {
   const envoiImpossible = () => new ErreurApi(502, CODES_ERREUR.INTERNE, 'Le message n’a pas pu partir. Réessaie dans quelques minutes.')
 
   async function envoyer(compte: { id: string; prenom: string }, type: 'verification' | 'changement', email: string) {
-    if (await envois.bloque(compte.id)) throw new ErreurApi(429, CODES_ERREUR.TROP_DE_TENTATIVES, 'Trop d’envois. Réessaie dans une heure.')
+    const attente = await envois.attente(compte.id)
+    if (attente > 0) throw new TropDEssais(attente, 'Trop d’envois')
     await envois.compter(compte.id)
     await envoyerLienEmail(contexteEnvoi(app), compte, type, email).catch((e) => {
       app.log.error(erreurPourJournal(e, app.production), 'Envoi du lien e-mail impossible')
@@ -28,10 +29,14 @@ export async function routesCompte(app: FastifyInstance) {
     })
   }
 
+  /** Un e-mail d'information qui ne part pas n'annule pas l'action déjà faite : il est seulement noté au journal. */
+  const alerter = (envoi: () => Promise<void>) => envoi().catch((e) => app.log.error(erreurPourJournal(e, app.production), 'Envoi d’une alerte impossible'))
+
   /** Les actions lourdes redemandent le mot de passe ; 5 erreurs bloquent un quart d'heure. */
   async function confirmer(requete: FastifyRequest, motDePasse: string) {
     const id = utilisateurDe(requete)
-    if (await essais.bloque(id)) throw new ErreurApi(429, CODES_ERREUR.TROP_DE_TENTATIVES, 'Trop d’essais. Réessaie dans quelques minutes.')
+    const attente = await essais.attente(id)
+    if (attente > 0) throw new TropDEssais(attente)
     const compte = await app.prisma.utilisateur.findUnique({ where: { id } })
     if (!compte) throw introuvable('Compte')
     if (!compte.motDePasse || !(await verifier(motDePasse, compte.motDePasse))) {
@@ -76,6 +81,13 @@ export async function routesCompte(app: FastifyInstance) {
     await app.prisma.utilisateur.update({ where: { id: compte.id }, data: { motDePasse: await hacher(nouveau) } })
     await app.prisma.session.deleteMany({ where: { utilisateurId: compte.id } })
     await ouvrirSession(app.prisma, requete, reponse, compte.id, securise)
+    if (compte.email) await alerter(() => envoyerAlerteMotDePasse(contexteEnvoi(app), { prenom: compte.prenom, email: compte.email! }))
+    return reponse.status(204).send()
+  })
+
+  // Se déconnecter de tous les appareils, celui-ci compris (lot P3).
+  app.post('/compte/sessions/fermeture', async (requete, reponse) => {
+    await fermerToutesLesSessions(app.prisma, reponse, utilisateurDe(requete), securise)
     return reponse.status(204).send()
   })
 
@@ -97,6 +109,7 @@ export async function routesCompte(app: FastifyInstance) {
     const compte = await confirmer(requete, motDePasse)
     await comptes.supprimer(app.prisma, compte.id)
     await fermerSession(app.prisma, requete, reponse, securise)
+    if (compte.email) await alerter(() => envoyerConfirmationSuppression(contexteEnvoi(app), { prenom: compte.prenom, email: compte.email! }))
     return reponse.status(204).send()
   })
 }

@@ -54,7 +54,7 @@ export const cookieDe = (reponse: { headers: Record<string, unknown> }) => Strin
 
 /** Crée un compte par l'inscription et garde son cookie de session. */
 export async function creerCompte(app: FastifyInstance, prenom: string, email = `compte-${++numero}@exemple.test`): Promise<Utilisateur> {
-  const reponse = await app.inject({ method: 'POST', url: url('/auth/inscription'), payload: { prenom, email, motDePasse: MOT_DE_PASSE_TEST } })
+  const reponse = await app.inject({ method: 'POST', url: url('/auth/inscription'), payload: { prenom, email, motDePasse: MOT_DE_PASSE_TEST, accepteConditions: true } })
   if (reponse.statusCode !== 201) throw new Error(reponse.body)
   const compte = reponse.json() as Utilisateur
   cookies.set(compte.id, cookieDe(reponse))

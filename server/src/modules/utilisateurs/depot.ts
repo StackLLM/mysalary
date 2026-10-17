@@ -1,5 +1,5 @@
 import type { Devise, Inscription, Utilisateur } from '@mysalary/partage'
-import { REGLAGES_PAR_DEFAUT } from '@mysalary/partage'
+import { REGLAGES_PAR_DEFAUT, VERSION_CONDITIONS } from '@mysalary/partage'
 import type { PrismaClient, Utilisateur as LigneUtilisateur } from '@prisma/client'
 import { hacher } from '../../lib/motDePasse'
 
@@ -26,7 +26,17 @@ export function reglagesParDefaut() {
 /** Crée le compte, son mot de passe haché et ses réglages par défaut dans la même écriture. */
 export async function creer(prisma: PrismaClient, { prenom, email, motDePasse, devise }: Required<Inscription>, maintenant: Date) {
   const ligne = await prisma.utilisateur.create({
-    data: { prenom, email, devise, motDePasse: await hacher(motDePasse), derniereOuverture: maintenant, reglages: { create: reglagesParDefaut() } },
+    data: {
+      prenom,
+      email,
+      devise,
+      motDePasse: await hacher(motDePasse),
+      derniereOuverture: maintenant,
+      // Le schéma d'inscription exige l'acceptation : on garde la date et la version acceptée.
+      conditionsAccepteesLe: maintenant,
+      conditionsVersion: VERSION_CONDITIONS,
+      reglages: { create: reglagesParDefaut() },
+    },
   })
   return versDto(ligne)
 }

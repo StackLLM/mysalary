@@ -32,9 +32,12 @@ export function PageVerificationEmail() {
   )
   if (etat === 'confirme') return <MiseEnPageAuth titre="Adresse confirmée" sousTitre="Tu te connectes désormais avec cette adresse.">{continuer}</MiseEnPageAuth>
   if (etat === 'lienMort') {
+    // Réglages renvoie le lien (ou relance le changement d'adresse) ; sans session, la connexion ramène ensuite à Réglages.
     return (
-      <MiseEnPageAuth titre="Lien expiré" sousTitre="Ce lien n’est plus valable : il a déjà servi, ou il a plus de 24 heures. Dans Réglages, demande-en un nouveau.">
-        {continuer}
+      <MiseEnPageAuth titre="Lien expiré" sousTitre="Ce lien n’est plus valable : il a déjà servi, ou il a plus de 24 heures.">
+        <Link to="/reglages" className={styleBouton({ taille: 'lg', className: 'w-full' })}>
+          Recevoir un nouveau lien
+        </Link>
       </MiseEnPageAuth>
     )
   }

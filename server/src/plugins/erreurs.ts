@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client'
 import type { FastifyError, FastifyInstance } from 'fastify'
 import { ErreurApi } from '../lib/erreurs'
 import { erreurPourJournal } from '../lib/journaux'
+import { TropDEssais } from '../lib/limiteur'
 
 function corps(erreur: ErreurApi): ReponseErreur {
   return {
@@ -18,6 +19,7 @@ function corps(erreur: ErreurApi): ReponseErreur {
 export function installerErreurs(app: FastifyInstance, production = false) {
   app.setErrorHandler((erreur: FastifyError | Error, requete, reponse) => {
     if (erreur instanceof ErreurApi) {
+      if (erreur instanceof TropDEssais) reponse.header('retry-after', String(Math.max(1, Math.ceil(erreur.attenteMs / 1000))))
       return reponse.status(erreur.statut).send(corps(erreur))
     }
     if (erreur instanceof Prisma.PrismaClientKnownRequestError && erreur.code === 'P2025') {

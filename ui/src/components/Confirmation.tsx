@@ -41,11 +41,12 @@ export function Confirmation({
             <div className="mt-2 text-texte text-gris">{description}</div>
           </Dialog.Description>
           {children && <div className="mt-5">{children}</div>}
-          <div className="mt-6 flex justify-end gap-3">
-            <Bouton variante="contour" taille="md" onClick={onFermer}>
+          {/* Sur mobile, les boutons s'empilent sur toute la largeur : un long libellé ne déborde jamais de la fenêtre. */}
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Bouton variante="contour" taille="md" className="w-full sm:w-auto" onClick={onFermer}>
               Annuler
             </Bouton>
-            <Bouton variante={ton} taille="md" onClick={onConfirmer} disabled={confirmerDesactive} chargement={chargement}>
+            <Bouton variante={ton} taille="md" className="w-full sm:w-auto" onClick={onConfirmer} disabled={confirmerDesactive} chargement={chargement}>
               {libelleConfirmer}
             </Bouton>
           </div>

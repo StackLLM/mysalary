@@ -33,6 +33,9 @@ const PageInscription = lazy(() => import('./features/connexion/PageInscription'
 const PageMotDePasseOublie = lazy(() => import('./features/connexion/PageMotDePasseOublie').then((m) => ({ default: m.PageMotDePasseOublie })))
 const PageVerificationEmail = lazy(() => import('./features/connexion/PageVerificationEmail').then((m) => ({ default: m.PageVerificationEmail })))
 const PageNouveauMotDePasse = lazy(() => import('./features/connexion/PageNouveauMotDePasse').then((m) => ({ default: m.PageNouveauMotDePasse })))
+// Pages légales (lot P3), lisibles connecté ou non.
+const PageConditions = lazy(() => import('./features/legal/PagesLegales').then((m) => ({ default: m.PageConditions })))
+const PageConfidentialite = lazy(() => import('./features/legal/PagesLegales').then((m) => ({ default: m.PageConfidentialite })))
 // La vitrine du design system n'existe qu'en développement.
 const PageVitrine = lazy(() => import('./features/vitrine/PageVitrine').then((m) => ({ default: m.PageVitrine })))
 
@@ -75,15 +78,17 @@ function Public({ children, vers }: { children: ReactNode; vers?: string }) {
   return children
 }
 
-const CHEMINS_PUBLICS = ['/connexion', '/inscription', '/mot-de-passe/oubli', '/mot-de-passe/nouveau', '/email/verification']
+const CHEMINS_PUBLICS = ['/connexion', '/inscription', '/mot-de-passe/oubli', '/mot-de-passe/nouveau', '/email/verification', '/conditions', '/confidentialite']
+/** Pages publiques qui s'ouvrent aussi connecté : liens des e-mails, pages légales. */
+const OUVERTES_A_TOUS = ['/mot-de-passe/nouveau', '/email/verification', '/conditions', '/confidentialite']
 
 /** Les écrans publics ont leur propre mise en page ; le reste est l'app, derrière la garde. */
 function Racine() {
   const emplacement = useLocation()
   if (!CHEMINS_PUBLICS.includes(emplacement.pathname)) return <Vues />
-  const page = { '/connexion': <PageConnexion />, '/inscription': <PageInscription />, '/mot-de-passe/oubli': <PageMotDePasseOublie />, '/mot-de-passe/nouveau': <PageNouveauMotDePasse />, '/email/verification': <PageVerificationEmail /> }[emplacement.pathname]
-  // Les liens d'un e-mail (mot de passe, confirmation d'adresse) s'ouvrent aussi connecté.
-  if (emplacement.pathname === '/mot-de-passe/nouveau' || emplacement.pathname === '/email/verification') return <Suspense fallback={null}>{page}</Suspense>
+  const page = { '/connexion': <PageConnexion />, '/inscription': <PageInscription />, '/mot-de-passe/oubli': <PageMotDePasseOublie />, '/mot-de-passe/nouveau': <PageNouveauMotDePasse />, '/email/verification': <PageVerificationEmail />, '/conditions': <PageConditions />, '/confidentialite': <PageConfidentialite /> }[emplacement.pathname]
+  // Les liens d'un e-mail (mot de passe, confirmation d'adresse) et les pages légales s'ouvrent aussi connecté.
+  if (OUVERTES_A_TOUS.includes(emplacement.pathname)) return <Suspense fallback={null}>{page}</Suspense>
   return (
     <Suspense fallback={null}>
       <Public vers={emplacement.pathname === '/inscription' ? '/onboarding' : undefined}>{page}</Public>

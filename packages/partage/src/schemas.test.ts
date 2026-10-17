@@ -3,21 +3,22 @@ import { schemaConnexion, schemaInscription, schemaModificationReglages } from '
 
 describe('schémas', () => {
   it('inscription : nettoie le prénom et l’e-mail (minuscules), met MAD par défaut', () => {
-    expect(schemaInscription.parse({ prenom: '  Oussama ', email: ' Oussama@Exemple.TEST ', motDePasse: 'mot-de-passe' })).toEqual({
+    expect(schemaInscription.parse({ prenom: '  Oussama ', email: ' Oussama@Exemple.TEST ', motDePasse: 'mot-de-passe', accepteConditions: true })).toEqual({
       prenom: 'Oussama',
       email: 'oussama@exemple.test',
       motDePasse: 'mot-de-passe',
       devise: 'MAD',
+      accepteConditions: true,
     })
   })
   it('inscription : refuse un prénom vide, un e-mail invalide, un mot de passe court et un champ inconnu', () => {
-    const base = { prenom: 'A', email: 'a@exemple.test', motDePasse: 'mot-de-passe' }
-    for (const mauvais of [{ ...base, prenom: '  ' }, { ...base, email: 'pas-un-email' }, { ...base, motDePasse: '1234567' }, { ...base, role: 'admin' }]) {
+    const base = { prenom: 'A', email: 'a@exemple.test', motDePasse: 'mot-de-passe', accepteConditions: true }
+    for (const mauvais of [{ ...base, accepteConditions: false }, { ...base, prenom: '  ' }, { ...base, email: 'pas-un-email' }, { ...base, motDePasse: '1234567' }, { ...base, role: 'admin' }]) {
       expect(schemaInscription.safeParse(mauvais).success, JSON.stringify(mauvais)).toBe(false)
     }
   })
   it('mot de passe : les plus courants et les répétitions sont refusés, en majuscules aussi ; un mot de passe ordinaire passe', () => {
-    const base = { prenom: 'A', email: 'a@exemple.test' }
+    const base = { prenom: 'A', email: 'a@exemple.test', accepteConditions: true }
     for (const courant of ['password123', 'AZERTYUIOP', '12345678', 'motdepasse', 'Maroc123', 'zzzzzzzzzz']) {
       const r = schemaInscription.safeParse({ ...base, motDePasse: courant })
       expect(r.success, courant).toBe(false)

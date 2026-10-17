@@ -1,4 +1,6 @@
+import { CODES_ERREUR } from '@mysalary/partage'
 import { Prisma, type PrismaClient } from '@prisma/client'
+import { ErreurApi } from './erreurs'
 import { empreinteJeton } from './motDePasse'
 
 /**
@@ -20,10 +22,11 @@ export class Limiteur {
     return empreinteJeton(`${this.nom}:${valeur}`)
   }
 
-  /** Vrai si la clé a épuisé ses essais. */
-  async bloque(valeur: string): Promise<boolean> {
+  /** Temps à attendre avant un nouvel essai, en millisecondes ; 0 si la clé n'est pas bloquée. */
+  async attente(valeur: string): Promise<number> {
     const ligne = await this.prisma.tentativeAcces.findUnique({ where: { cle: this.cle(valeur) } })
-    return !!ligne && ligne.finFenetre > this.maintenant() && ligne.nombre >= this.maximum
+    if (!ligne || ligne.nombre < this.maximum) return 0
+    return Math.max(0, ligne.finFenetre.getTime() - this.maintenant().getTime())
   }
 
   /** Compte un essai. Une fenêtre passée repart de zéro. Sûr si deux instances comptent en même temps. */
@@ -47,5 +50,22 @@ export class Limiteur {
 
   async effacer(valeur: string) {
     await this.prisma.tentativeAcces.deleteMany({ where: { cle: this.cle(valeur) } })
+  }
+}
+
+/** Délai lisible : « 1 minute », « 14 minutes », « 1 heure ». Arrondi au-dessus, jamais « 0 minute ». */
+export function dureeLisible(ms: number): string {
+  const minutes = Math.max(1, Math.ceil(ms / 60_000))
+  if (minutes >= 60 && minutes % 60 === 0) return minutes === 60 ? '1 heure' : `${minutes / 60} heures`
+  return `${minutes} minute${minutes > 1 ? 's' : ''}`
+}
+
+/** Refus 429 avec le délai réel (lot P3) ; `Retry-After` est posé par le gestionnaire d'erreurs. */
+export class TropDEssais extends ErreurApi {
+  constructor(
+    readonly attenteMs: number,
+    quoi = 'Trop d’essais',
+  ) {
+    super(429, CODES_ERREUR.TROP_DE_TENTATIVES, `${quoi}. Réessaie dans ${dureeLisible(attenteMs)}.`)
   }
 }

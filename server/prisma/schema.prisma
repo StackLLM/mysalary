@@ -23,6 +23,9 @@ model Utilisateur {
   /// Hash scrypt du mot de passe ; vide = compte d'avant le lot 23, qui ne peut pas se connecter avant son activation.
   motDePasse        String?
   derniereOuverture DateTime?
+  /// Acceptation des conditions d'utilisation et de la politique de confidentialité (lot P3). Vide = compte d'avant P3.
+  conditionsAccepteesLe DateTime?
+  conditionsVersion     String?
   creeLe            DateTime  @default(now())
   modifieLe         DateTime  @updatedAt
   reglages          Reglages?

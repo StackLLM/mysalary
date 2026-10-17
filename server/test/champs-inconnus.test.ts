@@ -12,6 +12,7 @@ const ctx = preparerApp()
 const SANS_CORPS = new Set([
   'POST /compte/email/renvoi',
   'POST /mois/:cle/rouvrir',
+  'POST /compte/sessions/fermeture',
   // Un export d'une version plus récente peut porter des champs que celle-ci ne connaît pas encore.
   'POST /compte/restauration',
 ])
