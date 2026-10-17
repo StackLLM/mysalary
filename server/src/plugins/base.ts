@@ -20,6 +20,8 @@ declare module 'fastify' {
     /** Instant courant (remplaçable dans les tests). */
     maintenant: () => Date
     auth: ConfigAuthentification
+    /** Serveur de production : journaux sans détail (prod.md § 7.3). */
+    production: boolean
   }
 }
 
@@ -28,8 +30,9 @@ export function dateLocale(instant: Date): DateCivile {
   return dateCivile(instant.getFullYear(), instant.getMonth() + 1, instant.getDate())
 }
 
-export function installerBase(app: FastifyInstance, prisma: PrismaClient, auth: ConfigAuthentification, horloge: () => Date = () => new Date()) {
+export function installerBase(app: FastifyInstance, prisma: PrismaClient, auth: ConfigAuthentification, horloge: () => Date = () => new Date(), production = false) {
   app.decorate('prisma', prisma)
+  app.decorate('production', production)
   app.decorate('auth', auth)
   app.decorate('maintenant', horloge)
   app.decorate('aujourdhui', () => dateLocale(horloge()))

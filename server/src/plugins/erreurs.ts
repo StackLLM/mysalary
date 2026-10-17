@@ -2,6 +2,7 @@ import { CODES_ERREUR, type ReponseErreur } from '@mysalary/partage'
 import { Prisma } from '@prisma/client'
 import type { FastifyError, FastifyInstance } from 'fastify'
 import { ErreurApi } from '../lib/erreurs'
+import { erreurPourJournal } from '../lib/journaux'
 
 function corps(erreur: ErreurApi): ReponseErreur {
   return {
@@ -14,7 +15,7 @@ function corps(erreur: ErreurApi): ReponseErreur {
 }
 
 /** Toutes les erreurs sortent au format `{ erreur: { code, message, champs? } }`. */
-export function installerErreurs(app: FastifyInstance) {
+export function installerErreurs(app: FastifyInstance, production = false) {
   app.setErrorHandler((erreur: FastifyError | Error, requete, reponse) => {
     if (erreur instanceof ErreurApi) {
       return reponse.status(erreur.statut).send(corps(erreur))
@@ -35,7 +36,7 @@ export function installerErreurs(app: FastifyInstance) {
         .send(corps(new ErreurApi(statut, CODES_ERREUR.VALIDATION, 'Requête invalide.')))
     }
     // Jamais de détail interne ni de donnée financière dans la réponse.
-    requete.log.error({ err: erreur }, 'Erreur interne')
+    requete.log.error(erreurPourJournal(erreur, production), 'Erreur interne')
     return reponse
       .status(500)
       .send(corps(new ErreurApi(500, CODES_ERREUR.INTERNE, 'Erreur interne du serveur.')))

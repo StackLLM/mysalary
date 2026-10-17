@@ -69,8 +69,8 @@ Il remplace les fichiers séparés `DEPLOYMENT.md`, `AUTHENTICATION.md`, `SECURI
 | Lot | Sujet | Statut | Remplace |
 |---|---|---|---|
 | [P0](#p0-hébergement-et-cadre-légal) | Hébergement et cadre légal | ✅ validé le 17/10/2026 (lancement de P1) | question ouverte « hébergement » (lots.md § 7) |
-| [P1](#p1-isolation-stricte-des-données) | Isolation stricte des données | 🟡 livré le 17/10/2026, à valider | — |
-| [P2](#p2-durcissement-de-la-sécurité) | Durcissement de la sécurité | ⬜ | lot 30 (en-têtes, journaux) |
+| [P1](#p1-isolation-stricte-des-données) | Isolation stricte des données | ✅ validé le 17/10/2026 | — |
+| [P2](#p2-durcissement-de-la-sécurité) | Durcissement de la sécurité | 🟡 livré le 17/10/2026, à valider | lot 30 (en-têtes, journaux) |
 | [P3](#p3-authentification-de-bout-en-bout) | Authentification de bout en bout, pages légales | ⬜ | lot 30 (pages légales) |
 | [P4](#p4-passage-à-postgresql) | Passage à PostgreSQL (Neon) | ⬜ | lot 30 (PostgreSQL, reprise des données) |
 | [P5](#p5-api-et-interface-sur-netlify) | API et interface sur Netlify, PWA | ⬜ | lot 30 (build, PWA) |
@@ -105,7 +105,7 @@ Il remplace les fichiers séparés `DEPLOYMENT.md`, `AUTHENTICATION.md`, `SECURI
 | D9 | 12/10/2026 | La restauration d'une sauvegarde ne se fait que dans un compte vide. | ✅ en vigueur | lot 20 |
 | D10 | 15/10/2026 | Documentation de production centralisée dans ce fichier. Pas de fichier par sujet ni par lot. | ✅ en vigueur | — |
 | D11 | 15/10/2026 | Hébergement : interface et API sur **Netlify** (API en Netlify Functions), base sur **Neon PostgreSQL**. Plan B, si la mesure P7 l'exige : API sur un service séparé (Render, Fly.io, Railway), relayée par Netlify sur la même origine. | ✅ validée le 15/10/2026 | § 4.2 |
-| D12 | 15/10/2026 | Pas de Row-Level Security au lancement : isolation par le code, une matrice de tests sur toutes les routes, et un rôle PostgreSQL sans droits sur le schéma. | 🟡 proposée, à valider avec P1 | § 6.3 |
+| D12 | 15/10/2026 | Pas de Row-Level Security au lancement : isolation par le code, une matrice de tests sur toutes les routes, et un rôle PostgreSQL sans droits sur le schéma. | ✅ validée le 17/10/2026 | § 6.3 |
 | D13 | 15/10/2026 | Deux onglets modifient le même élément : la dernière écriture l'emporte. Les calculs qui lisent puis écrivent un total passent en transaction `Serializable`. | ⬜ proposée, à valider en P6 | § 9.3 |
 | D14 | 15/10/2026 | Les données sont traitées hors du Maroc (Netlify, Neon) : en Union européenne avec l'option « Europe » de D15, aux États-Unis avec l'option « économique ». **Tu engages toi-même la démarche CNDP** (déclaration et, si besoin, autorisation), et elle doit aboutir avant l'ouverture (P8). Le travail technique continue en attendant. | ✅ décidée | § 7.4 |
 | D15 | — | Offres et régions : l'API (fonctions) et la base doivent être dans la **même région**. Option « Europe » : Netlify Pro (fonctions à Francfort) + Neon Launch à Francfort. Option « économique » : Netlify Personal (fonctions dans l'Ohio, région imposée) + Neon Launch dans l'Ohio. Pas d'offre gratuite en production. **Choix reporté après la mesure de P7** : jusque-là, offres gratuites, avec la base de développement dans l'Ohio (`aws-us-east-2`), à côté des fonctions de Netlify Free. | ✅ décidée (choix final après P7) | § 8.6 |
@@ -185,7 +185,9 @@ Ce qu'il faut adapter pour A : la purge devient une fonction planifiée, les lim
 | Confirmation par mot de passe (Réglages) | 5 échecs en 15 minutes |
 | Renvoi du lien de vérification | 3 par heure |
 
-Aujourd'hui, ces compteurs sont gardés en mémoire (`server/src/lib/limiteur.ts`), ce qui suffit pour un seul processus. En serverless, chaque instance a sa propre mémoire : ils passeront en base en P2.
+Depuis P2, ces compteurs sont en base, dans la table `TentativeAcces` (`server/src/lib/limiteur.ts`) : toutes les instances partagent la même limite, y compris en serverless. Chaque ligne a une clé, un nombre d'essais et une fin de fenêtre. La clé est l'empreinte SHA-256 de la limite et de l'e-mail, de l'adresse IP ou du compte : ni e-mail ni IP en clair. Les fenêtres passées sont supprimées avec les sessions expirées (purge horaire).
+
+**Mot de passe** : 8 caractères au moins, et refus des mots de passe les plus courants (une centaine, tirée des listes publiques de fuites, plus des variantes françaises et marocaines) et des répétitions d'un seul caractère. La règle vaut à l'inscription, au changement et à la réinitialisation (`packages/partage/src/motsDePasseCourants.ts`).
 
 ### 5.5 Comptes créés avant l'authentification
 
@@ -309,14 +311,14 @@ Audit du 15/10/2026.
 |---|---|---|---|
 | 1 | Bloquant | SQLite ne convient pas à Netlify (pas de disque persistant) ; migrations et sauvegarde propres à SQLite | P4 |
 | 2 | Bloquant | API en serveur continu avec purge par `setInterval` : à transformer en fonction et en tâche planifiée | P5 |
-| 3 | Élevé | Limites d'essais en mémoire, inefficaces avec plusieurs instances | P2 |
-| 4 | Élevé | `npm audit --omit=dev` : 6 failles (4 élevées, 2 modérées) dans `nodemailer`, `react-router`, `react-router-dom` et `deepmerge-ts` | P2 |
-| 5 | Élevé | Sans `SMTP_URL`, le texte des e-mails, avec le lien de réinitialisation, est écrit dans le journal | P2 |
+| 3 | Élevé | Limites d'essais en mémoire, inefficaces avec plusieurs instances | P2 ✅ corrigé |
+| 4 | Élevé | `npm audit --omit=dev` : 6 failles (4 élevées, 2 modérées) dans `nodemailer`, `react-router`, `react-router-dom` et `deepmerge-ts` | P2 ✅ corrigé (0 faille) |
+| 5 | Élevé | Sans `SMTP_URL`, le texte des e-mails, avec le lien de réinitialisation, est écrit dans le journal | P2 ✅ corrigé (`SMTP_URL` obligatoire en production) |
 | 6 | Moyen | Écritures sur `where: { id }` après vérification (§ 6.3) | P1 ✅ corrigé |
 | 7 | Moyen | Isolation testée seulement sur les réglages | P1 ✅ corrigé |
 | 8 | Moyen | Restauration jusqu'à 50 Mo, au-delà de la limite des fonctions Netlify | P5 |
 | 9 | Moyen | Index insuffisants pour PostgreSQL | P4 |
-| 10 | Moyen | Variables d'environnement non vérifiées au démarrage | P2 |
+| 10 | Moyen | Variables d'environnement non vérifiées au démarrage | P2 ✅ corrigé |
 | 11 | Faible | Aucun en-tête de sécurité sur les pages de l'interface (CSP, HSTS, `frame-ancestors`) | P5 |
 | 12 | Faible | Session sans renouvellement, pas de « Se déconnecter de tous les appareils » | P3 |
 | 13 | Faible | Aucune alerte à l'ancienne adresse après un changement d'e-mail ou de mot de passe | P3 |
@@ -326,11 +328,12 @@ Audit du 15/10/2026.
 
 - **Secrets** : `DATABASE_URL`, `DIRECT_URL`, `SMTP_URL`. Ils vivent uniquement dans `server/.env` (ignoré par git) en local, et dans les variables d'environnement de Netlify en production. Jamais dans le code, dans une variable `VITE_*`, ni dans le chat.
 - **Fichiers jamais versionnés** : `.env`, la base SQLite, `sauvegardes/`, `Salaire/` (données personnelles réelles).
-- **Journaux, règles cibles (P2)** :
-  - en production, uniquement le destinataire masqué (`o***@gmail.com`) et le sujet d'un e-mail, jamais son texte ;
-  - masquer `cookie`, `set-cookie`, `motDePasse`, `jeton` et `token` ;
-  - aucun montant ni libellé financier.
-- **Démarrage** : en production, le serveur refuse de démarrer sans `SMTP_URL` ou sans `APP_URL` en `https://` (P2).
+- **Journaux** (`server/src/lib/journaux.ts`, en place depuis P2) :
+  - un e-mail envoyé : seulement le destinataire masqué (`l***@exemple.test`) et le sujet, jamais le texte ni le lien ;
+  - champs effacés de toute ligne : `cookie`, `authorization`, `set-cookie`, `motDePasse`, `actuel`, `nouveau`, `jeton`, `token` ;
+  - erreur interne en production : type, code et pile d'appels, **sans le message**, car celui de Prisma recopie les valeurs de la requête (montants, libellés) ;
+  - en local seulement, sans `SMTP_URL`, le texte des e-mails reste dans le journal pour lire le lien.
+- **Démarrage** (`server/src/config.ts`) : toutes les variables sont vérifiées au lancement. En production (`NODE_ENV=production`), le serveur refuse de démarrer sans `DATABASE_URL`, sans `SMTP_URL`, sans `APP_URL` en `https://` ou avec `COOKIE_SECURE=0`. Le message liste chaque variable fautive, jamais sa valeur.
 
 ### 7.4 Loi 09-08 et CNDP
 
@@ -347,6 +350,7 @@ En local : `server/.env`, à partir de `server/.env.example`. En production : le
 
 | Variable | Rôle | Défaut local | Production |
 |---|---|---|---|
+| `NODE_ENV` | `production` active les exigences du démarrage (§ 7.3) et les journaux sans détail | `development` | `production` |
 | `DATABASE_URL` | Base : fichier SQLite aujourd'hui, URL Neon mutualisée (`-pooler`, `pgbouncer=true&connection_limit=1`) après P4 | `file:./mysalary.db` | obligatoire, secret |
 | `DIRECT_URL` | URL Neon directe, pour les migrations (après P4) | — | obligatoire, secret |
 | `PORT` | Port de l'API en local | `3010` | inutile en fonction |
@@ -481,13 +485,13 @@ Je ne saisis aucun secret ni aucun mot de passe de service : tu les mets toi-mê
 
 ### 9.1 Tests existants
 
-499 tests au 17/10/2026, lancés par `npm run verifier` (types, tests, build) :
-- partage : 23 ;
+511 tests au 17/10/2026, lancés par `npm run verifier` (types, tests, build) :
+- partage : 24 ;
 - moteur : 190 ;
-- serveur : 119, avec `fastify.inject` sur une base de test vidée avant chaque test ;
+- serveur : 130, avec `fastify.inject` sur une base de test vidée avant chaque test ;
 - interface : 167, avec Testing Library.
 
-Fichiers serveur liés aux comptes : `authentification.test.ts`, `compte.test.ts`, `email.test.ts`, `isolation.test.ts`, `matrice-isolation.test.ts`, `messagerie.test.ts`, `sauvegarde.test.ts`. Stratégie générale de tests : produit.md (Plan) § 13.
+Fichiers serveur liés aux comptes : `authentification.test.ts`, `compte.test.ts`, `email.test.ts`, `isolation.test.ts`, `matrice-isolation.test.ts`, `champs-inconnus.test.ts`, `securite.test.ts`, `messagerie.test.ts`, `sauvegarde.test.ts`. Stratégie générale de tests : produit.md (Plan) § 13.
 
 ### 9.2 Tests avant mise en production
 
@@ -533,6 +537,10 @@ Un test non exécuté est noté « non exécuté », jamais « réussi ». Aucun
 | 17/10/2026 | local, SQLite | `npm run verifier` | 499 tests réussis, build OK |
 | 17/10/2026 | local, SQLite | Test 7 du § 9.2, automatique : matrice sur les 91 routes du compte | réussi |
 | 17/10/2026 | local, navigateur, 1342 et 375 px | Test 7 du § 9.2, navigateur : A rempli, affiché puis déconnecté ; B inscrit dans le même onglet sans recharger. Objectifs et Mon plan de B vides de A, `localStorage` sans l'identifiant de A. Comptes d'essai supprimés ensuite. | réussi |
+| 17/10/2026 | local, SQLite | `npm run verifier` après P2 | 511 tests réussis, build OK |
+| 17/10/2026 | local | `npm audit --omit=dev` | 0 faille |
+| 17/10/2026 | local | Démarrage en production sans `SMTP_URL` ni `APP_URL` en `https://` | refusé, code de sortie 1, variables listées |
+| 17/10/2026 | local, navigateur | Inscription avec un mot de passe courant ; 6ᵉ connexion après 5 échecs | refusée avec le message sous le champ ; « Trop d'essais » affiché. Compte d'essai et lignes de test supprimés. |
 | — | — | Tests 1 à 6 et 8 à 10 du § 9.2 | non exécutés |
 
 ## 10. Lots P0 à P9
@@ -575,7 +583,7 @@ Chaque lot suit la méthode du dépôt : analyse → travaux → tests → véri
   - faille trouvée et corrigée : un scénario enregistré pouvait garder l'identifiant d'un objectif ou d'une charge d'un autre compte, sans rien lire ni modifier chez lui. Ces leviers sont maintenant retirés à l'enregistrement ;
   - relations relues : clés composées en base reportées à P4, où le schéma PostgreSQL repart de zéro ;
   - vérification dans le navigateur avec deux comptes d'essai, supprimés ensuite.
-- **À décider** : valider D12 (pas de Row-Level Security au lancement).
+- **Validé avec toi (17/10/2026)** : P1 et D12 (pas de Row-Level Security au lancement).
 
 ### P2. Durcissement de la sécurité
 
@@ -592,6 +600,14 @@ Chaque lot suit la méthode du dépôt : analyse → travaux → tests → véri
   - tests : démarrage refusé avec une configuration incomplète, aucun lien dans les journaux en production, limite d'essais tenue avec deux instances sur la même base.
 
   Mettre à jour les § 5.4, 7.2 et 7.3.
+- **Fait (17/10/2026)** :
+  - **dépendances** : `nodemailer` 6 → 10 ; `deepmerge-ts` forcé en 8.0.2 sous l'outil Prisma (`overrides` du `package.json` racine), sans passer à Prisma 7 ; `react-router-dom` 6 → 7 ; `concurrently` 9 → 10. `npm audit --omit=dev` : 0 faille ;
+  - **configuration** vérifiée au démarrage (`server/src/config.ts`), démarrage refusé en production si elle est incomplète ;
+  - **journaux** selon le § 7.3 ;
+  - **limites d'essais en base** (table `TentativeAcces`, migration `20261017080000_tentatives_acces`), testées avec deux instances et des essais simultanés ;
+  - **champs inconnus** : un test lit toutes les routes avec un corps (49) et vérifie qu'elles le refusent ;
+  - **mots de passe courants** refusés (§ 5.4).
+- **Reste dans les outils de développement** : 13 failles (`vitest`, `vite`, `esbuild`, `tailwindcss`), sans effet en production puisque rien de cela n'est publié. Leur correction demande des versions majeures (Vite 8, Vitest 5, Tailwind 4) : à faire dans un lot à part, avant P5 qui touche au build.
 
 ### P3. Authentification de bout en bout
 
@@ -679,6 +695,7 @@ L'abonnement payant (lot 32) vient après l'ouverture.
 - **Démarrages à froid** : premier affichage lent après une période calme (fonction et Neon en veille). Mesuré en P7 ; plan B, l'option B de D11.
 - **Quotas** : en offre Netlify Free, des crédits épuisés mettent le site en pause jusqu'au mois suivant. D'où une offre payante en production (§ 8.6), avec la recharge automatique activée ou une alerte de consommation.
 - **Pas de RLS** : l'isolation repose sur le code et la matrice de tests (D12).
+- **Outils de développement** : 13 failles connues dans `vitest`, `vite` et `tailwindcss` (P2). Elles ne touchent que le poste de développement, pas le site en ligne.
 - **Dernière écriture gagnante** entre deux onglets (D13).
 - **E-mails** : la livraison dépend du fournisseur et du DNS ; un e-mail en spam bloque la récupération du compte.
 - **CNDP** : un délai d'autorisation peut retarder l'ouverture (D14).

@@ -24,7 +24,7 @@ export function rendre(page: ReactElement, { route = '/', chemin, compte = null,
     <QueryClientProvider client={client}>
       <FournisseurAnimations>
         <FournisseurCompte>
-          <MemoryRouter initialEntries={[route]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <MemoryRouter initialEntries={[route]}>
             <Routes>
               <Route path={chemin ?? route.split('?')[0]} element={page} />
               {Object.entries(autres).map(([chemin, element]) => (

@@ -30,6 +30,7 @@ export function preparerApp() {
     contexte.jour = null
     contexte.messages.length = 0
     await contexte.prisma.utilisateur.deleteMany()
+    await contexte.prisma.tentativeAcces.deleteMany()
   })
   afterAll(async () => {
     await contexte.app.close()

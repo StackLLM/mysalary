@@ -431,3 +431,13 @@ model JetonEmail {
 
   @@index([utilisateurId])
 }
+
+/// Limite d'essais (connexion, mot de passe oublié, envois de liens), partagée par toutes les instances (prod.md § 5.4).
+/// `cle` est l'empreinte SHA-256 de « limite:e-mail », « limite:adresse IP » ou « limite:compte » : ni e-mail ni IP en clair.
+model TentativeAcces {
+  cle        String   @id
+  nombre     Int
+  finFenetre DateTime
+
+  @@index([finFenetre])
+}

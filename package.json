@@ -20,7 +20,7 @@
     "compte:activer": "npm run compte:activer -w server --"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0",
+    "concurrently": "^10.0.6",
     "typescript": "^5.6.3",
     "vitest": "^2.1.9"
   },
@@ -33,5 +33,10 @@
     "@prisma/engines@6.19.3": true,
     "esbuild@0.21.5": true,
     "esbuild@0.28.2": true
+  },
+  "overrides": {
+    "@prisma/config": {
+      "deepmerge-ts": "8.0.2"
+    }
   }
 }

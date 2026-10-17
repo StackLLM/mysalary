@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify'
 import { ErreurApi } from '../../lib/erreurs'
 import { contexteEnvoi, envoyerLienEmail, envoyerLienMotDePasse } from '../../lib/envois'
 import { creerJetonMotDePasse } from '../../lib/jetons'
+import { erreurPourJournal } from '../../lib/journaux'
 import { Limiteur } from '../../lib/limiteur'
 import { empreinteJeton, hacher, verifier } from '../../lib/motDePasse'
 import { valider } from '../../lib/valider'
@@ -20,9 +21,9 @@ const lienInvalide = () => new ErreurApi(400, CODES_ERREUR.LIEN_INVALIDE, 'Ce li
 /** Inscription, connexion, déconnexion, session, mot de passe oublié (lot 23), confirmation de l'e-mail (lot 24). Routes publiques. */
 export async function routesAuth(app: FastifyInstance) {
   // Échecs de connexion : 5 par e-mail et 20 par adresse IP en 15 minutes. Mot de passe oublié : 5 par heure et par IP.
-  const parEmail = new Limiteur(5, QUINZE_MINUTES)
-  const parIp = new Limiteur(20, QUINZE_MINUTES)
-  const oublis = new Limiteur(5, UNE_HEURE)
+  const parEmail = new Limiteur(app.prisma, 'connexion-email', 5, QUINZE_MINUTES, app.maintenant)
+  const parIp = new Limiteur(app.prisma, 'connexion-ip', 20, QUINZE_MINUTES, app.maintenant)
+  const oublis = new Limiteur(app.prisma, 'oubli-ip', 5, UNE_HEURE, app.maintenant)
   // Un hash factice : un e-mail inconnu prend le même temps qu'un mauvais mot de passe.
   const leurre = hacher('mot-de-passe-leurre')
   const securise = app.auth.cookieSecurise
@@ -33,7 +34,7 @@ export async function routesAuth(app: FastifyInstance) {
       const compte = await comptes.creer(app.prisma, donnees, app.maintenant())
       await ouvrirSession(app.prisma, requete, reponse, compte.id, securise)
       // Le compte existe déjà : un envoi raté ne bloque pas l'inscription, le lien se redemande depuis l'app.
-      await envoyerLienEmail(contexteEnvoi(app), compte, 'verification', donnees.email).catch((e) => app.log.error(e, 'Envoi du lien de vérification impossible'))
+      await envoyerLienEmail(contexteEnvoi(app), compte, 'verification', donnees.email).catch((e) => app.log.error(erreurPourJournal(e, app.production), 'Envoi du lien de vérification impossible'))
       return reponse.status(201).send(compte)
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
@@ -47,15 +48,15 @@ export async function routesAuth(app: FastifyInstance) {
     const { email, motDePasse } = valider(schemaConnexion, requete.body)
     const cleEmail = `email:${email}`
     const cleIp = `ip:${requete.ip}`
-    if (parEmail.bloque(cleEmail) || parIp.bloque(cleIp)) throw trop()
+    if ((await parEmail.bloque(cleEmail)) || (await parIp.bloque(cleIp))) throw trop()
     const compte = await app.prisma.utilisateur.findUnique({ where: { email } })
     const valide = await verifier(motDePasse, compte?.motDePasse ?? (await leurre))
     if (!compte?.motDePasse || !valide) {
-      parEmail.compter(cleEmail)
-      parIp.compter(cleIp)
+      await parEmail.compter(cleEmail)
+      await parIp.compter(cleIp)
       throw refuse()
     }
-    parEmail.effacer(cleEmail)
+    await parEmail.effacer(cleEmail)
     await ouvrirSession(app.prisma, requete, reponse, compte.id, securise)
     return comptes.versDto(await app.prisma.utilisateur.update({ where: { id: compte.id }, data: { derniereOuverture: app.maintenant() } }))
   })
@@ -77,12 +78,12 @@ export async function routesAuth(app: FastifyInstance) {
   app.post('/auth/mot-de-passe/oubli', async (requete, reponse) => {
     const { email } = valider(schemaOubliMotDePasse, requete.body)
     const cle = `ip:${requete.ip}`
-    if (oublis.bloque(cle)) throw trop()
-    oublis.compter(cle)
+    if (await oublis.bloque(cle)) throw trop()
+    await oublis.compter(cle)
     const compte = await app.prisma.utilisateur.findUnique({ where: { email } })
     if (compte) {
       const jeton = await creerJetonMotDePasse(app.prisma, compte.id, app.maintenant())
-      await envoyerLienMotDePasse(contexteEnvoi(app), { prenom: compte.prenom, email }, jeton).catch((e) => app.log.error(e, 'Envoi du lien de mot de passe impossible'))
+      await envoyerLienMotDePasse(contexteEnvoi(app), { prenom: compte.prenom, email }, jeton).catch((e) => app.log.error(erreurPourJournal(e, app.production), 'Envoi du lien de mot de passe impossible'))
     }
     return reponse.status(204).send()
   })

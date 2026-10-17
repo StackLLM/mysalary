@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { motDePasseTropCourant } from './motsDePasseCourants'
 
 export const DEVISES = ['MAD', 'EUR', 'USD'] as const
 export type Devise = (typeof DEVISES)[number]
@@ -18,11 +19,12 @@ export const email = z
   .max(254, 'E-mail trop long.')
   .pipe(z.email({ error: 'Cet e-mail n’est pas valide.' }))
 
-/** Mot de passe d'un compte : 8 caractères au moins, sans autre règle imposée. */
+/** Mot de passe d'un compte : 8 caractères au moins, et pas un des mots de passe les plus courants (lot P2). */
 export const motDePasse = z
   .string({ error: 'Le mot de passe est obligatoire.' })
   .min(8, 'Au moins 8 caractères.')
   .max(200, 'Au plus 200 caractères.')
+  .refine((v) => !motDePasseTropCourant(v), 'Ce mot de passe est trop courant : choisis-en un autre.')
 
 /** Mot de passe saisi pour se connecter ou confirmer : seulement non vide (l'ancienne règle peut différer). */
 const motDePasseSaisi = z.string({ error: 'Le mot de passe est obligatoire.' }).min(1, 'Le mot de passe est obligatoire.').max(200, 'Au plus 200 caractères.')

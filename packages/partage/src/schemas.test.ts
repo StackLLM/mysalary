@@ -16,6 +16,15 @@ describe('schémas', () => {
       expect(schemaInscription.safeParse(mauvais).success, JSON.stringify(mauvais)).toBe(false)
     }
   })
+  it('mot de passe : les plus courants et les répétitions sont refusés, en majuscules aussi ; un mot de passe ordinaire passe', () => {
+    const base = { prenom: 'A', email: 'a@exemple.test' }
+    for (const courant of ['password123', 'AZERTYUIOP', '12345678', 'motdepasse', 'Maroc123', 'zzzzzzzzzz']) {
+      const r = schemaInscription.safeParse({ ...base, motDePasse: courant })
+      expect(r.success, courant).toBe(false)
+      expect(r.error?.issues[0]?.message).toBe('Ce mot de passe est trop courant : choisis-en un autre.')
+    }
+    expect(schemaInscription.safeParse({ ...base, motDePasse: 'cheval-agrafe-bleu' }).success).toBe(true)
+  })
   it('connexion : le mot de passe n’est jamais modifié (espaces gardés), seulement exigé', () => {
     expect(schemaConnexion.parse({ email: 'A@exemple.test', motDePasse: ' x ' })).toEqual({ email: 'a@exemple.test', motDePasse: ' x ' })
     expect(schemaConnexion.safeParse({ email: 'a@exemple.test', motDePasse: '' }).success).toBe(false)

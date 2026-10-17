@@ -134,7 +134,7 @@ export function App() {
       <FournisseurCompte>
         <SynchroAnimations />
         <Tooltip.Provider delayDuration={250}>
-          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <BrowserRouter>
             <FournisseurSaisieRapide>
               <Racine />
             </FournisseurSaisieRapide>

@@ -2,6 +2,7 @@ import { CODES_ERREUR, type DemandeChangementEmail, schemaChangementEmail, schem
 import type { FastifyInstance, FastifyRequest } from 'fastify'
 import { ErreurApi, introuvable } from '../../lib/erreurs'
 import { contexteEnvoi, envoyerLienEmail } from '../../lib/envois'
+import { erreurPourJournal } from '../../lib/journaux'
 import { Limiteur } from '../../lib/limiteur'
 import { hacher, verifier } from '../../lib/motDePasse'
 import { valider } from '../../lib/valider'
@@ -12,17 +13,17 @@ import * as comptes from '../utilisateurs/depot'
 
 /** Le compte connecté (lot 23) : prénom, e-mail (changement confirmé par un lien), mot de passe, export, restauration, réinitialisation, suppression. */
 export async function routesCompte(app: FastifyInstance) {
-  const essais = new Limiteur(5, 15 * 60 * 1000)
+  const essais = new Limiteur(app.prisma, 'confirmation-compte', 5, 15 * 60 * 1000, app.maintenant)
   const securise = app.auth.cookieSecurise
   // Envois de liens e-mail : 3 par heure et par compte, pour ne pas faire de l'app un moyen d'inonder une boîte.
-  const envois = new Limiteur(3, 60 * 60 * 1000)
+  const envois = new Limiteur(app.prisma, 'envoi-lien', 3, 60 * 60 * 1000, app.maintenant)
   const envoiImpossible = () => new ErreurApi(502, CODES_ERREUR.INTERNE, 'Le message n’a pas pu partir. Réessaie dans quelques minutes.')
 
   async function envoyer(compte: { id: string; prenom: string }, type: 'verification' | 'changement', email: string) {
-    if (envois.bloque(compte.id)) throw new ErreurApi(429, CODES_ERREUR.TROP_DE_TENTATIVES, 'Trop d’envois. Réessaie dans une heure.')
-    envois.compter(compte.id)
+    if (await envois.bloque(compte.id)) throw new ErreurApi(429, CODES_ERREUR.TROP_DE_TENTATIVES, 'Trop d’envois. Réessaie dans une heure.')
+    await envois.compter(compte.id)
     await envoyerLienEmail(contexteEnvoi(app), compte, type, email).catch((e) => {
-      app.log.error(e, 'Envoi du lien e-mail impossible')
+      app.log.error(erreurPourJournal(e, app.production), 'Envoi du lien e-mail impossible')
       throw envoiImpossible()
     })
   }
@@ -30,14 +31,14 @@ export async function routesCompte(app: FastifyInstance) {
   /** Les actions lourdes redemandent le mot de passe ; 5 erreurs bloquent un quart d'heure. */
   async function confirmer(requete: FastifyRequest, motDePasse: string) {
     const id = utilisateurDe(requete)
-    if (essais.bloque(id)) throw new ErreurApi(429, CODES_ERREUR.TROP_DE_TENTATIVES, 'Trop d’essais. Réessaie dans quelques minutes.')
+    if (await essais.bloque(id)) throw new ErreurApi(429, CODES_ERREUR.TROP_DE_TENTATIVES, 'Trop d’essais. Réessaie dans quelques minutes.')
     const compte = await app.prisma.utilisateur.findUnique({ where: { id } })
     if (!compte) throw introuvable('Compte')
     if (!compte.motDePasse || !(await verifier(motDePasse, compte.motDePasse))) {
-      essais.compter(id)
+      await essais.compter(id)
       throw new ErreurApi(401, CODES_ERREUR.IDENTIFIANTS_REFUSES, 'Mot de passe incorrect.', { motDePasse: 'Mot de passe incorrect.' })
     }
-    essais.effacer(id)
+    await essais.effacer(id)
     return compte
   }
 

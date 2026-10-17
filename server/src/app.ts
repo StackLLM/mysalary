@@ -29,10 +29,12 @@ interface Options {
   trustProxy?: boolean
   /** Reçoit « MÉTHODE /chemin » de chaque route du compte : la matrice d'isolation vérifie qu'aucune n'est oubliée (prod.md § 6.3). */
   inventaireRoutes?: string[]
+  /** Production : journaux d'erreurs sans message (prod.md § 7.3). */
+  production?: boolean
 }
 
 /** Construit l'application sans l'écouter : utilisé par le serveur et par les tests. */
-export async function construireApp({ prisma, logger = false, horloge, auth = {}, trustProxy = false, inventaireRoutes }: Options) {
+export async function construireApp({ prisma, logger = false, horloge, auth = {}, trustProxy = false, inventaireRoutes, production = false }: Options) {
   const app = Fastify({ logger, bodyLimit: 1024 * 1024, trustProxy })
 
   installerBase(
@@ -44,8 +46,9 @@ export async function construireApp({ prisma, logger = false, horloge, auth = {}
       messagerie: auth.messagerie ?? (async ({ a, sujet, texte }) => app.log.info({ a, sujet }, `E-mail non envoyé (SMTP_URL absent)\n${texte}`)),
     },
     horloge,
+    production,
   )
-  installerErreurs(app)
+  installerErreurs(app, production)
   await app.register(helmet)
 
   await app.register(

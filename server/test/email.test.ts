@@ -125,7 +125,7 @@ describe('changement d’e-mail', () => {
 })
 
 describe('purge', () => {
-  it('supprime les sessions et les liens expirés, garde les autres', async () => {
+  it('supprime les sessions, les liens et les limites d’essais expirés, garde les autres', async () => {
     const a = await creerCompte(ctx.app, 'A', 'a@exemple.test')
     await appeler(null, 'POST', '/auth/mot-de-passe/oubli', { email: 'a@exemple.test' })
     const passe = new Date('2000-01-01T00:00:00Z')
@@ -133,11 +133,13 @@ describe('purge', () => {
     await ctx.prisma.session.create({ data: { id: 'vieille', utilisateurId: a.id, expireLe: passe } })
     await ctx.prisma.jetonMotDePasse.updateMany({ data: { expireLe: passe } })
     await ctx.prisma.jetonEmail.create({ data: { id: 'vieux', utilisateurId: a.id, type: 'changement', email: 'x@exemple.test', expireLe: passe } })
+    await ctx.prisma.tentativeAcces.create({ data: { cle: 'vieille', nombre: 3, finFenetre: passe } })
 
     const n = await purgerExpires(ctx.prisma, new Date())
-    expect(n).toEqual({ sessions: 1, liensMotDePasse: 1, liensEmail: 1 })
+    expect(n).toEqual({ sessions: 1, liensMotDePasse: 1, liensEmail: 1, tentatives: 1 })
     expect(await ctx.prisma.session.count()).toBe(1) // la session ouverte à l'inscription
     expect(await ctx.prisma.jetonEmail.count()).toBe(1) // le lien de vérification de l'inscription
+    expect(await ctx.prisma.tentativeAcces.count()).toBe(1) // la demande de lien de cette heure
     expect(futur.getTime()).toBeGreaterThan(Date.now())
   })
 })
