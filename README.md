@@ -64,6 +64,15 @@ npm run dev
 - Interface : http://127.0.0.1:6010 (créer un compte depuis `/inscription`)
 - API : http://127.0.0.1:3010/api/v1/sante
 
+## Lancer en images Docker
+
+```bash
+docker compose up --build
+```
+
+- Interface : http://127.0.0.1:8080 (changer avec `PORT_WEB`). Les ports 3010 et 6010 du développement restent libres.
+- La base est dans un volume Docker, séparée de celle du développement. Détails et réglages : [`docs/prod.md`](docs/prod.md) § 8.8.
+
 ## Comptes, sécurité et mise en ligne
 
 Tout est dans [`docs/prod.md`](docs/prod.md) : variables d'environnement (§ 8.1), authentification et sessions (§ 5), activation d'un compte d'avant l'authentification (§ 5.5), e-mails en production (§ 8.4), déploiement Netlify + Neon et lots P0 à P9.

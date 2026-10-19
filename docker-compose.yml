@@ -1,0 +1,37 @@
+# MySalary en local, en images : docker compose up --build  →  http://127.0.0.1:8080 (docs/prod.md § 8.8).
+# Les ports 3010 et 6010 du développement (`npm run dev`) restent libres : les deux modes peuvent tourner ensemble.
+# Les réglages se lisent dans `.env` à la racine (copie de docker/.env.example) ; sans lui, les valeurs par défaut suffisent.
+services:
+  api:
+    build:
+      context: .
+      target: api
+    restart: unless-stopped
+    environment:
+      # Mode local : liens d'e-mail écrits dans le journal (docker compose logs api). Pour la production : § 8.1.
+      NODE_ENV: ${NODE_ENV:-development}
+      APP_URL: ${APP_URL:-http://127.0.0.1:8080}
+      TRUST_PROXY: "1"
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      MAIL_CONTACT: ${MAIL_CONTACT:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-}
+    volumes:
+      - donnees:/data
+    # Pas de port publié : seule l'interface (nginx) parle à l'API.
+    expose:
+      - "3010"
+
+  web:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${PORT_WEB:-8080}:8080"
+
+volumes:
+  donnees:

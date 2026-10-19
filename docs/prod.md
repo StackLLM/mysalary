@@ -38,6 +38,7 @@ Il remplace les fichiers séparés `DEPLOYMENT.md`, `AUTHENTICATION.md`, `SECURI
    - [8.5 Mise en production et retour arrière](#85-mise-en-production-et-retour-arrière)
    - [8.6 Offres, régions et coûts](#86-offres-régions-et-coûts)
    - [8.7 Actions manuelles](#87-actions-manuelles)
+   - [8.8 Docker (essai en images)](#88-docker-essai-en-images)
 9. [Tests](#9-tests)
    - [9.1 Tests existants](#91-tests-existants)
    - [9.2 Tests avant mise en production](#92-tests-avant-mise-en-production)
@@ -484,6 +485,20 @@ Je ne saisis aucun secret ni aucun mot de passe de service : tu les mets toi-mê
 | Fournisseur SMTP, SPF, DKIM et DMARC | fournisseur d'e-mails, DNS | P8 |
 | Nom de domaine et HTTPS | registrar, Netlify | P8 |
 | Valider chaque lot | — | tous |
+
+### 8.8 Docker (essai en images)
+
+Ajouté hors lots, à la demande du 19/10/2026. C'est un moyen de faire tourner l'app en images sur une machine ; **ce n'est pas la cible de production** (Netlify + Neon, § 8.2 et 8.3).
+
+- **Deux images**, construites par le `Dockerfile` (cibles `api` et `web`) et assemblées par `docker-compose.yml` :
+  - `web` : nginx sans droits root, sert `ui/dist` et relaie `/api` vers `api`. Une seule origine, comme avec Vite : le cookie reste `SameSite=Strict`.
+  - `api` : Fastify lancé par `tsx` (les paquets partagés sont livrés en TypeScript). `prisma migrate deploy` s'exécute avant chaque démarrage. Pas de port publié.
+- **Lancer** : `docker compose up --build`, puis http://127.0.0.1:8080 (`PORT_WEB` pour changer). Les ports 3010 et 6010 du développement restent libres.
+- **Données** : base SQLite dans le volume `donnees` (`/data`). Elle est **indépendante** de `server/prisma/mysalary.db` : les comptes du développement n'y sont pas. `docker compose down -v` efface le volume.
+- **Réglages** : `docker/.env.example` copié en `.env` à la racine. Par défaut `NODE_ENV=development` : les liens d'e-mail sont écrits dans `docker compose logs api`. Avec `NODE_ENV=production`, les règles du § 8.1 s'appliquent (https, SMTP, contact).
+- **Rien de personnel dans les images** : `.dockerignore` exclut `Salaire/`, `sauvegardes/`, les `.env` et les bases.
+- **Reste** : l'image `api` pèse environ 1,2 Go (elle garde les dépendances de développement pour `tsx` et `prisma`). À réduire avec le passage à PostgreSQL (P4).
+- **Essai du 19/10/2026** : build des deux images, démarrage, migrations appliquées, `/api/v1/sante`, page profonde, inscription, puis redémarrage de l'API avec la connexion toujours possible ; tout nettoyé ensuite.
 
 ## 9. Tests
 
