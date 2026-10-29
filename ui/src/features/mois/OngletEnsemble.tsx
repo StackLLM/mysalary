@@ -18,6 +18,7 @@ import { cn } from '../../lib/cn'
 import { CarteIndicateurs } from '../conseils/Conseils'
 import { useEnregistrerDepense, useSupprimerDepense } from '../depenses/requetes'
 import type { Ton } from '../salaire/saisie'
+import { CorrectionCumul } from './CorrectionCumul'
 import { EnteteMois } from './EnteteMois'
 import { useCloturer, useRouvrir } from './requetes'
 import { confirmation, FAMILLES, moisPrecedent, NATURES_CUMUL, paiementsEnRetard, parFamille, plus, pointsRythme, statutLigne } from './saisie'
@@ -398,21 +399,24 @@ function CarteCloture({ bilan, onDemande }: { bilan: BilanDto; onDemande: (d: 'c
  * passera au suivant, comme sur le compte courant. Réel, estimation (mois en cours) ou prévu : toujours dit.
  */
 function BandeCumul({ cumul }: { cumul: MoisCumul }) {
-  if (cumul.nature === 'avant' || cumul.report === null || cumul.cumul === null) {
+  const [correction, setCorrection] = useState(false)
+  if (cumul.nature === 'avant' || cumul.report === null || cumul.cumul === null || cumul.cumulCalcule === null) {
     return <p className="mt-5 rounded-champ bg-teinte px-4 py-3 text-texte-sm text-gris">Pas de cumul pour ce mois : il précède le début de ton suivi.</p>
   }
   const nature = NATURES_CUMUL[cumul.nature]
   const precedent = deMois(moisPrecedent(cumul.cle), { annee: false })
-  // Le cumul se lit de gauche à droite : report + revenus − charges − épargne confirmée = cumul.
+  const corrige = cumul.ecart !== null
+  // Le cumul se lit de gauche à droite : report + revenus − charges − épargne confirmée (+ écart, lot 35) = cumul.
   const cases = [
     { cle: 'report', libelle: cumul.premier ? 'Solde de départ' : `Report ${precedent}`, valeur: cumul.report, signe: '' },
     { cle: 'revenus', libelle: 'Revenus', valeur: cumul.revenus, signe: '+' },
     { cle: 'charges', libelle: 'Charges', valeur: cumul.charges, signe: '−' },
     { cle: 'epargne', libelle: 'Épargne confirmée', valeur: cumul.epargneConfirmee, signe: '−' },
+    ...(cumul.ecart !== null ? [{ cle: 'ecart', libelle: 'Écart non saisi', valeur: cumul.ecart, signe: cumul.ecart > 0 ? '+' : '' }] : []),
   ]
   return (
     <section aria-label="Cumul de mois en mois" className="mt-5 rounded-bouton bg-interne p-4 shadow-bouton sm:p-5">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className={cn('grid grid-cols-2 gap-3', corrige ? 'sm:grid-cols-6' : 'sm:grid-cols-5')}>
         {cases.map((c) => (
           <div key={c.cle} className="min-w-0">
             <span className="block truncate text-mention text-gris" title={c.libelle}>
@@ -425,7 +429,7 @@ function BandeCumul({ cumul }: { cumul: MoisCumul }) {
           </div>
         ))}
         <div className="col-span-2 min-w-0 sm:col-span-1 sm:text-right">
-          <span className="block truncate text-mention text-gris">= Cumul fin de mois</span>
+          <span className="block truncate text-mention text-gris">{corrige ? '= Solde réel' : '= Cumul fin de mois'}</span>
           <span className={cn('block text-titre font-bold tabular-nums', cumul.cumul < 0 ? 'text-alerte' : 'text-encre')}>
             <Montant valeur={cumul.cumul} />
           </span>
@@ -439,6 +443,23 @@ function BandeCumul({ cumul }: { cumul: MoisCumul }) {
           <Montant valeur={cumul.epargneAConfirmer} className="font-bold italic text-encre-2" />
         </p>
       )}
+      {cumul.nature === 'reel' && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-champ border border-filet bg-white px-4 py-2.5 text-texte-sm">
+          <span className="text-gris">
+            {corrige ? (
+              <>
+                <span className="font-semibold text-encre-2">Corrigé par toi.</span> Calculé : <Montant valeur={cumul.cumulCalcule} className="font-semibold text-encre-2" />
+              </>
+            ) : (
+              'Le cumul ne correspond pas à ton compte ? Saisis ton solde réel.'
+            )}
+          </span>
+          <Bouton variante="teinte" taille="sm" onClick={() => setCorrection(true)}>
+            {corrige ? 'Modifier' : 'Corriger le cumul'}
+          </Bouton>
+        </div>
+      )}
+      {correction && <CorrectionCumul cumul={{ ...cumul, cumulCalcule: cumul.cumulCalcule }} ouvert onFermer={() => setCorrection(false)} />}
       <p className="mt-3 text-mention text-gris">
         {cumul.premier ? 'Premier mois du cumul : il part du solde déclaré dans les Réglages (0 sinon). ' : `Ce qui restait à la fin ${precedent} est reporté ici. `}
         Seule l’épargne que tu as confirmée est retirée{nature ? ` (${nature})` : ''}. Solde de départ :{' '}

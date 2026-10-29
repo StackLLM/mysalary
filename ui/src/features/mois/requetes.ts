@@ -61,6 +61,17 @@ export function useRouvrir() {
   return useMutation({ mutationFn: (cle: string) => api.creer<void>(`/mois/${cle}/rouvrir`, {}), onSuccess: invalider })
 }
 
+/** Solde réel de fin d'un mois terminé (lot 35) : remplace le cumul calculé de ce mois ; les mois suivants en partent. */
+export function useCorrigerCumul() {
+  const invalider = useInvalider()
+  return useMutation({ mutationFn: ({ cle, solde }: { cle: string; solde: number }) => api.modifier<void>(`/mois/${cle}/cumul`, { solde }), onSuccess: invalider })
+}
+
+export function useAnnulerCorrectionCumul() {
+  const invalider = useInvalider()
+  return useMutation({ mutationFn: (cle: string) => api.supprimer(`/mois/${cle}/cumul`), onSuccess: invalider })
+}
+
 /** Calendrier de l'année (lot 14) : cumul des 12 mois et revenus / charges datés de chaque jour. */
 export function useAnnee(annee: number) {
   const { mois, actif } = useCles()

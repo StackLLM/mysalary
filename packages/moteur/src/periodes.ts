@@ -175,6 +175,15 @@ export interface SuiviDuMois {
   restePrevu: Record<'lignes' | 'enveloppes' | 'dettes' | 'total', Centimes>
 }
 
+/**
+ * Solde réel du compte courant déclaré à la fin d'un mois terminé (lot 35) : il remplace le cumul calculé de ce mois.
+ * L'écart (charges non saisies, oublis) reste visible à part ; il ne devient jamais une dépense.
+ */
+export interface CorrectionCumul {
+  mois: CleMois
+  solde: Centimes
+}
+
 export type Calendrier = ReturnType<typeof creerCalendrier>
 
 export function creerCalendrier({
@@ -188,6 +197,7 @@ export function creerCalendrier({
   moisClotures = [],
   objectifs = [],
   mouvementsEpargne = [],
+  correctionsCumul = [],
   ...donnees
 }: DonneesSalaire &
   DonneesCharges & {
@@ -196,12 +206,14 @@ export function creerCalendrier({
     moisClotures?: BornesFigees[]
     objectifs?: Objectif[]
     mouvementsEpargne?: MouvementEpargne[]
+    correctionsCumul?: CorrectionCumul[]
   }) {
   const paies = creerCalendrierPaie(donnees)
   /** Sans contrat, le cycle de paie n'est pas défini : on retombe sur le mois civil. */
   const cycle = mode === 'cyclePaie' && paies.aContrat
 
   const figes = new Map(moisClotures.map((m) => [m.cle, m]))
+  const corrections = new Map(correctionsCumul.map((c) => [c.mois, c.solde]))
 
   /** Début d'un mois. Un mois clôturé garde ses bornes ; le mois qui le suit commence le lendemain de sa fin. */
   function borne(cle: CleMois): { date: DateCivile; source: SourceBorne } {
@@ -532,6 +544,8 @@ export function creerCalendrier({
     /** Épargne nette (réelle) entre deux dates incluses. */
     epargneEntre: (du: DateCivile, au: DateCivile) => epargneNette(mouvementsEpargne, du, au),
     etatDette: (id: string) => etats.get(id) ?? null,
+    /** Solde réel déclaré à la fin du mois (lot 35) ; `null` sans correction. */
+    soldeFinDeclare: (cle: CleMois): Centimes | null => corrections.get(cle) ?? null,
     /** Vrai si l'utilisateur a choisi le cycle de paie mais n'a pas encore de contrat. */
     sansContrat: mode === 'cyclePaie' && !paies.aContrat,
     paies,

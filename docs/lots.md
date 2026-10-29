@@ -47,6 +47,7 @@
 | 32 | [Abonnement payant](#lots-32-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
 | 33 | [Arabe et darija](#lots-32-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
 | 34 | [Import de relevés](#lots-32-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
+| 35 | [Correction du cumul en fin de mois](#lot-35--correction-du-cumul-en-fin-de-mois) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 535 | [Bilan du lot 35](#bilan-du-lot-35--correction-du-cumul-en-fin-de-mois) |
 
 « Tests » = nombre total de tests automatiques du projet à la clôture du lot (partage + moteur + serveur + interface).
 
@@ -374,6 +375,12 @@ Décidés le 12/10/2026 après l'étude de marché (`docs/etude/Etude-marche-202
 ### Lot 31 — Mise en ligne en bêta fermée
 
 - **Remplacé le 15/10/2026** par les lots P8 (mise en production, bêta fermée de 10 à 20 testeurs) et P9 (recette) de [`prod.md`](prod.md#10-lots-p0-à-p9). Critères : [`prod.md` § 11](prod.md#11-critères-douverture).
+
+### Lot 35 — Correction du cumul en fin de mois
+
+- **Statut** : 🟡 livré le 27/10/2026, en attente de validation · [Bilan du lot 35](#bilan-du-lot-35--correction-du-cumul-en-fin-de-mois).
+- **Besoin** : des charges oubliées faussent le cumul du mois et de tous les suivants ; seul le solde de départ des Réglages permettait de recaler, et seulement au premier mois.
+- **Décisions (27/10/2026)** : l'écart est une **ligne à part** (« Écart non saisi »), jamais une dépense : charges, reste et indicateurs restent ceux saisis. Correction possible **sur les mois terminés seulement** : leur solde de fin est un chiffre réel.
 
 ### Lots 32 et suivants — après le lancement
 
@@ -2518,3 +2525,15 @@ Inscription → bandeau sur la mise en route → « Renvoyer le lien » (204) �
 **Reste à payer, séparé (3ᵉ passe)** : « à confirmer (date passée) » = lignes en retard sans paiement noté (peut-être déjà payées) ; « à venir » = le reste, enveloppes comprises. Bouton « Tout marquer payé » dans Mois › À confirmer.
 
 **Épargne confirmée seulement (4ᵉ passe)** : le cumul et le reste n'enlèvent que l'épargne versée (confirmée dans Épargne) ; le prévu non confirmé est affiché à part, partout (Mois, Année, fenêtre d'un mois, tableau des paies, Aujourd'hui). Champs moteur : `epargneConfirmee`, `epargneAConfirmer`, `cumulApresPrevu` (ancien calcul, gardé pour la simulation des objectifs). Le calcul du cumul est affiché en entier (report + revenus − charges − épargne confirmée) sur chaque écran où il apparaît.
+
+### Bilan du lot 35 — Correction du cumul en fin de mois
+
+> Livré le 27/10/2026, à valider.
+
+- **Moteur** : `creerCalendrier` reçoit `correctionsCumul` (`soldeFinDeclare`) ; `cumulDesMois` remplace le cumul d'un mois terminé par le solde déclaré, garde `cumulCalcule` et `ecart` (solde − calcul), et fait partir les mois suivants du solde déclaré, projections comprises (`cumulApresPrevu`). Toutes les vues qui passent par le cumul suivent : Mois, Année, suivi annuel, simulation des objectifs. Une correction sur un mois en cours ou à venir est ignorée.
+- **Base** : table `CorrectionCumul` (un solde par mois et par compte), migration `20261027090000_corrections_cumul` ; incluse dans l'export, la restauration et la suppression du compte.
+- **API** : `PUT /mois/:cle/cumul` (`{ solde }` en centimes, négatif permis) et `DELETE /mois/:cle/cumul`. Refus 422 pour un mois pas terminé ou d'avant le début du suivi ; 404 si rien à retirer.
+- **Interface** : page Mois, bande du cumul d'un mois terminé : « Corriger le cumul » ouvre la fenêtre « Solde réel fin de … » (cumul calculé rappelé). Une fois corrigé : case « Écart non saisi », « = Solde réel », « Corrigé par toi. Calculé : … », « Modifier » et « Retirer la correction ». La fenêtre d'un mois de la page Année montre aussi l'écart.
+- **Tests** : moteur (écart négatif et positif, report et projections, mois en cours ignoré), serveur (correction, remplacement, retrait, refus, découvert), matrice d'isolation (2 routes), interface (saisie, affichage, retrait, absence sur un mois en cours). 535 tests.
+- **Vérifié** à 1342 px et 375 px avec un compte « Essai » supprimé ensuite : octobre corrigé à 8 750 DH (calculé 10 000 DH, écart −1 250 DH), novembre reprend 8 750 DH, retrait de la correction ; pas de défilement horizontal.
+- **À savoir** : en cycle de paie, un mois se termine à l'arrivée de la paie suivante. Tant qu'elle n'est pas notée comme reçue, le mois reste « en cours » et ne se corrige pas encore.

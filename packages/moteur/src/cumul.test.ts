@@ -197,3 +197,44 @@ describe('calendrier de l’année (lot 14)', () => {
     expect(dimanche.flat().filter(Boolean)).toHaveLength(31)
   })
 })
+
+describe('correction du cumul en fin de mois (lot 35)', () => {
+  const corrige = (corrections: { mois: string; solde: number }[]) =>
+    creerCalendrier({
+      mode: 'cyclePaie',
+      contrats: [contrat],
+      paies: [paie('2026-12', '2026-11-27'), paie('2027-01', '2026-12-27')],
+      sources: [cours],
+      charges: [charge('Loyer', 'fixe', 350_000), charge('Courses', 'enveloppe', 200_000)],
+      depenses,
+      objectifs: [moto],
+      mouvementsEpargne: [versement],
+      correctionsCumul: corrections.map((c) => ({ mois: m(c.mois), solde: centimes(c.solde) })),
+      aujourdhui: AUJOURDHUI,
+    })
+
+  it('le solde déclaré remplace le cumul du mois terminé ; l’écart reste à part, le reste du mois ne change pas', () => {
+    // Décembre calculé : 3 700 DH. Le compte affiche 3 000 DH : 700 DH de sorties non saisies.
+    const [decembre, janvier, fevrier] = cumulDesMois(corrige([{ mois: '2026-12', solde: 300_000 }]), m('2026-12'), m('2027-02'), { aujourdhui: AUJOURDHUI })
+    expect(decembre).toMatchObject({ nature: 'reel', charges: 530_000, reste: 370_000, cumulCalcule: 370_000, ecart: -70_000, cumul: 300_000, cumulApresPrevu: 300_000 })
+    // Les mois suivants partent du solde déclaré, et les projections aussi.
+    expect(janvier).toMatchObject({ report: 300_000, cumulCalcule: 750_000, ecart: null, cumul: 750_000, cumulApresPrevu: 650_000 })
+    expect(fevrier).toMatchObject({ report: 750_000, cumul: 1_300_000, cumulApresPrevu: 1_100_000 })
+  })
+
+  it('un écart positif (revenu non saisi) est gardé tel quel', () => {
+    const [decembre] = cumulDesMois(corrige([{ mois: '2026-12', solde: 400_000 }]), m('2026-12'), m('2026-12'), { aujourdhui: AUJOURDHUI })
+    expect(decembre).toMatchObject({ cumulCalcule: 370_000, ecart: 30_000, cumul: 400_000 })
+  })
+
+  it('le mois en cours et les mois à venir ne se corrigent pas : leur fin n’est pas encore connue', () => {
+    const [, janvier, fevrier] = cumulDesMois(corrige([{ mois: '2027-01', solde: 0 }, { mois: '2027-02', solde: 0 }]), m('2026-12'), m('2027-02'), { aujourdhui: AUJOURDHUI })
+    expect(janvier).toMatchObject({ ecart: null, cumul: 820_000 })
+    expect(fevrier).toMatchObject({ ecart: null, cumul: 1_370_000 })
+  })
+
+  it('sans correction, le cumul calculé est le cumul', () => {
+    const [decembre] = cumulDesMois(calendrier(depenses), m('2026-12'), m('2026-12'), { aujourdhui: AUJOURDHUI })
+    expect(decembre).toMatchObject({ cumulCalcule: 370_000, ecart: null, cumul: 370_000 })
+  })
+})

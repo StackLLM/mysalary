@@ -121,3 +121,25 @@ export async function rouvrir(prisma: PrismaClient, utilisateurId: string, cle: 
     prisma.journalCloture.create({ data: { utilisateurId, cle, action: 'reouverture' } }),
   ])
 }
+
+/**
+ * Corrige le cumul d'un mois terminé avec le solde réel du compte (lot 35). Refus pour un mois en cours, à venir,
+ * ou d'avant le début du suivi : sa fin n'est pas connue, ou il n'a pas de cumul.
+ */
+export async function corrigerCumul(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile, cle: CleMois, solde: number) {
+  const { calendrier, depart } = await chargerCalendrier(prisma, utilisateurId, aujourdhui)
+  const nom = formaterMois(cle, { majuscule: true })
+  if (calendrier.mois(cle).statut !== 'passe') throw regle(`${nom} n’est pas terminé : son solde de fin se corrige après sa dernière journée.`)
+  if (cle < debutCumul(calendrier, aujourdhui, depart)) throw regle(`${nom} précède le début de ton suivi : il n’a pas de cumul à corriger.`)
+  await prisma.correctionCumul.upsert({
+    where: { utilisateurId_cle: { utilisateurId, cle } },
+    create: { utilisateurId, cle, solde },
+    update: { solde },
+  })
+}
+
+/** Retire la correction : le cumul du mois redevient celui calculé. */
+export async function annulerCorrectionCumul(prisma: PrismaClient, utilisateurId: string, cle: CleMois) {
+  const { count } = await prisma.correctionCumul.deleteMany({ where: { utilisateurId, cle } })
+  if (count === 0) throw new ErreurApi(404, CODES_ERREUR.INTROUVABLE, `${formaterMois(cle, { majuscule: true })} n’a pas de correction.`)
+}

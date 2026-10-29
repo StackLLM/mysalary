@@ -4,6 +4,12 @@ import { schemaCleMois } from './salaire'
 
 export type { CalendrierDuMois, CoutMois, Depart, EvenementCalendrier, EvenementJour, JourCalendrier, MoisAnnuel, MoisCumul, ProgressionAnnuelle, TotalAnnuel, TypeEvenement, NatureCumul, ResumeCumul } from '@mysalary/moteur'
 
+/** Solde réel du compte courant à la fin d'un mois terminé : corrige le cumul de ce mois (lot 35). Négatif si découvert. */
+export const schemaCorrectionCumul = z.strictObject({
+  solde: z.number({ error: 'Montant attendu.' }).int('Montant en centimes entiers.').min(-100_000_000_00, 'Montant trop grand.').max(100_000_000_00, 'Montant trop grand.'),
+})
+export type SaisieCorrectionCumul = z.infer<typeof schemaCorrectionCumul>
+
 /** Plage de mois du cumul : 36 mois au plus. */
 export const schemaPlageCumul = z
   .strictObject({ du: schemaCleMois, au: schemaCleMois })

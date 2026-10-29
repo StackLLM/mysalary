@@ -12,6 +12,8 @@ import type { Calendrier, StatutPeriode } from './periodes'
  * Seule l'épargne confirmée par l'utilisateur dans Épargne (versée, réelle) est retirée du cumul. Le versement prévu mais pas
  * encore fait (`epargneAConfirmer`) reste visible à part : le cumul ne suppose jamais que l'utilisateur va épargner.
  * `cumulApresPrevu` garde l'ancien calcul (versements prévus retirés) pour la simulation des objectifs, qui les compte à part.
+ * Correction (lot 35) : sur un mois terminé, le solde réel déclaré par l'utilisateur remplace le cumul calculé ; l'écart est
+ * gardé à part (`ecart`), les revenus, charges et reste du mois ne changent pas, et les mois suivants partent du solde déclaré.
  */
 
 /** `avant` : mois antérieur au début du suivi, sans chiffre. */
@@ -40,8 +42,12 @@ export interface MoisCumul {
   epargneAConfirmer: Centimes
   /** Revenus − charges − épargne confirmée. */
   reste: Centimes
-  /** Report + reste : ce qu'il y aurait sur le compte à la fin du mois ; `null` avant le suivi. */
+  /** Report + reste, ou solde réel déclaré s'il y en a un (lot 35) : ce qu'il y a sur le compte à la fin du mois ; `null` avant le suivi. */
   cumul: Centimes | null
+  /** Report + reste, tel que calculé avant toute correction ; `null` avant le suivi. */
+  cumulCalcule: Centimes | null
+  /** Solde déclaré − cumul calculé (négatif : sorties non saisies) ; `null` sans correction. */
+  ecart: Centimes | null
   /** Cumul si les versements prévus étaient faits (revenus − charges − épargne versée ou prévue) ; `null` avant le suivi. */
   cumulApresPrevu: Centimes | null
   /** Mois en cours : part déjà réelle des revenus, charges et épargne. */
@@ -81,14 +87,18 @@ export function cumulDesMois(calendrier: Calendrier, du: CleMois, au: CleMois, {
     const base = { cle, debut: mois.debut, fin: mois.fin, statut: mois.statut }
     if (cle < debut) {
       if (cle >= du) {
-        resultat.push({ ...base, nature: 'avant', premier: false, report: null, revenus: centimes(0), charges: centimes(0), apresCharges: centimes(0), epargne: centimes(0), epargneConfirmee: centimes(0), epargneAConfirmer: centimes(0), reste: centimes(0), cumul: null, cumulApresPrevu: null, dontReel: null })
+        resultat.push({ ...base, nature: 'avant', premier: false, report: null, revenus: centimes(0), charges: centimes(0), apresCharges: centimes(0), epargne: centimes(0), epargneConfirmee: centimes(0), epargneAConfirmer: centimes(0), reste: centimes(0), cumul: null, cumulCalcule: null, ecart: null, cumulApresPrevu: null, dontReel: null })
       }
       continue
     }
     const ligne = calculer(calendrier, cle, mois.statut, regle)
-    const cumul = additionner(report, ligne.reste)
-    const cumulApresPrevu = additionner(reportApresPrevu, soustraire(ligne.apresCharges, ligne.epargne))
-    if (cle >= du) resultat.push({ ...base, ...ligne, premier: cle === debut, report, cumul, cumulApresPrevu })
+    const cumulCalcule = additionner(report, ligne.reste)
+    // Seul un mois terminé se corrige : son solde de fin est alors un chiffre réel.
+    const declare = mois.statut === 'passe' ? calendrier.soldeFinDeclare(cle) : null
+    const ecart = declare === null ? null : soustraire(declare, cumulCalcule)
+    const cumul = declare ?? cumulCalcule
+    const cumulApresPrevu = additionner(reportApresPrevu, soustraire(ligne.apresCharges, ligne.epargne), ecart ?? centimes(0))
+    if (cle >= du) resultat.push({ ...base, ...ligne, premier: cle === debut, report, cumul, cumulCalcule, ecart, cumulApresPrevu })
     report = cumul
     reportApresPrevu = cumulApresPrevu
   }

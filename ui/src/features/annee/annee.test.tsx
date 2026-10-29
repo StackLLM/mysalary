@@ -23,7 +23,7 @@ function visible(element: Element) {
 
 // Salaire 10 000 DH le 27 ; suivi depuis septembre 2026 ; aujourd'hui : 10 oct. 2026.
 const mois = (cle: string, modif: Record<string, unknown>): MoisCumul =>
-  ({ cle, debut: `${cle}-01`, fin: `${cle}-28`, statut: 'aVenir', nature: 'prevu', premier: false, report: 0, revenus: 1_000_000, charges: 560_000, apresCharges: 440_000, epargne: 100_000, epargneConfirmee: 0, epargneAConfirmer: 100_000, reste: 440_000, cumul: 0, cumulApresPrevu: 0, dontReel: null, ...modif }) as unknown as MoisCumul
+  ({ cle, debut: `${cle}-01`, fin: `${cle}-28`, statut: 'aVenir', nature: 'prevu', premier: false, report: 0, revenus: 1_000_000, charges: 560_000, apresCharges: 440_000, epargne: 100_000, epargneConfirmee: 0, epargneAConfirmer: 100_000, reste: 440_000, cumul: 0, cumulCalcule: 0, ecart: null, cumulApresPrevu: 0, dontReel: null, ...modif }) as unknown as MoisCumul
 
 const avant = (cle: string) => mois(cle, { statut: 'passe', nature: 'avant', report: null, cumul: null, revenus: 0, charges: 0, apresCharges: 0, epargne: 0, epargneConfirmee: 0, epargneAConfirmer: 0, reste: 0 })
 const annee2026: MoisCumul[] = [

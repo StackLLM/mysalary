@@ -30,6 +30,8 @@ const TABLES: Table[] = [
   },
   { cle: 'clotureMois', json: ['instantane', 'semaines'] },
   { cle: 'journalCloture' },
+  // Soldes réels de fin de mois (lot 35).
+  { cle: 'correctionCumul' },
   { cle: 'compteEpargne' },
   { cle: 'objectif' },
   { cle: 'mouvementEpargne', liens: { compteId: { vers: 'compteEpargne', requis: true }, objectifId: { vers: 'objectif', requis: false } } },

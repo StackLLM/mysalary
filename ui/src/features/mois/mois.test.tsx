@@ -71,7 +71,7 @@ const bilan = (modif: Partial<BilanDto> = {}) =>
     rythme: [{ date: '2027-01-20', prevu: 100_000, reel: 140_000 }],
     cloture: null,
     journal: [],
-    cumul: { cle: '2027-01', nature: 'enCours', premier: false, report: 150_000, revenus: 1_000_000, charges: 650_000, epargne: 50_000, epargneConfirmee: 50_000, epargneAConfirmer: 0, reste: 300_000, cumul: 450_000, cumulApresPrevu: 450_000, dontReel: null },
+    cumul: { cle: '2027-01', nature: 'enCours', premier: false, report: 150_000, revenus: 1_000_000, charges: 650_000, epargne: 50_000, epargneConfirmee: 50_000, epargneAConfirmer: 0, reste: 300_000, cumul: 450_000, cumulCalcule: 450_000, ecart: null, cumulApresPrevu: 450_000, dontReel: null },
     ...modif,
   }) as unknown as BilanDto
 let bilanCourant = bilan()
@@ -350,5 +350,45 @@ describe('Mois › Vue d’ensemble', () => {
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Dépenses' }))
     expect(await screen.findByRole('button', { name: 'Ajouter une dépense' })).toBeDisabled()
     expect(screen.queryByRole('button', { name: 'Modifier Marché' })).not.toBeInTheDocument()
+  })
+
+  // Correction du cumul (lot 35) : seulement sur un mois terminé.
+  const termine = (cumul: Record<string, number> = {}) =>
+    bilan({
+      mois: { ...bilan().mois, statut: 'passe' },
+      estimation: null,
+      cumul: { ...bilan().cumul, debut: '2026-12-27', fin: '2027-01-26', nature: 'reel', ...cumul },
+    } as Partial<BilanDto>)
+
+  it('mois terminé : « Corriger le cumul » enregistre le solde réel du compte', async () => {
+    bilanCourant = termine()
+    vi.mocked(api.modifier).mockResolvedValue(undefined)
+    ouvrirMois('/mois')
+    fireEvent.click(await screen.findByRole('button', { name: 'Corriger le cumul' }))
+    const fenetre = await screen.findByRole('dialog')
+    expect(within(fenetre).getByText('Cumul calculé')).toBeInTheDocument()
+    fireEvent.change(within(fenetre).getByLabelText('Solde réel du compte'), { target: { value: '3200' } })
+    fireEvent.click(within(fenetre).getByRole('button', { name: 'Enregistrer' }))
+    await waitFor(() => expect(api.modifier).toHaveBeenCalledWith('/mois/2027-01/cumul', { solde: 320_000 }))
+  })
+
+  it('cumul corrigé : l’écart est affiché à part, la correction se retire', async () => {
+    bilanCourant = termine({ cumul: 320_000, cumulCalcule: 450_000, ecart: -130_000 })
+    vi.mocked(api.supprimer).mockResolvedValue(undefined)
+    ouvrirMois('/mois')
+    const bande = await screen.findByRole('region', { name: 'Cumul de mois en mois' })
+    expect(within(bande).getByText('Écart non saisi')).toBeInTheDocument()
+    expect(within(bande).getByText('= Solde réel')).toBeInTheDocument()
+    expect(within(bande).getByText('Corrigé par toi.')).toBeInTheDocument()
+    fireEvent.click(within(bande).getByRole('button', { name: 'Modifier' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Retirer la correction' }))
+    await waitFor(() => expect(api.supprimer).toHaveBeenCalledWith('/mois/2027-01/cumul'))
+  })
+
+  it('mois en cours : pas de correction du cumul', async () => {
+    bilanCourant = bilan()
+    ouvrirMois('/mois')
+    expect(await screen.findByRole('region', { name: 'Cumul de mois en mois' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Corriger le cumul' })).not.toBeInTheDocument()
   })
 })

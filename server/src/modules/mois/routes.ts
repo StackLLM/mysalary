@@ -1,5 +1,5 @@
 import { ecartJours, semainesDe, type CleMois, type DateCivile } from '@mysalary/moteur'
-import { schemaAnnee, schemaCleMois, schemaCloture, schemaPlageCumul, type MoisBudgetaireDto } from '@mysalary/partage'
+import { schemaAnnee, schemaCleMois, schemaCloture, schemaCorrectionCumul, schemaPlageCumul, type MoisBudgetaireDto } from '@mysalary/partage'
 import type { FastifyInstance } from 'fastify'
 import { valider } from '../../lib/valider'
 import { utilisateurDe } from '../../plugins/utilisateurCourant'
@@ -70,6 +70,19 @@ export async function routesMois(app: FastifyInstance) {
     const cle = valider(schemaCleMois, requete.params.cle)
     const { forcer } = valider(schemaCloture, requete.body ?? {})
     await depot.cloturer(app.prisma, utilisateurDe(requete), app.aujourdhui(), cle, forcer)
+    return reponse.status(204).send()
+  })
+
+  // Correction du cumul par le solde réel de fin de mois (lot 35).
+  app.put<{ Params: { cle: string } }>('/mois/:cle/cumul', async (requete, reponse) => {
+    const cle = valider(schemaCleMois, requete.params.cle)
+    const { solde } = valider(schemaCorrectionCumul, requete.body)
+    await depot.corrigerCumul(app.prisma, utilisateurDe(requete), app.aujourdhui(), cle, solde)
+    return reponse.status(204).send()
+  })
+
+  app.delete<{ Params: { cle: string } }>('/mois/:cle/cumul', async (requete, reponse) => {
+    await depot.annulerCorrectionCumul(app.prisma, utilisateurDe(requete), valider(schemaCleMois, requete.params.cle))
     return reponse.status(204).send()
   })
 

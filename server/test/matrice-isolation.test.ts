@@ -69,6 +69,9 @@ async function remplir(prenom: string, marque: string) {
   const mouvement = await creer(id, '/epargne/mouvements', { sens: 'versement', compteId: compte, objectifId: objectif, date: '2027-01-05', montant: 100_000 })
   const scenario = await creer(id, '/scenarios', { nom: `Plan ${marque}`, ajustements: { versements: { [objectif]: 300_000 } }, horizon: 12 })
   await ok(id, 'POST', '/mois/2026-12/cloturer', { forcer: true })
+  // Suivi dès décembre, puis solde réel de fin de décembre (lot 35).
+  await ok(id, 'PUT', '/reglages', { depart: { mois: '2026-12', solde: 0 } })
+  await ok(id, 'PUT', '/mois/2026-12/cumul', { solde: 123_400 })
   await ok(id, 'POST', '/import/apercu', { fichier: { ...IMPORT, prenom: marque } })
   return { id, contrat, categorie, charge, enveloppe, ponctuel, dette, paiement, depense, source, recu, compte, objectif, mouvement, scenario }
 }
@@ -111,6 +114,8 @@ const CAS: Record<string, (c: Comptes) => Appel[]> = {
   'GET /annee/:annee/suivi': () => [{ chemin: '/annee/2027/suivi', attendu: 'lecture' }],
   'POST /mois/:cle/cloturer': () => [{ chemin: '/mois/2026-11/cloturer', payload: { forcer: true }, attendu: 'compte' }],
   'POST /mois/:cle/rouvrir': () => [{ chemin: '/mois/2026-11/rouvrir', attendu: 'compte' }],
+  'PUT /mois/:cle/cumul': () => [{ chemin: '/mois/2026-12/cumul', payload: { solde: 1 }, attendu: 'compte' }],
+  'DELETE /mois/:cle/cumul': () => [{ chemin: '/mois/2026-12/cumul', attendu: 'compte' }],
 
   // Autres revenus.
   'GET /revenus/sources': () => [{ chemin: '/revenus/sources', attendu: 'lecture' }],

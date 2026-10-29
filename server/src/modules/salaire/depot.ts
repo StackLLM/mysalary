@@ -118,7 +118,7 @@ export async function supprimerContrat(prisma: PrismaClient, utilisateurId: stri
 
 /** Charge tout ce qu'il faut au moteur pour calculer paies et mois du compte. */
 export async function chargerCalendrier(prisma: PrismaClient, utilisateurId: string, aujourdhui: DateCivile) {
-  const [contrats, paies, reglages, sources, recus, charges, ponctuels, dettes, paiementsDettes, depenses, moisClotures, comptes, mouvements, objectifs] = await Promise.all([
+  const [contrats, paies, reglages, sources, recus, charges, ponctuels, dettes, paiementsDettes, depenses, moisClotures, comptes, mouvements, objectifs, corrections] = await Promise.all([
     prisma.contratSalaire.findMany({ where: { utilisateurId } }),
     prisma.paie.findMany({ where: { utilisateurId }, include: { lignes: true } }),
     prisma.reglages.findUnique({ where: { utilisateurId } }),
@@ -133,6 +133,7 @@ export async function chargerCalendrier(prisma: PrismaClient, utilisateurId: str
     prisma.compteEpargne.findMany({ where: { utilisateurId }, orderBy: { creeLe: 'asc' } }),
     prisma.mouvementEpargne.findMany({ where: { utilisateurId } }),
     prisma.objectif.findMany({ where: { utilisateurId } }),
+    prisma.correctionCumul.findMany({ where: { utilisateurId } }),
   ])
   const epargne = { comptes: comptes.map(versCompte), mouvementsEpargne: mouvements.map(versMouvement), objectifs: objectifs.map(versObjectif) }
   return {
@@ -150,6 +151,8 @@ export async function chargerCalendrier(prisma: PrismaClient, utilisateurId: str
       moisClotures,
       objectifs: epargne.objectifs,
       mouvementsEpargne: epargne.mouvementsEpargne,
+      // Soldes réels déclarés en fin de mois (lot 35).
+      correctionsCumul: corrections.map((c) => ({ mois: lireCleMois(c.cle), solde: centimes(c.solde) })),
       aujourdhui,
     }),
     /** Épargne et objectifs (lot 10), pour les projections. */
