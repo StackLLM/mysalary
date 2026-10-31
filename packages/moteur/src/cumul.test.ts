@@ -238,3 +238,34 @@ describe('correction du cumul en fin de mois (lot 35)', () => {
     expect(decembre).toMatchObject({ cumulCalcule: 370_000, ecart: null, cumul: 370_000 })
   })
 })
+
+describe('versement mensuel « pas ce mois-ci » (lot 36)', () => {
+  const avecSaut = (mois: string) =>
+    creerCalendrier({
+      mode: 'cyclePaie',
+      contrats: [contrat],
+      paies: [paie('2026-12', '2026-11-27'), paie('2027-01', '2026-12-27')],
+      sources: [cours],
+      charges: [charge('Loyer', 'fixe', 350_000), charge('Courses', 'enveloppe', 200_000)],
+      depenses,
+      objectifs: [moto],
+      mouvementsEpargne: [versement],
+      versementsSautes: [{ objectifId: 'moto', mois: m(mois) }],
+      aujourdhui: AUJOURDHUI,
+    })
+
+  it('le versement sauté n’est plus attendu : ni à confirmer, ni retiré des projections', () => {
+    const c = avecSaut('2027-01')
+    expect(c.epargneDuMois(m('2027-01'))).toMatchObject({ prevue: 0, lignes: [{ objectifId: 'moto', prevu: null, prevuSaute: 100_000, reel: 0 }] })
+    const [, janvier, fevrier] = cumulDesMois(c, m('2026-12'), m('2027-02'), { aujourdhui: AUJOURDHUI })
+    // Sans saut : 1 000 DH à confirmer en janvier, cumul après prévu 7 200 DH.
+    expect(janvier).toMatchObject({ epargne: 0, epargneAConfirmer: 0, cumul: 820_000, cumulApresPrevu: 820_000 })
+    // Le mois suivant n'est pas touché.
+    expect(fevrier).toMatchObject({ epargneAConfirmer: 100_000 })
+  })
+
+  it('un autre mois ne change rien', () => {
+    const ligne = avecSaut('2027-03').epargneDuMois(m('2027-01')).lignes[0]
+    expect(ligne).toMatchObject({ prevu: 100_000, prevuSaute: null })
+  })
+})

@@ -39,6 +39,20 @@ export async function routesEpargne(app: FastifyInstance) {
     return reponse.status(204).send()
   })
 
+  // Plan du mois (lot 36) : « pas ce mois-ci », et annulation de ce qui a été épargné ce mois-ci.
+  app.put<AvecId>('/epargne/plan/:id/saut', async (requete, reponse) => {
+    await depot.sauterVersement(p, utilisateurDe(requete), requete.params.id, app.aujourdhui())
+    return reponse.status(204).send()
+  })
+  app.delete<AvecId>('/epargne/plan/:id/saut', async (requete, reponse) => {
+    await depot.reprendreVersement(p, utilisateurDe(requete), requete.params.id, app.aujourdhui())
+    return reponse.status(204).send()
+  })
+  app.delete<AvecId>('/epargne/plan/:id/versements', async (requete, reponse) => {
+    await depot.annulerVersementsDuMois(p, utilisateurDe(requete), requete.params.id, app.aujourdhui())
+    return reponse.status(204).send()
+  })
+
   app.get('/objectifs', async (requete) => depot.lister(p, utilisateurDe(requete), app.aujourdhui()))
   app.post('/objectifs', async (requete, reponse) => reponse.status(201).send(await depot.creer(p, utilisateurDe(requete), valider(schemaObjectif, requete.body))))
   app.post<{ Querystring: { remplace?: string } }>('/objectifs/apercu', async (requete) =>

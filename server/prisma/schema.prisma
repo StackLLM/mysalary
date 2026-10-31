@@ -41,6 +41,7 @@ model Utilisateur {
   clotures          ClotureMois[]
   journalClotures   JournalCloture[]
   correctionsCumul  CorrectionCumul[]
+  versementsSautes  VersementSaute[]
   comptesEpargne    CompteEpargne[]
   mouvementsEpargne MouvementEpargne[]
   objectifs         Objectif[]
@@ -387,6 +388,7 @@ model Objectif {
   creeLe           DateTime           @default(now())
   modifieLe        DateTime           @updatedAt
   mouvements       MouvementEpargne[]
+  sautes           VersementSaute[]
 }
 
 /// Scénario de simulation enregistré : des leviers, jamais des données (lot 11).
@@ -458,4 +460,17 @@ model TentativeAcces {
   finFenetre DateTime
 
   @@index([finFenetre])
+}
+
+/// « Pas ce mois-ci » : le versement mensuel d'un objectif n'est pas attendu ce mois budgétaire (lot 36).
+model VersementSaute {
+  id            String      @id @default(cuid())
+  utilisateurId String
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  objectifId    String
+  objectif      Objectif    @relation(fields: [objectifId], references: [id], onDelete: Cascade)
+  cle           String
+  creeLe        DateTime    @default(now())
+
+  @@unique([utilisateurId, objectifId, cle])
 }

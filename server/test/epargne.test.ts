@@ -64,7 +64,7 @@ describe('épargne', () => {
     const avant = await lire<EpargneDto>(id, '/epargne')
     expect(avant.etat).toMatchObject({ declare: false, solde: 0, reserve: 900_000, disponible: 0, depassement: 0 })
     expect(avant.planMois).toMatchObject({ cle: '2027-01', debut: '2026-12-27', prevue: 400_000, reelle: 0 })
-    expect(avant.planMois.lignes).toEqual([{ objectifId: moto, libelle: 'Moto', prevu: 400_000, reel: 0 }])
+    expect(avant.planMois.lignes).toEqual([{ objectifId: moto, libelle: 'Moto', prevu: 400_000, reel: 0, prevuSaute: null }])
     const alertes = (await lire<ConseilsDto>(id, '/recommandations')).alertes
     expect(alertes.map((a) => a.type)).toEqual(expect.arrayContaining(['epargneNonDeclaree', 'versementPrevu']))
     expect(alertes.map((a) => a.type)).not.toContain('reserveDepasse')
@@ -168,5 +168,45 @@ describe('objectifs', () => {
     expect((await appeler(b.id, 'GET', `/objectifs/${a.moto}`)).statusCode).toBe(404)
     expect((await appeler(b.id, 'POST', '/epargne/mouvements', { sens: 'versement', compteId: a.cih, date: '2027-01-10', montant: 1_000 })).statusCode).toBe(404)
     expect((await appeler(b.id, 'PUT', '/objectifs/ordre', { ids: [a.moto, a.permis] })).statusCode).toBe(422)
+  })
+})
+
+describe('plan d’épargne du mois (lot 36)', () => {
+  const ligne = async (id: string, objectifId: string) => (await lire<EpargneDto>(id, '/epargne')).planMois.lignes.find((l) => l.objectifId === objectifId)
+
+  it('« pas ce mois-ci » : le versement n’est plus attendu, ni dans le plan ni dans le bilan ; puis il se reprend', async () => {
+    const { id, permis } = await compte()
+    expect(await ligne(id, permis)).toMatchObject({ prevu: 100_000, reel: 0, prevuSaute: null })
+    await ok(id, 'PUT', `/epargne/plan/${permis}/saut`)
+    expect(await ligne(id, permis)).toMatchObject({ prevu: null, reel: 0, prevuSaute: 100_000 })
+    expect((await lire<EpargneDto>(id, '/epargne')).planMois.prevue).toBe(0)
+    expect((await lire<BilanDto>(id, '/mois/2027-01/bilan')).cumul.epargneAConfirmer).toBe(0)
+    // Deux fois de suite : rien ne change.
+    await ok(id, 'PUT', `/epargne/plan/${permis}/saut`)
+    await ok(id, 'DELETE', `/epargne/plan/${permis}/saut`)
+    expect(await ligne(id, permis)).toMatchObject({ prevu: 100_000, prevuSaute: null })
+    expect((await appeler(id, 'DELETE', `/epargne/plan/${permis}/saut`)).statusCode).toBe(404)
+  })
+
+  it('refuse « pas ce mois-ci » sans versement prévu, ou quand le versement est déjà noté', async () => {
+    const { id, cih, moto, permis } = await compte()
+    expect((await appeler(id, 'PUT', `/epargne/plan/${moto}/saut`)).json().erreur.message).toBe('Aucun versement n’est prévu ce mois-ci pour « Moto ».')
+    await ok(id, 'POST', '/epargne/mouvements', { sens: 'versement', compteId: cih, objectifId: permis, date: '2027-01-08', montant: 100_000 })
+    expect((await appeler(id, 'PUT', `/epargne/plan/${permis}/saut`)).statusCode).toBe(422)
+  })
+
+  it('annuler l’épargne du mois retire les versements du mois de cet objectif, et seulement eux', async () => {
+    const { id, cih, moto, permis } = await compte()
+    await ok(id, 'POST', '/epargne/mouvements', { sens: 'versement', compteId: cih, objectifId: permis, date: '2026-12-20', montant: 50_000 })
+    await ok(id, 'POST', '/epargne/mouvements', { sens: 'versement', compteId: cih, objectifId: permis, date: '2027-01-08', montant: 60_000 })
+    await ok(id, 'POST', '/epargne/mouvements', { sens: 'versement', compteId: cih, objectifId: permis, date: '2027-01-09', montant: 40_000 })
+    expect(await ligne(id, permis)).toMatchObject({ reel: 100_000 })
+    await ok(id, 'DELETE', `/epargne/plan/${permis}/versements`)
+    expect(await ligne(id, permis)).toMatchObject({ reel: 0, prevu: 100_000 })
+    // Le versement de décembre (mois précédent) et celui de la moto restent.
+    const mouvements = (await lire<EpargneDto>(id, '/epargne')).mouvements.map((m) => [m.objectif, m.date])
+    expect(mouvements).toEqual([['Moto', '2027-01-05'], ['Permis', '2026-12-20']])
+    expect((await appeler(id, 'DELETE', `/epargne/plan/${moto}/versements`)).statusCode).toBe(204)
+    expect((await appeler(id, 'DELETE', `/epargne/plan/${moto}/versements`)).statusCode).toBe(404)
   })
 })

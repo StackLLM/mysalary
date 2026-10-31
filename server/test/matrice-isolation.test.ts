@@ -67,13 +67,16 @@ async function remplir(prenom: string, marque: string) {
   const compte = await creer(id, '/epargne/comptes', { libelle: `Épargne ${marque}`, solde: 500_000, auLe: '2027-01-01' })
   const objectif = await creer(id, '/objectifs', { libelle: `Moto ${marque}`, montantCible: 8_500_000, dateCible: '2027-12' })
   const mouvement = await creer(id, '/epargne/mouvements', { sens: 'versement', compteId: compte, objectifId: objectif, date: '2027-01-05', montant: 100_000 })
+  // « Pas ce mois-ci » sur un objectif avec un versement mensuel (lot 36).
+  const mensuel = await creer(id, '/objectifs', { libelle: `Permis ${marque}`, montantCible: 300_000, versementMensuel: 100_000 })
+  await ok(id, 'PUT', `/epargne/plan/${mensuel}/saut`)
   const scenario = await creer(id, '/scenarios', { nom: `Plan ${marque}`, ajustements: { versements: { [objectif]: 300_000 } }, horizon: 12 })
   await ok(id, 'POST', '/mois/2026-12/cloturer', { forcer: true })
   // Suivi dès décembre, puis solde réel de fin de décembre (lot 35).
   await ok(id, 'PUT', '/reglages', { depart: { mois: '2026-12', solde: 0 } })
   await ok(id, 'PUT', '/mois/2026-12/cumul', { solde: 123_400 })
   await ok(id, 'POST', '/import/apercu', { fichier: { ...IMPORT, prenom: marque } })
-  return { id, contrat, categorie, charge, enveloppe, ponctuel, dette, paiement, depense, source, recu, compte, objectif, mouvement, scenario }
+  return { id, contrat, categorie, charge, enveloppe, ponctuel, dette, paiement, depense, source, recu, compte, objectif, mouvement, scenario, mensuel }
 }
 type Comptes = { a: Awaited<ReturnType<typeof remplir>>; b: Awaited<ReturnType<typeof remplir>> }
 
@@ -186,6 +189,9 @@ const CAS: Record<string, (c: Comptes) => Appel[]> = {
     { chemin: '/epargne/mouvements', payload: { sens: 'retrait', compteId: a.compte, objectifId: b.objectif, date: '2027-01-15', montant: 1 }, attendu: 'refus' },
   ],
   'DELETE /epargne/mouvements/:id': ({ b }) => [{ chemin: `/epargne/mouvements/${b.mouvement}`, attendu: 'introuvable' }],
+  'PUT /epargne/plan/:id/saut': ({ b }) => [{ chemin: `/epargne/plan/${b.mensuel}/saut`, attendu: 'introuvable' }],
+  'DELETE /epargne/plan/:id/saut': ({ b }) => [{ chemin: `/epargne/plan/${b.mensuel}/saut`, attendu: 'introuvable' }],
+  'DELETE /epargne/plan/:id/versements': ({ b }) => [{ chemin: `/epargne/plan/${b.objectif}/versements`, attendu: 'introuvable' }],
   'GET /objectifs': () => [{ chemin: '/objectifs', attendu: 'lecture' }],
   'POST /objectifs': () => [{ chemin: '/objectifs', payload: { libelle: 'Voyage', montantCible: 100_000 }, attendu: 'compte' }],
   'POST /objectifs/apercu': ({ b }) => [

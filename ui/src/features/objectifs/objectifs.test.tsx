@@ -1,6 +1,6 @@
 import { REGLES_SCENARIOS_DEFAUT } from '@mysalary/partage'
 import type { EpargneDto, MouvementEpargneDto, ObjectifDetailDto, ObjectifsDto, SuiviObjectif, Utilisateur } from '@mysalary/partage'
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { api } from '../../lib/api'
 import { rendre } from '../../test/outils'
@@ -148,7 +148,7 @@ beforeEach(() => {
   epargne = {
     aujourdhui: '2026-10-09',
     etat,
-    planMois: { cle: '2026-10', debut: '2026-09-27', fin: '2026-10-26', lignes: [{ objectifId: 'moto', libelle: 'Moto', prevu: 400_000, reel: 200_000 }], prevue: 400_000, reelle: 200_000 },
+    planMois: { cle: '2026-10', debut: '2026-09-27', fin: '2026-10-26', lignes: [{ objectifId: 'moto', libelle: 'Moto', prevu: 400_000, reel: 200_000, prevuSaute: null }], prevue: 400_000, reelle: 200_000 },
     mouvements: [versement],
     objectifs: [{ id: 'moto', libelle: 'Moto', statut: 'actif' }],
   } as unknown as EpargneDto
@@ -216,7 +216,7 @@ describe('Objectifs (liste)', () => {
     expect(within(actions).queryByText('Paie en retard')).not.toBeInTheDocument()
     fireEvent.click(within(actions).getByRole('button', { name: 'Noter le versement' }))
     expect(await screen.findByLabelText('Montant')).toHaveValue('2000')
-    expect(screen.getByLabelText('Pour')).toHaveValue('moto')
+    expect(screen.getByRole('radio', { name: /Moto/ })).toHaveAttribute('aria-checked', 'true')
   })
 
   it('monter un objectif envoie l’ordre complet', async () => {
@@ -333,21 +333,63 @@ describe('Épargne', () => {
       { route: '/plan', compte: 'u1' },
     )
     expect(espaces((await screen.findByRole('alert')).textContent)).toMatch(/réservent 500 DH de plus que ton épargne déclarée/)
-    expect(within(screen.getByRole('list', { name: 'Comptes d’épargne' })).getByText('CIH')).toBeInTheDocument()
+    expect(within(screen.getByRole('region', { name: 'Comptes d’épargne' })).getByText('CIH')).toBeInTheDocument()
   })
 
-  it('versement mensuel prévu : prévu, versé, reste ; « Noter » pré-remplit le versement', async () => {
+  // Plan du mois (lot 36) : un choix clair par objectif, chacun annulable.
+  const ouvrirEpargne = () =>
     rendre(
       <FournisseurSaisieRapide>
         <OngletEpargne />
       </FournisseurSaisieRapide>,
       { route: '/plan', compte: 'u1' },
     )
-    const prevus = await screen.findByRole('region', { name: 'Versements prévus ce mois-ci' })
-    expect(espaces(prevus.textContent)).toMatch(/Prévu 4 000 ?DH.*· versé 2 000 ?DH/)
-    fireEvent.click(within(prevus).getByRole('button', { name: /Noter le versement de 2.000.DH pour Moto/ }))
+  const plan = (lignes: object[]) => {
+    epargne = { ...epargne, planMois: { ...epargne.planMois, lignes } } as unknown as EpargneDto
+  }
+  const ligneMoto = async () => (await screen.findByRole('link', { name: 'Moto' })).closest('li')!
+
+  it('en partie épargné : « Compléter » note le reste en un clic ; « Autre montant » ouvre la saisie pré-remplie', async () => {
+    ouvrirEpargne()
+    const mois = await screen.findByRole('region', { name: 'Épargne du mois' })
+    expect(espaces(mois.textContent)).toMatch(/2 000.*épargnés sur 4 000.*prévus/)
+    const moto = await ligneMoto()
+    fireEvent.click(within(moto).getByRole('button', { name: /Épargné : 2.000.DH pour Moto/ }))
+    await waitFor(() =>
+      expect(api.creer).toHaveBeenCalledWith('/epargne/mouvements', { sens: 'versement', compteId: 'cih', objectifId: 'moto', date: '2026-10-09', montant: 200_000, libelle: '' }),
+    )
+    fireEvent.click(within(moto).getByRole('button', { name: 'Autre montant' }))
     expect(await screen.findByLabelText('Montant')).toHaveValue('2000')
-    expect(screen.getByLabelText('Pour')).toHaveValue('moto')
+    expect(screen.getByRole('radio', { name: /Moto/ })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('à décider : « Pas ce mois-ci », puis « Annuler » le rend de nouveau à décider', async () => {
+    plan([{ objectifId: 'moto', libelle: 'Moto', prevu: 400_000, reel: 0, prevuSaute: null }])
+    vi.mocked(api.supprimer).mockResolvedValue(undefined)
+    ouvrirEpargne()
+    fireEvent.click(within(await ligneMoto()).getByRole('button', { name: 'Pas ce mois-ci' }))
+    await waitFor(() => expect(api.modifier).toHaveBeenCalledWith('/epargne/plan/moto/saut', {}))
+
+    cleanup()
+    plan([{ objectifId: 'moto', libelle: 'Moto', prevu: null, reel: 0, prevuSaute: 400_000 }])
+    ouvrirEpargne()
+    const moto = await ligneMoto()
+    expect(espaces(moto.textContent)).toMatch(/Pas ce mois-ci · 4 000.*non épargnés/)
+    expect(within(moto).queryByRole('button', { name: /Épargné/ })).not.toBeInTheDocument()
+    fireEvent.click(within(moto).getByRole('button', { name: 'Annuler' }))
+    await waitFor(() => expect(api.supprimer).toHaveBeenCalledWith('/epargne/plan/moto/saut'))
+  })
+
+  it('épargné : « Annuler » demande confirmation, puis retire les versements du mois de cet objectif', async () => {
+    plan([{ objectifId: 'moto', libelle: 'Moto', prevu: 400_000, reel: 400_000, prevuSaute: null }])
+    vi.mocked(api.supprimer).mockResolvedValue(undefined)
+    ouvrirEpargne()
+    const moto = await ligneMoto()
+    expect(within(moto).getByRole('img', { name: 'Épargné' })).toBeInTheDocument()
+    expect(espaces((await screen.findByRole('region', { name: 'Épargne du mois' })).textContent)).toMatch(/Tout est décidé pour ce mois/)
+    fireEvent.click(within(moto).getByRole('button', { name: 'Annuler' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Annuler l’épargne' }))
+    await waitFor(() => expect(api.supprimer).toHaveBeenCalledWith('/epargne/plan/moto/versements'))
   })
 
   it('sans compte déclaré : pas d’alerte « en trop », on propose de déclarer le compte avec l’épargne des objectifs', async () => {
@@ -379,7 +421,7 @@ describe('Épargne', () => {
       expect(screen.getByRole('dialog')).toBeInTheDocument()
     })
     fireEvent.change(await screen.findByLabelText('Montant'), { target: { value: '300' } })
-    expect(screen.getByLabelText('Pour')).toHaveValue('moto')
+    expect(screen.getByRole('radio', { name: /Moto/ })).toHaveAttribute('aria-checked', 'true')
     fireEvent.click(screen.getByRole('button', { name: 'Noter le versement' }))
     await waitFor(() =>
       expect(api.creer).toHaveBeenCalledWith('/epargne/mouvements', { sens: 'versement', compteId: 'cih', objectifId: 'moto', date: '2026-10-09', montant: 30_000, libelle: '' }),

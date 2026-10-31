@@ -48,6 +48,7 @@
 | 33 | [Arabe et darija](#lots-32-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
 | 34 | [Import de relevés](#lots-32-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
 | 35 | [Correction du cumul en fin de mois](#lot-35--correction-du-cumul-en-fin-de-mois) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 535 | [Bilan du lot 35](#bilan-du-lot-35--correction-du-cumul-en-fin-de-mois) |
+| 36 | [Épargne du mois, objectif par objectif](#lot-36--épargne-du-mois-objectif-par-objectif) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 542 | [Bilan du lot 36](#bilan-du-lot-36--épargne-du-mois-objectif-par-objectif) |
 
 « Tests » = nombre total de tests automatiques du projet à la clôture du lot (partage + moteur + serveur + interface).
 
@@ -381,6 +382,12 @@ Décidés le 12/10/2026 après l'étude de marché (`docs/etude/Etude-marche-202
 - **Statut** : 🟡 livré le 27/10/2026, en attente de validation · [Bilan du lot 35](#bilan-du-lot-35--correction-du-cumul-en-fin-de-mois).
 - **Besoin** : des charges oubliées faussent le cumul du mois et de tous les suivants ; seul le solde de départ des Réglages permettait de recaler, et seulement au premier mois.
 - **Décisions (27/10/2026)** : l'écart est une **ligne à part** (« Écart non saisi »), jamais une dépense : charges, reste et indicateurs restent ceux saisis. Correction possible **sur les mois terminés seulement** : leur solde de fin est un chiffre réel.
+
+### Lot 36 — Épargne du mois, objectif par objectif
+
+- **Statut** : 🟡 livré le 30/10/2026, en attente de validation · [Bilan du lot 36](#bilan-du-lot-36--épargne-du-mois-objectif-par-objectif).
+- **Besoin (30/10/2026)** : la page Mon plan › Épargne n'était pas compréhensible. Elle doit dire, mois par mois et objectif par objectif : « j'ai épargné le montant prévu », ou pas, avec une annulation claire plutôt qu'une simple suppression ; et laisser choisir l'objectif quand il y en a plusieurs.
+- **Décision** : « Pas ce mois-ci » est enregistré (le versement n'est plus attendu ce mois-là, dans tous les calculs), et il s'annule.
 
 ### Lots 32 et suivants — après le lancement
 
@@ -2537,3 +2544,15 @@ Inscription → bandeau sur la mise en route → « Renvoyer le lien » (204) �
 - **Tests** : moteur (écart négatif et positif, report et projections, mois en cours ignoré), serveur (correction, remplacement, retrait, refus, découvert), matrice d'isolation (2 routes), interface (saisie, affichage, retrait, absence sur un mois en cours). 535 tests.
 - **Vérifié** à 1342 px et 375 px avec un compte « Essai » supprimé ensuite : octobre corrigé à 8 750 DH (calculé 10 000 DH, écart −1 250 DH), novembre reprend 8 750 DH, retrait de la correction ; pas de défilement horizontal.
 - **À savoir** : en cycle de paie, un mois se termine à l'arrivée de la paie suivante. Tant qu'elle n'est pas notée comme reçue, le mois reste « en cours » et ne se corrige pas encore.
+
+### Bilan du lot 36 — Épargne du mois, objectif par objectif
+
+> Livré le 30/10/2026, à valider.
+
+- **Moteur** : `creerCalendrier` reçoit `versementsSautes` ; dans `epargneDuMois`, un versement sauté passe de `prevu` à `prevuSaute`. Il n'est donc plus attendu : ni à confirmer, ni dans le cumul après prévu, ni dans les alertes, ni dans le reste à épargner d'Aujourd'hui et de Mois.
+- **Base** : table `VersementSaute` (objectif, mois, compte), migration `20261030090000_versements_sautes` ; supprimée avec l'objectif ou le compte ; incluse dans l'export et la restauration.
+- **API** (mois en cours) : `PUT` et `DELETE /epargne/plan/:id/saut` (« pas ce mois-ci » et son annulation ; refus sans versement prévu ou si un versement est déjà noté), `DELETE /epargne/plan/:id/versements` (annule les versements du mois de l'objectif ; les retraits et les autres mois restent).
+- **Interface** : la page commence par « Épargne de novembre » : un anneau (épargné sur prévu), puis une ligne par objectif avec son état (à décider, en partie, épargné, pas ce mois-ci) et ses choix : « Épargné 1 000 DH » en un clic (un seul compte ; sinon la saisie s'ouvre pour choisir le compte), « Autre montant », « Pas ce mois-ci », et « Annuler » sur chaque choix fait (avec confirmation pour retirer un versement). « Épargner pour un objectif » ouvre la saisie, où l'objectif se choisit sur des cartes qui disent où il en est ce mois-ci. À droite, une seule carte « Ton épargne » : solde, réservé, disponible, alertes et progression de chaque objectif. L'historique parle d'« annuler » un mouvement, plus de « supprimer ». `Confirmation` accepte un libellé de renoncement (« Garder »).
+- **Code retiré** : la bande Solde / Prévu ce mois-ci, la liste « Versements prévus », le bloc « Réservé aux objectifs » et les totaux en bas (trois fois les mêmes chiffres), la carte « Objectifs », `lignesPrevues` (remplacé par `lignesDuPlan` et `resumePlan`).
+- **Tests** : moteur (versement sauté, autre mois intact), serveur (saut, reprise, refus, annulation limitée au mois et à l'objectif), matrice d'isolation (3 routes), interface (compléter en un clic, autre montant pré-rempli, pas ce mois-ci et reprise, annulation confirmée). 542 tests.
+- **Vérifié** à 1342 px et 375 px avec un compte « Essai » supprimé ensuite : Moto épargné, Voyage « pas ce mois-ci » (prévu ramené de 1 800 à 1 300 DH, alertes de 3 à 1), choix d'objectif en cartes, annulation de Moto ; pas de défilement horizontal, aucune erreur de console.

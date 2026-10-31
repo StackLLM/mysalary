@@ -68,6 +68,11 @@ export const useSupprimerCompte = () => useEcriture((id: string) => api.supprime
 export const useAjouterMouvement = () => useEcriture((s: SaisieMouvementEpargne) => api.creer<{ id: string }>('/epargne/mouvements', s))
 export const useSupprimerMouvement = () => useEcriture((id: string) => api.supprimer(`/epargne/mouvements/${id}`))
 
+/** Plan du mois (lot 36) : « pas ce mois-ci », le reprendre, ou annuler ce qui a été épargné ce mois-ci pour un objectif. */
+export const useSauterVersement = () => useEcriture((objectifId: string) => api.modifier<void>(`/epargne/plan/${objectifId}/saut`, {}))
+export const useReprendreVersement = () => useEcriture((objectifId: string) => api.supprimer(`/epargne/plan/${objectifId}/saut`))
+export const useAnnulerVersementsDuMois = () => useEcriture((objectifId: string) => api.supprimer(`/epargne/plan/${objectifId}/versements`))
+
 export function useEnregistrerObjectif() {
   const invalider = useInvalider()
   return useMutation({

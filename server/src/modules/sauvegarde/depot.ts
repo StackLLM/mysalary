@@ -34,6 +34,8 @@ const TABLES: Table[] = [
   { cle: 'correctionCumul' },
   { cle: 'compteEpargne' },
   { cle: 'objectif' },
+  // « Pas ce mois-ci » (lot 36).
+  { cle: 'versementSaute', liens: { objectifId: { vers: 'objectif', requis: true } } },
   { cle: 'mouvementEpargne', liens: { compteId: { vers: 'compteEpargne', requis: true }, objectifId: { vers: 'objectif', requis: false } } },
   { cle: 'scenario', json: ['ajustements'] },
 ]

@@ -8,6 +8,8 @@ interface ProprietesConfirmation {
   titre: string
   description: ReactNode
   libelleConfirmer: string
+  /** Libellé du bouton qui ferme sans rien faire ; à changer quand l'action elle-même est une annulation. */
+  libelleRenoncer?: string
   onConfirmer: () => void
   /** Bouton de confirmation bloqué tant qu'une condition n'est pas remplie (ex. prénom retapé). */
   confirmerDesactive?: boolean
@@ -24,6 +26,7 @@ export function Confirmation({
   titre,
   description,
   libelleConfirmer,
+  libelleRenoncer = 'Annuler',
   onConfirmer,
   confirmerDesactive,
   chargement,
@@ -44,7 +47,7 @@ export function Confirmation({
           {/* Sur mobile, les boutons s'empilent sur toute la largeur : un long libellé ne déborde jamais de la fenêtre. */}
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Bouton variante="contour" taille="md" className="w-full sm:w-auto" onClick={onFermer}>
-              Annuler
+              {libelleRenoncer}
             </Bouton>
             <Bouton variante={ton} taille="md" className="w-full sm:w-auto" onClick={onConfirmer} disabled={confirmerDesactive} chargement={chargement}>
               {libelleConfirmer}

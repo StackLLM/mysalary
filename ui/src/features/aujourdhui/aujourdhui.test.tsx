@@ -187,7 +187,7 @@ describe('Aujourd’hui', () => {
     expect(within(aFaire).getByLabelText('3 actions')).toBeInTheDocument()
     fireEvent.click(within(aFaire).getByRole('button', { name: 'Noter le versement' }))
     expect(await screen.findByLabelText('Montant')).toHaveValue('1000')
-    expect(screen.getByLabelText('Pour')).toHaveValue('moto')
+    expect(screen.getByRole('radio', { name: /Moto/ })).toHaveAttribute('aria-checked', 'true')
   })
 
   it('« Confirmer la paie » ouvre la réception de la paie ici même', async () => {

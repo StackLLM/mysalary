@@ -112,6 +112,14 @@ export interface LigneEpargne {
   prevu: Centimes | null
   /** Versements − retraits du mois (réel). */
   reel: Centimes
+  /** Versement prévu que l'utilisateur a choisi de ne pas faire ce mois-ci (lot 36) ; `prevu` vaut alors `null`. */
+  prevuSaute: Centimes | null
+}
+
+/** « Pas ce mois-ci » : le versement mensuel d'un objectif n'est pas attendu ce mois-là (lot 36). */
+export interface VersementSaute {
+  objectifId: string
+  mois: CleMois
 }
 
 /** Bornes figées d'un mois clôturé. */
@@ -198,6 +206,7 @@ export function creerCalendrier({
   objectifs = [],
   mouvementsEpargne = [],
   correctionsCumul = [],
+  versementsSautes = [],
   ...donnees
 }: DonneesSalaire &
   DonneesCharges & {
@@ -207,6 +216,7 @@ export function creerCalendrier({
     objectifs?: Objectif[]
     mouvementsEpargne?: MouvementEpargne[]
     correctionsCumul?: CorrectionCumul[]
+    versementsSautes?: VersementSaute[]
   }) {
   const paies = creerCalendrierPaie(donnees)
   /** Sans contrat, le cycle de paie n'est pas défini : on retombe sur le mois civil. */
@@ -214,6 +224,7 @@ export function creerCalendrier({
 
   const figes = new Map(moisClotures.map((m) => [m.cle, m]))
   const corrections = new Map(correctionsCumul.map((c) => [c.mois, c.solde]))
+  const sautes = new Set(versementsSautes.map((v) => `${v.objectifId}:${v.mois}`))
 
   /** Début d'un mois. Un mois clôturé garde ses bornes ; le mois qui le suit commence le lendemain de sa fin. */
   function borne(cle: CleMois): { date: DateCivile; source: SourceBorne } {
@@ -511,10 +522,13 @@ export function creerCalendrier({
         const restant = Math.max(0, o.montantCible - epargneObjectif(o, mouvementsEpargne, ajouterJours(periode.debut, -1)))
         prevu = restant > 0 ? centimes(Math.min(o.versementMensuel, restant)) : null
       }
-      if (prevu !== null || reel !== 0) lignes.push({ objectifId: o.id, libelle: o.libelle, prevu, reel })
+      // « Pas ce mois-ci » (lot 36) : le versement n'est plus attendu, ni dans le reste à épargner ni dans le cumul.
+      const prevuSaute = prevu !== null && sautes.has(`${o.id}:${cle}`) ? prevu : null
+      if (prevuSaute !== null) prevu = null
+      if (prevu !== null || prevuSaute !== null || reel !== 0) lignes.push({ objectifId: o.id, libelle: o.libelle, prevu, reel, prevuSaute })
     }
     const libre = additionner(...mouvementsEpargne.filter((m) => m.objectifId === null && dans(m)).map((m) => m.montant))
-    if (libre !== 0) lignes.push({ objectifId: null, libelle: 'Épargne libre', prevu: null, reel: libre })
+    if (libre !== 0) lignes.push({ objectifId: null, libelle: 'Épargne libre', prevu: null, reel: libre, prevuSaute: null })
     return {
       lignes,
       prevue: additionner(...lignes.map((l) => l.prevu ?? centimes(0))),

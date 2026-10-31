@@ -71,7 +71,8 @@ export interface PlanEpargneMoisDto {
   cle: CleMois
   debut: DateCivile
   fin: DateCivile
-  lignes: { objectifId: string | null; libelle: string; prevu: number | null; reel: number }[]
+  /** `prevuSaute` : versement prévu que l'utilisateur a choisi de ne pas faire ce mois-ci (lot 36). */
+  lignes: { objectifId: string | null; libelle: string; prevu: number | null; reel: number; prevuSaute: number | null }[]
   prevue: number
   reelle: number
 }

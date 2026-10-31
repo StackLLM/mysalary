@@ -5,10 +5,13 @@ import { toast } from 'sonner'
 import { Bouton, styleBouton } from '../../components/Bouton'
 import { Champ, ChampMontant } from '../../components/Champ'
 import { Choix, Selection } from '../../components/Selection'
+import { Montant } from '../../components/Montant'
 import { ErreurApi } from '../../lib/api'
+import { cn } from '../../lib/cn'
 import { dateDuJour } from '../../lib/dates'
 import { lireMontant, versSaisie } from '../salaire/saisie'
 import { useAjouterMouvement, useEpargne, useSupprimerMouvement } from './requetes'
+import { lignesDuPlan, type LignePlan } from './saisie'
 
 /**
  * Versement ou retrait d'épargne (R11 : jamais une dépense), vers un objectif ou en épargne libre.
@@ -30,6 +33,15 @@ export function FormulaireVersement({ objectifId, montant: montantPrevu, onTermi
 
   const comptes = epargne.data?.etat.comptes ?? []
   const compte = compteId || comptes[0]?.id || ''
+  // Ce qui reste à verser ce mois-ci pour chaque objectif : proposé quand on le choisit (lot 36).
+  const plan = new Map(epargne.data ? lignesDuPlan(epargne.data.planMois).map((l) => [l.objectifId, l]) : [])
+  const restes = new Map([...plan].map(([id, l]) => [id, l.reste]))
+
+  function choisir(id: string) {
+    setObjectif(id)
+    const reste = restes.get(id)
+    if (sens === 'versement' && reste && (montant === '' || montant === versSaisie(restes.get(objectif) ?? -1))) setMontant(versSaisie(reste))
+  }
   // Le champ n'existe qu'une fois l'épargne chargée : le focus suit.
   useEffect(() => champMontant.current?.focus(), [epargne.isPending])
 
@@ -78,15 +90,33 @@ export function FormulaireVersement({ objectifId, montant: montantPrevu, onTermi
         ]}
       />
       <ChampMontant ref={champMontant} libelle="Montant" value={montant} onChange={(e) => setMontant(e.target.value)} erreur={erreurs.montant} />
-      <Selection libelle="Pour" value={objectif} onChange={(e) => setObjectif(e.target.value)}>
-        <option value="">Épargne libre (sans objectif)</option>
-        {epargne.data?.objectifs.map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.libelle}
-            {o.statut === 'pause' ? ' (en pause)' : ''}
-          </option>
-        ))}
-      </Selection>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-1.5 text-texte-sm text-gris">Pour</legend>
+        <div role="radiogroup" aria-label="Objectif" className="grid max-h-[264px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+          {[{ id: '', libelle: 'Épargne libre', statut: 'actif' }, ...(epargne.data?.objectifs ?? [])].map((o) => {
+            const choisi = objectif === o.id
+            const ligne = plan.get(o.id)
+            return (
+              <button
+                key={o.id || 'libre'}
+                type="button"
+                role="radio"
+                aria-checked={choisi}
+                onClick={() => choisir(o.id)}
+                className={cn(
+                  'flex min-w-0 flex-col items-start rounded-champ border px-3.5 py-2.5 text-left transition-colors',
+                  choisi ? 'border-primaire bg-sauge-50 ring-1 ring-primaire' : 'border-filet bg-white hover:border-filet-fort',
+                )}
+              >
+                <span className="w-full truncate text-texte-sm font-semibold text-encre">{o.libelle}</span>
+                <span className="w-full truncate text-mention text-gris">
+                  {o.id === '' ? 'Sans objectif' : o.statut === 'pause' ? 'En pause' : <EtatCeMois ligne={ligne} />}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </fieldset>
       <div className="grid gap-5 sm:grid-cols-2">
         {comptes.length > 1 && (
           <Selection libelle="Compte" value={compte} onChange={(e) => setCompteId(e.target.value)}>
@@ -111,4 +141,12 @@ export function FormulaireVersement({ objectifId, montant: montantPrevu, onTermi
       </Bouton>
     </form>
   )
+}
+
+/** État de l'objectif dans le plan du mois, sous son nom (lot 36). */
+function EtatCeMois({ ligne }: { ligne: LignePlan | undefined }) {
+  if (!ligne) return <>Rien de prévu ce mois-ci</>
+  if (ligne.etat === 'saute') return <>Pas ce mois-ci</>
+  if (ligne.reste > 0) return <>Reste <Montant valeur={ligne.reste} /> ce mois-ci</>
+  return <>Fait ce mois-ci</>
 }

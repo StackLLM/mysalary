@@ -145,6 +145,41 @@ export async function supprimerMouvement(prisma: PrismaClient, utilisateurId: st
   exigerTouche(await prisma.mouvementEpargne.deleteMany({ where: { id, utilisateurId } }), 'Mouvement')
 }
 
+// --- Plan du mois (lot 36) : épargné, « pas ce mois-ci », ou annulé ---
+
+/** Versement mensuel de l'objectif dans le mois en cours ; refus s'il n'y en a pas. */
+async function versementDuMois(prisma: PrismaClient, utilisateurId: string, objectifId: string, aujourdhui: DateCivile) {
+  const objectif = await trouverObjectif(prisma, utilisateurId, objectifId)
+  const { calendrier } = await chargerCalendrier(prisma, utilisateurId, aujourdhui)
+  const mois = calendrier.moisCourant()
+  const ligne = calendrier.epargneDuMois(mois.cle).lignes.find((l) => l.objectifId === objectifId)
+  return { objectif, mois, ligne }
+}
+
+/** « Pas ce mois-ci » : le versement mensuel n'est plus attendu ce mois-ci. Refus si rien n'est prévu ou si un versement est déjà noté. */
+export async function sauterVersement(prisma: PrismaClient, utilisateurId: string, objectifId: string, aujourdhui: DateCivile) {
+  const { objectif, mois, ligne } = await versementDuMois(prisma, utilisateurId, objectifId, aujourdhui)
+  if (ligne?.prevuSaute) return
+  if (!ligne?.prevu) throw regle(`Aucun versement n’est prévu ce mois-ci pour « ${objectif.libelle} ».`)
+  if (ligne.reel > 0) throw regle(`Un versement est déjà noté ce mois-ci pour « ${objectif.libelle} » : annule-le d’abord.`)
+  await prisma.versementSaute.create({ data: { utilisateurId, objectifId, cle: mois.cle } })
+}
+
+/** Annule « pas ce mois-ci » : le versement mensuel est de nouveau attendu. */
+export async function reprendreVersement(prisma: PrismaClient, utilisateurId: string, objectifId: string, aujourdhui: DateCivile) {
+  const { mois } = await versementDuMois(prisma, utilisateurId, objectifId, aujourdhui)
+  exigerTouche(await prisma.versementSaute.deleteMany({ where: { utilisateurId, objectifId, cle: mois.cle } }), 'Versement sauté')
+}
+
+/** Annule ce qui a été épargné ce mois-ci pour l'objectif : ses versements du mois en cours sont retirés (les retraits restent). */
+export async function annulerVersementsDuMois(prisma: PrismaClient, utilisateurId: string, objectifId: string, aujourdhui: DateCivile) {
+  const { mois } = await versementDuMois(prisma, utilisateurId, objectifId, aujourdhui)
+  exigerTouche(
+    await prisma.mouvementEpargne.deleteMany({ where: { utilisateurId, objectifId, type: 'versement', date: { gte: mois.debut, lte: mois.fin } } }),
+    'Versement du mois',
+  )
+}
+
 // --- Objectifs ---
 
 const comptesCourts = (prisma: PrismaClient, utilisateurId: string) =>
