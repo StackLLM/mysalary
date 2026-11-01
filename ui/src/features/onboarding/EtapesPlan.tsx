@@ -11,7 +11,7 @@ import { ErreurApi } from '../../lib/api'
 import { FormulaireCharge, FormulairePonctuel, type ProposeCharge } from '../charges/FormulaireCharge'
 import { useCategories, useCharges, useDettes, useEnregistrerCharge, useEnregistrerDette, useEnregistrerPonctuel, usePonctuels } from '../charges/requetes'
 import { FormulaireDette } from '../dettes/FormulaireDette'
-import { useEnregistrerCompte, useEnregistrerObjectif, useEpargne, useObjectifs } from '../epargne/requetes'
+import { useEnregistrerObjectif, useObjectifs } from '../epargne/requetes'
 import { moisSouhaitables } from '../objectifs/saisie'
 import { FormulaireSource } from '../revenus/FormulaireSource'
 import { useEnregistrerSource, useSources } from '../revenus/requetes'
@@ -28,8 +28,6 @@ export interface ProprietesEtape {
   moisCourant: string
   aller: (etape: number) => void
 }
-
-const erreurDe = (e: unknown) => (e instanceof ErreurApi ? e.message : 'Erreur inattendue. Réessaie.')
 
 function Titre({ titre, aide }: { titre: string; aide: ReactNode }) {
   return (
@@ -400,34 +398,13 @@ export function EtapeDettes({ onboarding, aujourdhui, moisCourant }: ProprietesE
 
 // --- 8. Épargne ---
 
-export function EtapeEpargne({ onboarding, aujourdhui }: ProprietesEtape) {
-  const epargne = useEpargne()
-  const enregistrer = useEnregistrerCompte()
+export function EtapeEpargne({ onboarding }: ProprietesEtape) {
   const { confirmer, ignorer, attente } = useDecisionEtape()
-  const [nom, setNom] = useState('')
-  const [solde, setSolde] = useState('')
-  const [erreur, setErreur] = useState<string>()
   const lignes = aConfirmer(onboarding.import?.lignes, 8)
-
-  async function ajouter(e: FormEvent) {
-    e.preventDefault()
-    const lu = lireMontant(solde, 0)
-    if (!nom.trim()) return setErreur('Donne un nom à ce compte.')
-    if ('erreur' in lu) return setErreur(lu.erreur)
-    try {
-      await enregistrer.mutateAsync({ libelle: nom.trim(), solde: lu.valeur, auLe: aujourdhui })
-      toast(`Compte « ${nom.trim()} » ajouté.`)
-      setNom('')
-      setSolde('')
-      setErreur(undefined)
-    } catch (err) {
-      setErreur(erreurDe(err))
-    }
-  }
 
   return (
     <div>
-      <Titre titre="Ton épargne" aide="Le solde actuel de ton épargne : c’est le point de départ réel. Ce que tu réserves à un objectif se règle à l’étape suivante." />
+      <Titre titre="Ton épargne" aide="Rien à déclarer ici : ton épargne se note objectif par objectif. Ce que tu as déjà de côté se règle à l’étape suivante, avec ton premier objectif." />
       {lignes.length > 0 && (
         <section aria-label="Importé, à confirmer" className="mt-5 rounded-bouton border border-info/30 bg-info-fond/50 p-4">
           <p className="text-texte-sm font-semibold text-info">Importé de ton ancien fichier · à confirmer</p>
@@ -450,23 +427,6 @@ export function EtapeEpargne({ onboarding, aujourdhui }: ProprietesEtape) {
             ))}
           </ul>
         </section>
-      )}
-      <DejaDansLePlan
-        titre="Tes comptes d’épargne"
-        vide="Aucun compte d’épargne pour l’instant."
-        elements={(epargne.data?.etat.comptes ?? []).map((c) => ({ id: c.id, libelle: c.libelle, detail: dh(c.soldeActuel) }))}
-      />
-      <form onSubmit={ajouter} noValidate className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-        <Champ libelle="Nom du compte" placeholder="Livret, compte épargne…" value={nom} onChange={(e) => setNom(e.target.value)} />
-        <ChampMontant libelle="Solde actuel" placeholder="0" value={solde} onChange={(e) => setSolde(e.target.value)} />
-        <Bouton type="submit" variante="teinte" taille="md" chargement={enregistrer.isPending} className="mb-px">
-          Ajouter ce compte
-        </Bouton>
-      </form>
-      {erreur && (
-        <p role="alert" className="mt-2 text-texte-sm font-medium text-alerte">
-          {erreur}
-        </p>
       )}
     </div>
   )

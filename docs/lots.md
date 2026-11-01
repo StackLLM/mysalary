@@ -49,6 +49,7 @@
 | 34 | [Import de relevés](#lots-32-et-suivants--après-le-lancement) | 10 — Après le lancement | ⬜ Prévu | — | — | — |
 | 35 | [Correction du cumul en fin de mois](#lot-35--correction-du-cumul-en-fin-de-mois) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 535 | [Bilan du lot 35](#bilan-du-lot-35--correction-du-cumul-en-fin-de-mois) |
 | 36 | [Épargne du mois, objectif par objectif](#lot-36--épargne-du-mois-objectif-par-objectif) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 542 | [Bilan du lot 36](#bilan-du-lot-36--épargne-du-mois-objectif-par-objectif) |
+| 37 | [Épargne sans comptes à gérer](#lot-37--épargne-sans-comptes-à-gérer) | 6 — Finalisation fonctionnelle | 🟡 Livré, à valider | — | 540 | [Bilan du lot 37](#bilan-du-lot-37--épargne-sans-comptes-à-gérer) |
 
 « Tests » = nombre total de tests automatiques du projet à la clôture du lot (partage + moteur + serveur + interface).
 
@@ -388,6 +389,12 @@ Décidés le 12/10/2026 après l'étude de marché (`docs/etude/Etude-marche-202
 - **Statut** : 🟡 livré le 30/10/2026, en attente de validation · [Bilan du lot 36](#bilan-du-lot-36--épargne-du-mois-objectif-par-objectif).
 - **Besoin (30/10/2026)** : la page Mon plan › Épargne n'était pas compréhensible. Elle doit dire, mois par mois et objectif par objectif : « j'ai épargné le montant prévu », ou pas, avec une annulation claire plutôt qu'une simple suppression ; et laisser choisir l'objectif quand il y en a plusieurs.
 - **Décision** : « Pas ce mois-ci » est enregistré (le versement n'est plus attendu ce mois-là, dans tous les calculs), et il s'annule.
+
+### Lot 37 — Épargne sans comptes à gérer
+
+- **Statut** : 🟡 livré le 01/11/2026, en attente de validation · [Bilan du lot 37](#bilan-du-lot-37--épargne-sans-comptes-à-gérer).
+- **Besoin (01/11/2026)** : « Nouveau compte d’épargne » et tout ce qui parle de comptes n'est pas compris. L'épargne sert à noter les montants mis de côté, rien de plus.
+- **Décision** : plus aucun compte d'épargne à l'écran. Le serveur range l'épargne sur un compte interne, créé tout seul.
 
 ### Lots 32 et suivants — après le lancement
 
@@ -2556,3 +2563,17 @@ Inscription → bandeau sur la mise en route → « Renvoyer le lien » (204) �
 - **Code retiré** : la bande Solde / Prévu ce mois-ci, la liste « Versements prévus », le bloc « Réservé aux objectifs » et les totaux en bas (trois fois les mêmes chiffres), la carte « Objectifs », `lignesPrevues` (remplacé par `lignesDuPlan` et `resumePlan`).
 - **Tests** : moteur (versement sauté, autre mois intact), serveur (saut, reprise, refus, annulation limitée au mois et à l'objectif), matrice d'isolation (3 routes), interface (compléter en un clic, autre montant pré-rempli, pas ce mois-ci et reprise, annulation confirmée). 542 tests.
 - **Vérifié** à 1342 px et 375 px avec un compte « Essai » supprimé ensuite : Moto épargné, Voyage « pas ce mois-ci » (prévu ramené de 1 800 à 1 300 DH, alertes de 3 à 1), choix d'objectif en cartes, annulation de Moto ; pas de défilement horizontal, aucune erreur de console.
+
+### Bilan du lot 37 — Épargne sans comptes à gérer
+
+> Livré le 01/11/2026, à valider.
+
+- **Partage et API** : `compteId` devient facultatif pour un versement, un retrait et la réalisation d'un objectif. Sans lui, le serveur prend le premier compte existant, sinon crée « Mon épargne » (solde 0, ouvert depuis toujours). Les comptes déjà créés restent et continuent de servir.
+- **Moteur** : alertes « Compte d’épargne à déclarer » et « Épargne à réajuster » (réservé au-delà du solde déclaré) supprimées, avec leurs textes.
+- **Interface** :
+  - Épargne : retrait de la section Comptes, du panneau « Nouveau compte d’épargne » / « Déclarer le solde », de la carte Solde / Réservé / Disponible et de ses alertes, et de « Sur quoi repose ce calcul ? ». Il reste le mois (épargné, autre montant, pas ce mois-ci), l'historique et « Mis de côté » par objectif.
+  - Saisie d'un versement et réalisation d'un objectif : plus de choix de compte ni de « Déclare d’abord ton épargne ».
+  - Objectifs : la carte Épargne affiche « Mis de côté » au lieu de Solde « Non déclaré ».
+  - Mise en route, étape Épargne : plus de formulaire de compte.
+- **Tests** : moteur (aucune alerte de compte), serveur (versement et réalisation sans compte, « Mon épargne » créé une seule fois), interface (aucune mention de compte ni de déclaration). 540 tests.
+- **Vérifié** à 1342 px et 375 px avec un compte « Essai » sans compte d'épargne, supprimé ensuite : « Épargné » en un clic sur Moto, saisie libre sans choix de compte, aucune mention de compte, pas de défilement horizontal.

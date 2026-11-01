@@ -1,10 +1,9 @@
 import { formaterMontant } from '@mysalary/partage'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Bouton, styleBouton } from '../../components/Bouton'
+import { Bouton } from '../../components/Bouton'
 import { Champ, ChampMontant } from '../../components/Champ'
-import { Choix, Selection } from '../../components/Selection'
+import { Choix } from '../../components/Selection'
 import { Montant } from '../../components/Montant'
 import { ErreurApi } from '../../lib/api'
 import { cn } from '../../lib/cn'
@@ -25,14 +24,11 @@ export function FormulaireVersement({ objectifId, montant: montantPrevu, onTermi
   const [sens, setSens] = useState<'versement' | 'retrait'>('versement')
   const [montant, setMontant] = useState(montantPrevu ? versSaisie(montantPrevu) : '')
   const [objectif, setObjectif] = useState(objectifId ?? '')
-  const [compteId, setCompteId] = useState('')
   const [date, setDate] = useState(aujourdhui)
   const [libelle, setLibelle] = useState('')
   const [erreurs, setErreurs] = useState<Record<string, string>>({})
   const champMontant = useRef<HTMLInputElement>(null)
 
-  const comptes = epargne.data?.etat.comptes ?? []
-  const compte = compteId || comptes[0]?.id || ''
   // Ce qui reste à verser ce mois-ci pour chaque objectif : proposé quand on le choisit (lot 36).
   const plan = new Map(epargne.data ? lignesDuPlan(epargne.data.planMois).map((l) => [l.objectifId, l]) : [])
   const restes = new Map([...plan].map(([id, l]) => [id, l.reste]))
@@ -46,17 +42,6 @@ export function FormulaireVersement({ objectifId, montant: montantPrevu, onTermi
   useEffect(() => champMontant.current?.focus(), [epargne.isPending])
 
   if (epargne.isPending) return <div className="h-64 animate-pulse rounded-carte bg-interne" aria-label="Chargement de l’épargne" />
-  if (comptes.length === 0) {
-    return (
-      <div className="rounded-bouton bg-interne p-5">
-        <p className="text-texte font-medium text-encre">Déclare d’abord ton épargne.</p>
-        <p className="mt-2 text-texte-sm text-gris">Un versement va sur un compte d’épargne. Ajoute ton compte et ce qu’il contient aujourd’hui.</p>
-        <Link to="/plan?onglet=epargne" onClick={onTermine} className={styleBouton({ taille: 'sm', className: 'mt-4' })}>
-          Ajouter un compte
-        </Link>
-      </div>
-    )
-  }
 
   async function soumettre(e: FormEvent) {
     e.preventDefault()
@@ -67,7 +52,7 @@ export function FormulaireVersement({ objectifId, montant: montantPrevu, onTermi
     setErreurs(p)
     if ('erreur' in lu || Object.keys(p).length > 0) return
     try {
-      const { id } = await ajouter.mutateAsync({ sens, compteId: compte, objectifId: objectif || null, date, montant: lu.valeur, libelle: libelle.trim() })
+      const { id } = await ajouter.mutateAsync({ sens, objectifId: objectif || null, date, montant: lu.valeur, libelle: libelle.trim() })
       const vers = epargne.data?.objectifs.find((o) => o.id === objectif)?.libelle
       toast(`${sens === 'versement' ? 'Versement' : 'Retrait'} de ${formaterMontant(lu.valeur)}${vers ? ` · ${vers}` : ''} noté.`, {
         action: { label: 'Annuler', onClick: () => supprimer.mutate(id) },
@@ -118,15 +103,6 @@ export function FormulaireVersement({ objectifId, montant: montantPrevu, onTermi
         </div>
       </fieldset>
       <div className="grid gap-5 sm:grid-cols-2">
-        {comptes.length > 1 && (
-          <Selection libelle="Compte" value={compte} onChange={(e) => setCompteId(e.target.value)}>
-            {comptes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.libelle}
-              </option>
-            ))}
-          </Selection>
-        )}
         <Champ libelle="Date" type="date" max={aujourdhui} value={date} onChange={(e) => setDate(e.target.value)} erreur={erreurs.date} />
         <Champ libelle="Libellé (facultatif)" placeholder="Virement du mois…" value={libelle} onChange={(e) => setLibelle(e.target.value)} maxLength={60} />
       </div>

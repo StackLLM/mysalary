@@ -54,7 +54,7 @@ describe('épargne', () => {
     expect((await appeler(id, 'DELETE', `/epargne/comptes/${cih}`)).statusCode).toBe(422)
   })
 
-  it('sans compte : épargne des objectifs à déclarer (pas « en trop ») ; le versement mensuel prévu apparaît, puis devient réel une fois noté', async () => {
+  it('aucun compte à gérer : le versement se note sans compte ; plus d’alerte de compte à déclarer (lot 37)', async () => {
     const { id } = await creerCompte(ctx.app, 'Sans compte')
     await ok(id, 'POST', '/salaire/contrats', CONTRAT)
     ctx.jour = '2027-01-10'
@@ -62,23 +62,20 @@ describe('épargne', () => {
     const moto = (await ok(id, 'POST', '/objectifs', { libelle: 'Moto', type: 'moto', montantCible: 8_300_000, montantInitial: 900_000, dateCible: '2027-09', versementMensuel: 400_000 })).id as string
 
     const avant = await lire<EpargneDto>(id, '/epargne')
-    expect(avant.etat).toMatchObject({ declare: false, solde: 0, reserve: 900_000, disponible: 0, depassement: 0 })
     expect(avant.planMois).toMatchObject({ cle: '2027-01', debut: '2026-12-27', prevue: 400_000, reelle: 0 })
     expect(avant.planMois.lignes).toEqual([{ objectifId: moto, libelle: 'Moto', prevu: 400_000, reel: 0, prevuSaute: null }])
-    const alertes = (await lire<ConseilsDto>(id, '/recommandations')).alertes
-    expect(alertes.map((a) => a.type)).toEqual(expect.arrayContaining(['epargneNonDeclaree', 'versementPrevu']))
-    expect(alertes.map((a) => a.type)).not.toContain('reserveDepasse')
+    expect((await lire<ConseilsDto>(id, '/recommandations')).alertes.map((a) => a.type)).toEqual(['versementPrevu'])
 
-    // Le compte déclaré contient les 9 000 DH déjà mis de côté ; le versement du mois est noté.
-    const cih = (await ok(id, 'POST', '/epargne/comptes', { libelle: 'Compte épargne', solde: 900_000, auLe: '2027-01-01' })).id as string
-    await ok(id, 'POST', '/epargne/mouvements', { sens: 'versement', compteId: cih, objectifId: moto, date: '2027-01-10', montant: 400_000 })
+    // Sans compte choisi : l'épargne va sur « Mon épargne », créé une seule fois.
+    await ok(id, 'POST', '/epargne/mouvements', { sens: 'versement', objectifId: moto, date: '2027-01-10', montant: 400_000 })
+    await ok(id, 'POST', '/epargne/mouvements', { sens: 'versement', objectifId: null, date: '2027-01-10', montant: 10_000 })
     const apres = await lire<EpargneDto>(id, '/epargne')
-    expect(apres.etat).toMatchObject({ declare: true, solde: 1_300_000, reserve: 1_300_000, disponible: 0, depassement: 0 })
-    expect(apres.planMois).toMatchObject({ prevue: 400_000, reelle: 400_000 })
-    expect((await lire<ConseilsDto>(id, '/recommandations')).alertes.map((a) => a.type)).not.toContain('versementPrevu')
+    expect(apres.etat.comptes.map((c) => c.libelle)).toEqual(['Mon épargne'])
+    expect(apres.planMois).toMatchObject({ prevue: 400_000, reelle: 410_000 })
+    expect((await lire<ConseilsDto>(id, '/recommandations')).alertes.map((a) => a.type)).toEqual([])
     // Même source partout : objectif, bilan du mois.
     expect((await lire<ObjectifDetailDto>(id, `/objectifs/${moto}`)).objectif.epargne).toBe(1_300_000)
-    expect((await lire<BilanDto>(id, '/mois/2027-01/bilan')).epargne).toEqual({ prevue: 400_000, reelle: 400_000 })
+    expect((await lire<BilanDto>(id, '/mois/2027-01/bilan')).epargne).toEqual({ prevue: 400_000, reelle: 410_000 })
   })
 
   it('déclarer un nouveau solde remplace l’ancien à partir de sa date', async () => {
@@ -122,7 +119,7 @@ describe('objectifs', () => {
 
   it('achat réalisé (R19) : l’épargné sort du compte, aucune dépense ; annulable', async () => {
     const { id, cih, moto } = await compte()
-    await ok(id, 'POST', `/objectifs/${moto}/realiser`, { date: '2027-01-09', compteId: cih })
+    await ok(id, 'POST', `/objectifs/${moto}/realiser`, { date: '2027-01-09' })
     const e = await lire<EpargneDto>(id, '/epargne')
     expect(e.etat).toMatchObject({ solde: 300_000, reserve: 0, disponible: 300_000 })
     const achat = e.mouvements.find((m) => m.type === 'achat')!

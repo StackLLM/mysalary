@@ -1,7 +1,7 @@
 import { centimes, type Centimes } from './argent'
 import { bilanDuMois } from './bilan'
 import { decalerMois, ecartJours, ecartMois, type CleMois, type DateCivile } from './dates'
-import { cibleFondsSecurite, etatEpargne, type Objectif } from './epargne'
+import { cibleFondsSecurite, type Objectif } from './epargne'
 import { analyser, projeter, REGLES_SCENARIOS_DEFAUT, type Ajustements, type DonneesObjectifs, type ReglesScenarios, type Risque } from './objectifs'
 import type { Calendrier } from './periodes'
 import type { Certitude } from './salaire'
@@ -23,9 +23,7 @@ export type Alerte = { cle: string } & (
   | { type: 'echeanceEnRetard'; origine: 'fixe' | 'ponctuel' | 'dette'; id: string; libelle: string; date: DateCivile; reste: Centimes; mois: CleMois }
   | { type: 'enveloppeDepassee'; id: string; libelle: string; budget: Centimes; depassement: Centimes; mois: CleMois }
   | { type: 'semaineDepassee'; mois: CleMois; numero: number; depassement: Centimes; joursRestants: number; budgetMoisRestant: Centimes; parJourMois: Centimes; joursRestantsMois: number }
-  | { type: 'reserveDepasse'; depassement: Centimes }
   /** Des objectifs ont de l'épargne mais aucun compte n'est déclaré : le solde réel est inconnu. */
-  | { type: 'epargneNonDeclaree'; reserve: Centimes }
   /** Versement mensuel d'un objectif prévu ce mois-ci, pas encore (entièrement) noté. */
   | { type: 'versementPrevu'; objectifId: string; libelle: string; reste: Centimes; mois: CleMois }
 )
@@ -72,7 +70,7 @@ const arrondi100 = (montant: number) => Math.max(SEUIL, Math.round(montant / SEU
 
 // --- Alertes ---
 
-export function alertes(calendrier: Calendrier, donnees: DonneesObjectifs, { aujourdhui, debutSemaine = 1, report = false, moisClos = [] }: OptionsConseils): Alerte[] {
+export function alertes(calendrier: Calendrier, _donnees: DonneesObjectifs, { aujourdhui, debutSemaine = 1, report = false, moisClos = [] }: OptionsConseils): Alerte[] {
   const clos = new Set<string>(moisClos)
   const courant = calendrier.moisContenant(aujourdhui).cle
   const precedent = decalerMois(courant, -1)
@@ -136,9 +134,7 @@ export function alertes(calendrier: Calendrier, donnees: DonneesObjectifs, { auj
     }
   }
 
-  const etat = etatEpargne(donnees)
-  if (etat.depassement > 0) liste.push({ cle: 'reserve', type: 'reserveDepasse', depassement: etat.depassement })
-  if (!etat.declare && etat.reserve > 0) liste.push({ cle: 'reserve', type: 'epargneNonDeclaree', reserve: etat.reserve })
+  // Plus d'alerte de compte d'épargne à déclarer ou de réservé en trop (lot 37) : l'utilisateur ne gère pas de comptes.
 
   // Versements mensuels des objectifs encore à faire ce mois-ci (même source que le bilan et le cumul).
   for (const l of clos.has(courant) ? [] : calendrier.epargneDuMois(courant).lignes) {

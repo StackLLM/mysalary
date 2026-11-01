@@ -8,7 +8,6 @@ import { BadgeNature, BadgeRisque } from '../../components/Badges'
 import { BarreProgression } from '../../components/BarreProgression'
 import { Bouton, styleBouton } from '../../components/Bouton'
 import { Carte, TitreSection } from '../../components/Carte'
-import { BlocTotaux } from '../../components/Elements'
 import { FilAriane } from '../../components/FilAriane'
 import { Menu } from '../../components/Menu'
 import { GraphiqueTrajectoire } from '../../components/graphiques/GraphiqueTrajectoire'
@@ -261,15 +260,13 @@ function Objectifs({ donnees }: { donnees: ObjectifsDto }) {
         <motion.div variants={elementApparition} className="flex min-w-0 flex-col gap-8">
           <ProchainesActions />
           <Carte titre="Épargne">
-            <BlocTotaux
-              lignes={[
-                { libelle: 'Solde', valeur: epargne.declare ? <Montant valeur={epargne.solde} /> : 'Non déclaré', fort: true },
-                { libelle: 'Réservé aux objectifs', valeur: <Montant valeur={epargne.reserve} /> },
-              ]}
-              total={{ libelle: 'Disponible', valeur: <Montant valeur={epargne.disponible} /> }}
-            />
+            {/* Ce qui est mis de côté pour les objectifs ; aucun compte à déclarer (lot 37). */}
+            <p className="flex items-baseline justify-between gap-3 text-texte">
+              <span className="text-gris">Mis de côté</span>
+              <Montant valeur={epargne.reserve} className="text-titre font-bold text-encre" />
+            </p>
             <Link to="/plan?onglet=epargne" className={styleBouton({ variante: 'blanc', className: 'mt-5 w-full' })}>
-              Voir mon épargne
+              Noter mon épargne
             </Link>
           </Carte>
           {fondsSecurite && !aUnFonds && (
@@ -306,7 +303,7 @@ function Chiffre({ libelle, valeur, detail, nature = 'reel' }: { libelle: string
   )
 }
 
-const ALERTES_OBJECTIFS = new Set(['versementPrevu', 'epargneNonDeclaree', 'reserveDepasse'])
+const ALERTES_OBJECTIFS = new Set(['versementPrevu'])
 const LEVIERS = new Set(['effort', 'reduction', 'prime', 'disponible'])
 
 /**

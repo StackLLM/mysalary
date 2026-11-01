@@ -106,11 +106,22 @@ async function trouverObjectif(prisma: PrismaClient, utilisateurId: string, id: 
   return o
 }
 
+/**
+ * Compte où va l'épargne quand l'utilisateur n'en choisit pas (lot 37) : la page Épargne ne parle plus de comptes,
+ * on note seulement ce qui est mis de côté. Le premier compte existant, sinon « Mon épargne », créé à 0 et ouvert depuis toujours.
+ */
+async function compteParDefaut(prisma: PrismaClient, utilisateurId: string): Promise<string> {
+  const existant = await prisma.compteEpargne.findFirst({ where: { utilisateurId }, orderBy: { creeLe: 'asc' }, select: { id: true } })
+  if (existant) return existant.id
+  const { id } = await prisma.compteEpargne.create({ data: { utilisateurId, libelle: 'Mon épargne', solde: 0, auLe: '2000-01-01' } })
+  return id
+}
+
 /** Versement ou retrait réel. Un retrait sur un objectif ne peut pas dépasser ce qu'il a d'épargné. */
 export async function creerMouvement(prisma: PrismaClient, utilisateurId: string, s: Sortie<typeof schemaMouvementEpargne>, aujourdhui: DateCivile) {
   pasDansLeFutur(s.date, aujourdhui, 'Un mouvement d’épargne')
   await exigerDatesOuvertes(prisma, utilisateurId, s.date)
-  await trouverCompte(prisma, utilisateurId, s.compteId)
+  const compteId = s.compteId ? (await trouverCompte(prisma, utilisateurId, s.compteId)).id : await compteParDefaut(prisma, utilisateurId)
   let libelle = s.libelle
   if (s.objectifId) {
     const o = await trouverObjectif(prisma, utilisateurId, s.objectifId)
@@ -125,7 +136,7 @@ export async function creerMouvement(prisma: PrismaClient, utilisateurId: string
   const { id } = await prisma.mouvementEpargne.create({
     data: {
       utilisateurId,
-      compteId: s.compteId,
+      compteId,
       objectifId: s.objectifId,
       type: s.sens,
       date: s.date,
@@ -312,12 +323,12 @@ export async function realiser(prisma: PrismaClient, utilisateurId: string, id: 
   if (o.statut === 'realise' || o.statut === 'abandonne') throw regle(`« ${o.libelle} » est déjà ${o.statut === 'realise' ? 'réalisé' : 'abandonné'}.`)
   pasDansLeFutur(s.date, aujourdhui, 'Un achat réalisé')
   await exigerDatesOuvertes(prisma, utilisateurId, s.date)
-  await trouverCompte(prisma, utilisateurId, s.compteId)
+  const compteId = s.compteId ? (await trouverCompte(prisma, utilisateurId, s.compteId)).id : await compteParDefaut(prisma, utilisateurId)
   const { epargne } = await chargerCalendrier(prisma, utilisateurId, aujourdhui)
   const dejaEpargne = epargneObjectif(epargne.objectifs.find((x) => x.id === id)!, epargne.mouvementsEpargne)
   await prisma.$transaction(async (tx) => {
     if (dejaEpargne > 0) {
-      await tx.mouvementEpargne.create({ data: { utilisateurId, compteId: s.compteId, objectifId: id, type: 'achat', date: s.date, montant: -dejaEpargne, libelle: `Achat : ${o.libelle}` } })
+      await tx.mouvementEpargne.create({ data: { utilisateurId, compteId, objectifId: id, type: 'achat', date: s.date, montant: -dejaEpargne, libelle: `Achat : ${o.libelle}` } })
     }
     exigerTouche(await tx.objectif.updateMany({ where: { id, utilisateurId }, data: { statut: 'realise', realiseLe: lireDate(s.date) } }), 'Objectif')
   })

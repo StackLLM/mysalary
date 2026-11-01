@@ -16,7 +16,6 @@ import { FilAriane } from '../../components/FilAriane'
 import { GraphiqueTrajectoire } from '../../components/graphiques/GraphiqueTrajectoire'
 import { Montant } from '../../components/Montant'
 import { Panneau } from '../../components/Panneau'
-import { Selection } from '../../components/Selection'
 import { ErreurApi } from '../../lib/api'
 import { conteneurCascade, elementApparition } from '../../lib/animations'
 import { cn } from '../../lib/cn'
@@ -414,19 +413,18 @@ function ResultatMois({ m, o }: { m: MoisSimulation; o: SuiviObjectif }) {
   )
 }
 
-/** Achat réalisé (R19) : l'épargné sort du compte choisi à la date de l'achat, sans dépense. */
+/** Achat réalisé (R19) : l'épargné de l'objectif sert à l'achat, à sa date, sans dépense. Aucun compte à choisir (lot 37). */
 function PanneauRealisation({ detail, ouvert, onFermer, aujourdhui }: { detail: ObjectifDetailDto; ouvert: boolean; onFermer: () => void; aujourdhui: string }) {
   const realiser = useRealiserObjectif()
-  const { objectif: o, comptes } = detail
+  const { objectif: o } = detail
   const [date, setDate] = useState(dateDuJour())
-  const [compteId, setCompteId] = useState(comptes[0]?.id ?? '')
   const [erreur, setErreur] = useState<string | null>(null)
 
   function soumettre(e: FormEvent) {
     e.preventDefault()
     if (date > aujourdhui) return setErreur('Un achat réalisé ne peut pas être dans le futur.')
     realiser.mutate(
-      { id: o.id, date, compteId },
+      { id: o.id, date },
       {
         onSuccess: () => {
           toast(`« ${o.libelle} » réalisé. ${formaterMontant(o.epargne)} ont servi à l’achat.`)
@@ -439,39 +437,20 @@ function PanneauRealisation({ detail, ouvert, onFermer, aujourdhui }: { detail: 
 
   return (
     <Panneau ouvert={ouvert} onFermer={onFermer} titre={`Réaliser « ${o.libelle} »`} description="L’épargne de l’objectif sert à l’achat. Ce n’est pas une dépense : elle n’est comptée qu’une fois.">
-      {comptes.length === 0 ? (
-        <div className="rounded-bouton bg-interne p-5">
-          <p className="text-texte font-medium text-encre">Aucun compte d’épargne.</p>
-          <p className="mt-2 text-texte-sm text-gris">L’argent de l’achat sort d’un compte : déclare d’abord ton épargne.</p>
-          <Link to="/plan?onglet=epargne" className={styleBouton({ taille: 'sm', className: 'mt-4' })}>
-            Ajouter un compte
-          </Link>
-        </div>
-      ) : (
-        <form onSubmit={soumettre} noValidate className="flex flex-col gap-5">
-          <p className="rounded-champ bg-teinte px-4 py-3 text-texte-sm text-encre-2">
-            <Montant valeur={o.epargne} className="font-semibold" /> sortent de ton épargne{o.atteint ? '.' : ` (la cible de ${formaterMontant(o.montantCible)} n’était pas atteinte).`}
+      <form onSubmit={soumettre} noValidate className="flex flex-col gap-5">
+        <p className="rounded-champ bg-teinte px-4 py-3 text-texte-sm text-encre-2">
+          <Montant valeur={o.epargne} className="font-semibold" /> sortent de ton épargne{o.atteint ? '.' : ` (la cible de ${formaterMontant(o.montantCible)} n’était pas atteinte).`}
+        </p>
+        <Champ libelle="Date de l’achat" type="date" max={aujourdhui} value={date} onChange={(e) => setDate(e.target.value)} />
+        {erreur && (
+          <p role="alert" className="text-texte-sm font-medium text-alerte">
+            {erreur}
           </p>
-          <Champ libelle="Date de l’achat" type="date" max={aujourdhui} value={date} onChange={(e) => setDate(e.target.value)} />
-          {comptes.length > 1 && (
-            <Selection libelle="Compte" value={compteId} onChange={(e) => setCompteId(e.target.value)}>
-              {comptes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.libelle}
-                </option>
-              ))}
-            </Selection>
-          )}
-          {erreur && (
-            <p role="alert" className="text-texte-sm font-medium text-alerte">
-              {erreur}
-            </p>
-          )}
-          <Bouton type="submit" taille="lg" className="w-full" chargement={realiser.isPending}>
-            Marquer comme réalisé
-          </Bouton>
-        </form>
-      )}
+        )}
+        <Bouton type="submit" taille="lg" className="w-full" chargement={realiser.isPending}>
+          Marquer comme réalisé
+        </Bouton>
+      </form>
     </Panneau>
   )
 }

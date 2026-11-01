@@ -3,7 +3,6 @@ import type {
   EpargneDto,
   ObjectifDetailDto,
   ObjectifsDto,
-  SaisieCompteEpargne,
   SaisieMouvementEpargne,
   SaisieObjectif,
   SaisieRealisation,
@@ -62,9 +61,6 @@ function useEcriture<S, R>(appel: (saisie: S) => Promise<R>) {
   return useMutation({ mutationFn: appel, onSuccess: invalider })
 }
 
-export const useEnregistrerCompte = () =>
-  useEcriture(async ({ id, ...s }: SaisieCompteEpargne & { id?: string }) => (id ? api.modifier<void>(`/epargne/comptes/${id}`, s) : api.creer<{ id: string }>('/epargne/comptes', s)))
-export const useSupprimerCompte = () => useEcriture((id: string) => api.supprimer(`/epargne/comptes/${id}`))
 export const useAjouterMouvement = () => useEcriture((s: SaisieMouvementEpargne) => api.creer<{ id: string }>('/epargne/mouvements', s))
 export const useSupprimerMouvement = () => useEcriture((id: string) => api.supprimer(`/epargne/mouvements/${id}`))
 

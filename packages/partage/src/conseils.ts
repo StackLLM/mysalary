@@ -147,20 +147,6 @@ export function redigerAlerte(a: Alerte): AlerteDto {
         action: { libelle: 'Voir la semaine', chemin: `/mois?mois=${a.mois}&onglet=semaines` },
       }
     }
-    case 'reserveDepasse':
-      return {
-        ...a,
-        titre: 'Épargne à réajuster',
-        message: `Tes objectifs réservent ${dh(a.depassement)} de plus que ton épargne déclarée. Mets à jour un solde, ou le montant déjà mis de côté d’un objectif.`,
-        action: { libelle: 'Ouvrir l’épargne', chemin: '/plan?onglet=epargne' },
-      }
-    case 'epargneNonDeclaree':
-      return {
-        ...a,
-        titre: 'Compte d’épargne à déclarer',
-        message: `Tes objectifs ont ${dh(a.reserve)} de côté, mais aucun compte d’épargne n’est déclaré. Indique son solde réel pour suivre tes versements.`,
-        action: { libelle: 'Déclarer mon compte', chemin: '/plan?onglet=epargne' },
-      }
     case 'versementPrevu':
       return {
         ...a,

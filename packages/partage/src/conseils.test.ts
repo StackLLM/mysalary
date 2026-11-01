@@ -15,7 +15,6 @@ const ALERTES: Alerte[] = [
   { cle: 'e', type: 'echeanceEnRetard', origine: 'dette', id: 'p', libelle: 'Prêt', date: date('2027-01-08'), reste: c(80_000), mois: mois('2027-01') },
   { cle: 'f', type: 'enveloppeDepassee', id: 'co', libelle: 'Courses', budget: c(200_000), depassement: c(30_000), mois: mois('2027-01') },
   { cle: 'g', type: 'semaineDepassee', mois: mois('2027-01'), numero: 3, depassement: c(151_000), joursRestants: 0, budgetMoisRestant: c(120_000), parJourMois: c(7_058), joursRestantsMois: 17 },
-  { cle: 'h', type: 'reserveDepasse', depassement: c(200_000) },
 ]
 
 const RECOMMANDATIONS: Recommandation[] = [
@@ -66,10 +65,7 @@ describe('alertes rédigées', () => {
     )
   })
 
-  it('épargne : compte à déclarer, versement prévu à noter', () => {
-    const declarer = redigerAlerte({ cle: 'r', type: 'epargneNonDeclaree', reserve: c(900_000) })
-    expect(n(declarer.message)).toBe('Tes objectifs ont 9 000 DH de côté, mais aucun compte d’épargne n’est déclaré. Indique son solde réel pour suivre tes versements.')
-    expect(declarer.action).toEqual({ libelle: 'Déclarer mon compte', chemin: '/plan?onglet=epargne' })
+  it('épargne : versement prévu à noter', () => {
     const versement = redigerAlerte({ cle: 'v', type: 'versementPrevu', objectifId: 'o', libelle: 'Moto', reste: c(400_000), mois: mois('2026-10') })
     expect(n(versement.titre)).toBe('Versement « Moto » à faire')
     expect(n(versement.message)).toBe('4 000 DH prévus ce mois-ci pour « Moto ». Note le versement quand il est fait.')

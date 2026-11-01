@@ -301,7 +301,7 @@ describe('Objectif (détail)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Marquer comme réalisé' }))
     const panneau = await screen.findByRole('dialog')
     fireEvent.click(within(panneau).getByRole('button', { name: 'Marquer comme réalisé' }))
-    await waitFor(() => expect(api.creer).toHaveBeenCalledWith('/objectifs/moto/realiser', { date: '2026-10-09', compteId: 'cih' }))
+    await waitFor(() => expect(api.creer).toHaveBeenCalledWith('/objectifs/moto/realiser', { date: '2026-10-09' }))
   })
 
   it('cible atteinte : verdict positif, plus rien à mettre de côté', async () => {
@@ -324,7 +324,7 @@ function BoutonVerser() {
 }
 
 describe('Épargne', () => {
-  it('solde, réservé, disponible ; alerte si les objectifs réservent trop', async () => {
+  it('aucun compte à gérer : ni compte, ni solde à déclarer ; ce qui est mis de côté, par objectif (lot 37)', async () => {
     epargne = { ...epargne, etat: { ...etat, disponible: 0, depassement: 50_000 } } as unknown as EpargneDto
     rendre(
       <FournisseurSaisieRapide>
@@ -332,8 +332,11 @@ describe('Épargne', () => {
       </FournisseurSaisieRapide>,
       { route: '/plan', compte: 'u1' },
     )
-    expect(espaces((await screen.findByRole('alert')).textContent)).toMatch(/réservent 500 DH de plus que ton épargne déclarée/)
-    expect(within(screen.getByRole('region', { name: 'Comptes d’épargne' })).getByText('CIH')).toBeInTheDocument()
+    expect(await screen.findByRole('region', { name: 'Épargne du mois' })).toBeInTheDocument()
+    expect(screen.queryByText(/compte/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/déclar/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(await screen.findByRole('list', { name: 'Épargne par objectif' })).toBeInTheDocument()
   })
 
   // Plan du mois (lot 36) : un choix clair par objectif, chacun annulable.
@@ -356,7 +359,7 @@ describe('Épargne', () => {
     const moto = await ligneMoto()
     fireEvent.click(within(moto).getByRole('button', { name: /Épargné : 2.000.DH pour Moto/ }))
     await waitFor(() =>
-      expect(api.creer).toHaveBeenCalledWith('/epargne/mouvements', { sens: 'versement', compteId: 'cih', objectifId: 'moto', date: '2026-10-09', montant: 200_000, libelle: '' }),
+      expect(api.creer).toHaveBeenCalledWith('/epargne/mouvements', { sens: 'versement', objectifId: 'moto', date: '2026-10-09', montant: 200_000, libelle: '' }),
     )
     fireEvent.click(within(moto).getByRole('button', { name: 'Autre montant' }))
     expect(await screen.findByLabelText('Montant')).toHaveValue('2000')
@@ -392,21 +395,6 @@ describe('Épargne', () => {
     await waitFor(() => expect(api.supprimer).toHaveBeenCalledWith('/epargne/plan/moto/versements'))
   })
 
-  it('sans compte déclaré : pas d’alerte « en trop », on propose de déclarer le compte avec l’épargne des objectifs', async () => {
-    epargne = { ...epargne, etat: { comptes: [], declare: false, solde: 0, reserve: 900_000, disponible: 0, depassement: 0 } } as unknown as EpargneDto
-    rendre(
-      <FournisseurSaisieRapide>
-        <OngletEpargne />
-      </FournisseurSaisieRapide>,
-      { route: '/plan', compte: 'u1' },
-    )
-    const alerte = await screen.findByRole('alert')
-    expect(espaces(alerte.textContent)).toMatch(/Aucun compte d’épargne déclaré\.Tes objectifs ont 9 000 ?DH.* de côté/)
-    expect(screen.getAllByText('Non déclaré').length).toBeGreaterThan(0)
-    fireEvent.click(within(alerte).getByRole('button', { name: 'Déclarer mon compte' }))
-    expect(await screen.findByLabelText('Solde réel')).toHaveValue('9000')
-  })
-
   it('saisie rapide d’un versement vers un objectif : jamais une dépense', async () => {
     rendre(
       <FournisseurSaisieRapide>
@@ -424,7 +412,7 @@ describe('Épargne', () => {
     expect(screen.getByRole('radio', { name: /Moto/ })).toHaveAttribute('aria-checked', 'true')
     fireEvent.click(screen.getByRole('button', { name: 'Noter le versement' }))
     await waitFor(() =>
-      expect(api.creer).toHaveBeenCalledWith('/epargne/mouvements', { sens: 'versement', compteId: 'cih', objectifId: 'moto', date: '2026-10-09', montant: 30_000, libelle: '' }),
+      expect(api.creer).toHaveBeenCalledWith('/epargne/mouvements', { sens: 'versement', objectifId: 'moto', date: '2026-10-09', montant: 30_000, libelle: '' }),
     )
     expect(api.creer).not.toHaveBeenCalledWith('/depenses', expect.anything())
   })

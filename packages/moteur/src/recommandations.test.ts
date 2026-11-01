@@ -178,16 +178,10 @@ describe('alertes (cloche)', () => {
     )
   })
 
-  it('épargne d’objectif sans compte déclaré : à déclarer, jamais « en trop » (le solde réel est inconnu)', () => {
-    const { calendrier, donnees } = cadre()
-    const liste = alertes(calendrier, { ...donnees, comptes: [] }, { aujourdhui: AUJOURDHUI })
-    expect(trouver(liste, 'epargneNonDeclaree')).toEqual({ cle: 'reserve', type: 'epargneNonDeclaree', reserve: 200_000 })
-    expect(types(liste)).not.toContain('reserveDepasse')
-  })
-
-  it('objectifs au-delà de l’épargne déclarée (R14)', () => {
+  it('aucune alerte de compte d’épargne : ni « à déclarer », ni « réservé en trop » (lot 37)', () => {
     const { calendrier, donnees } = cadre({ objectifs: [{ ...moto, montantInitial: centimes(1_200_000) }] })
-    expect(trouver(alertes(calendrier, donnees, { aujourdhui: AUJOURDHUI }), 'reserveDepasse')).toEqual({ cle: 'reserve', type: 'reserveDepasse', depassement: 200_000 })
+    const liste = [...alertes(calendrier, donnees, { aujourdhui: AUJOURDHUI }), ...alertes(calendrier, { ...donnees, comptes: [] }, { aujourdhui: AUJOURDHUI })]
+    expect(types(liste).filter((t) => t === ('reserveDepasse' as string) || t === ('epargneNonDeclaree' as string))).toEqual([])
   })
 })
 

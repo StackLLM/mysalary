@@ -47,7 +47,8 @@ export type SaisieCompteEpargne = z.input<typeof schemaCompteEpargne>
 /** Versement (avec ou sans objectif) ou retrait : réel, jamais une dépense (R11). */
 export const schemaMouvementEpargne = z.strictObject({
   sens: z.enum(['versement', 'retrait'], { error: 'Versement ou retrait ?' }),
-  compteId: z.string({ error: 'Choisis un compte.' }).min(1, 'Choisis un compte.'),
+  /** Facultatif : sans compte, l'épargne va sur le compte interne du compte utilisateur (lot 37, aucun compte à gérer). */
+  compteId: z.string().min(1).optional(),
   objectifId: z.string().min(1).nullable().default(null),
   date: schemaDateCivile,
   montant: schemaMontantPositif,
@@ -114,7 +115,7 @@ export const schemaStatutObjectif = z.strictObject({
 /** Achat réalisé (R19) : l'épargne de l'objectif est consommée à cette date, sans dépense. */
 export const schemaRealisation = z.strictObject({
   date: schemaDateCivile,
-  compteId: z.string({ error: 'Choisis le compte d’où sort l’argent.' }).min(1, 'Choisis le compte d’où sort l’argent.'),
+  compteId: z.string().min(1).optional(),
 })
 export type SaisieRealisation = z.input<typeof schemaRealisation>
 
